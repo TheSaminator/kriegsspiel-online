@@ -47,27 +47,27 @@ Unlike in some other strategy games, in Kriegsspiel Online, unit facing matters 
 Units have an Action bar that controls how much they can do in one round.
 
 * Move:
-    * Uses MaxDistance stat.
-    * Unit moves up to MaxDistance away from starting position, turning up to 22.5 degrees away from its original facing.
-    * The DistanceCovered is divided by MaxDistance to get the percentage of Action used up.
+    * Uses `moveSpeedPerRound` stat.
+    * Unit moves up to `moveSpeedPerRound` away from starting position, turning up to 22.5 degrees away from its original facing.
+    * The DistanceCovered is divided by `moveSpeedPerRound` to get the percentage of Action used up.
 * Turn:
-    * Uses MaxTurn stat.
+    * Uses `turnSpeedPerRound` stat.
     * Unit turns up to 180 degrees (or an angle determined by action remaining) away from starting facing.
-    * The AngleTurned is divided by MaxTurn to get the percentage of Action used up.
+    * The AngleTurned is divided by `turnSpeedPerRound` to get the percentage of Action used up.
 * Attack
     * Targets a single unit
-    * Uses attacker's MaxAttackTurn, MaxAttackDistance, SoftAttack, HardAttack, AttackActionConsumed, and CanMoveAfterAttacking stats.
-    * Uses target's MaxHealth and Hardness stats.
-    * Attacker's Action must be at least AttackActionConsumed.
-    * SoftAttackStrength is (attacker.SoftAttack * (1 - target.Hardness) * SoftFlankingMult)
-    * HardAttackStrength is (attacker.HardAttack * target.Hardness * HardFlankingMult)
-    * Flanking multiplier is calculated as ((attacker.facingNormal dot target.facingNormal) + flankWeight) / (flankWeight - 1)
+    * Uses attacker's `maxAttackAngle`, `maxAttackDistance`, `softAttack`, `hardAttack`, `attackActionConsumed`, and `canMoveAfterAttacking` stats.
+    * Uses target's `maxHealth` and `hardness` stats.
+    * Attacker's Action must be at least `attackActionConsumed`.
+    * `softAttackStrength` is `(attacker.softAttack * (1 - target.Hardness) * SoftFlankingMult)`
+    * `hardAttackStrength` is `(attacker.hardAttack * target.Hardness * HardFlankingMult)`
+    * Flanking multiplier is calculated as `((attacker.facingNormal dot target.facingNormal) + flankWeight) / (flankWeight - 1)`
         * Flank weight for soft attack is 3, resulting in a flank multiplier from 1 (minimum) to 2 (maximum)
         * Flank weight for hard attack is 9, resulting in a flank multiplier from 1 (minimum) to 1.125 (maximum)
-    * Total reduction of target's health is (SoftAttackStrength + HardAttackStrength) / target.MaxHealth
+    * Total reduction of target's health is `(softAttackStrength + hardAttackStrength) / target.maxHealth`
     * Reduction of attacker's Action is either:
-        * If attacker can't move after attacking, then all remaining Action
-        * Otherwise, AttackActionConsumed
+        * If attacker `canMoveAfterAttacking`, then `attackActionConsumed`
+        * Otherwise, all remaining Action
 
 Units can also Skip Turn, if not all of their Action is consumed, this lets them end the turn anyway.
 
