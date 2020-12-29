@@ -1,0 +1,8 @@
+{
+	"name": "signalling-server",
+	"version": "1.0.0",
+	"private": true,
+	"dependencies": {
+		"ws": "^7.4.1"
+	}
+}
