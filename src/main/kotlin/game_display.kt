@@ -288,110 +288,118 @@ object GameSidebar {
 	fun deployMenu() {
 		selection.clear()
 		
-		selection.append {
-			div(classes = "button-set col") {
-				p(classes = "info") {
-					+"You have $currentPoints points left to spend."
-				}
-				PieceType.values().forEach { pieceType ->
-					a(href = "#") {
-						+"${pieceType.displayName} (${pieceType.pointCost})"
-						
-						if (currentPoints < pieceType.pointCost)
-							classes = setOf("disabled")
-						else
-							onClickFunction = onClickFunction@{ e ->
-								e.preventDefault()
-								
-								if (currentPoints < pieceType.pointCost)
-									return@onClickFunction
-								
-								val mapSize = GameSessionData.currentSession!!.mapSize
-								val side = Game.currentSide!!
-								
-								val width = DEPLOY_ZONE_WIDTH
-								val height = mapSize.y
-								
-								val centerX = when (side) {
-									GameServerSide.HOST -> width / 2
-									GameServerSide.GUEST -> mapSize.x - (width / 2)
-								}
-								val centerY = height / 2
-								
-								val pReq = PickRequest.PickPosition(
-									PickBoundaryRectangle(
-										Vec2(centerX, centerY),
-										width, height
-									),
-									null,
-									pieceType.imageRadius + 15,
-									pieceType.imageRadius + 15
-								)
-								
-								deployJob?.cancel()
-								PickHandler.cancelRequest()
-								
-								deployJob = GlobalScope.launch {
-									val pRes = PickHandler.pickLocal(pReq) as? PickResponse.PickedPosition ?: return@launch
-									
-									val pos = pRes.pos
-									val facing = when (side) {
-										GameServerSide.HOST -> HOST_FACING
-										GameServerSide.GUEST -> GUEST_FACING
-									}
-									
-									currentPoints -= pieceType.pointCost
-									Player.currentPlayer!!.deployPiece(pieceType, pos, facing)
-									
-									deployMenu()
-								}
-							}
+		if (GamePhase.Deployment.localIsDone)
+			selection.append {
+				selection.clear()
+				
+				selection.append {
+					p(classes = "all-info") {
+						+"Wait for the game to begin"
 					}
 				}
-				
-				a(href = "#") {
-					+"CLEAR DEPLOYMENT"
-					
-					if (GameSessionData.currentSession!!.anyPiecesWithOwner(Game.currentSide!!))
-						onClickFunction = { e ->
-							e.preventDefault()
+			}
+		else
+			selection.append {
+				div(classes = "button-set col") {
+					p(classes = "info") {
+						+"You have $currentPoints points left to spend."
+					}
+					PieceType.values().forEach { pieceType ->
+						a(href = "#") {
+							+"${pieceType.displayName} (${pieceType.pointCost})"
 							
-							Player.currentPlayer!!.clearDeploying()
-							currentPoints = POINTS_TO_SPEND
-							
-							deployMenu()
-						}
-					else
-						classes = setOf("disabled")
-				}
-				
-				a(href = "#") {
-					id = "finish-deploy"
-					
-					+"DONE DEPLOYING"
-					
-					if (GameSessionData.currentSession!!.anyPiecesWithOwner(Game.currentSide!!))
-						onClickFunction = { e ->
-							e.preventDefault()
-							
-							Player.currentPlayer!!.finishDeploying()
-							
-							if (GamePhase.Deployment.bothAreDone) {
-								updateSidebar()
-							} else {
-								selection.clear()
-								
-								selection.append {
-									p(classes = "all-info") {
-										+"Wait for the game to begin"
-									}
+							if (currentPoints < pieceType.pointCost)
+								classes = setOf("disabled")
+							else
+								onClickFunction = onClickFunction@{ e ->
+									e.preventDefault()
+									
+									deployPiece(pieceType)
 								}
-							}
 						}
-					else
-						classes = setOf("disabled")
+					}
+					
+					a(href = "#") {
+						+"CLEAR DEPLOYMENT"
+						
+						if (GameSessionData.currentSession!!.anyPiecesWithOwner(Game.currentSide!!))
+							onClickFunction = { e ->
+								e.preventDefault()
+								
+								Player.currentPlayer!!.clearDeploying()
+								currentPoints = POINTS_TO_SPEND
+								
+								deployMenu()
+							}
+						else
+							classes = setOf("disabled")
+					}
+					
+					a(href = "#") {
+						id = "finish-deploy"
+						
+						+"DONE DEPLOYING"
+						
+						if (GameSessionData.currentSession!!.anyPiecesWithOwner(Game.currentSide!!))
+							onClickFunction = { e ->
+								e.preventDefault()
+								
+								Player.currentPlayer!!.finishDeploying()
+								
+								if (GamePhase.Deployment.bothAreDone)
+									updateSidebar()
+								else
+									deployMenu()
+							}
+						else
+							classes = setOf("disabled")
+					}
 				}
 			}
+	}
+	
+	private fun deployPiece(pieceType: PieceType) {
+		if (currentPoints < pieceType.pointCost)
+			return
+		
+		val mapSize = GameSessionData.currentSession!!.mapSize
+		val side = Game.currentSide!!
+		
+		val width = DEPLOY_ZONE_WIDTH
+		val height = mapSize.y
+		
+		val centerX = when (side) {
+			GameServerSide.HOST -> width / 2
+			GameServerSide.GUEST -> mapSize.x - (width / 2)
+		}
+		val centerY = height / 2
+		
+		val pReq = PickRequest.PickPosition(
+			PickBoundaryRectangle(
+				Vec2(centerX, centerY),
+				width, height
+			),
+			null,
+			pieceType.imageRadius + 15,
+			pieceType.imageRadius + 15
+		)
+		
+		deployJob?.cancel()
+		PickHandler.cancelRequest()
+		
+		deployJob = GlobalScope.launch {
+			val pRes = PickHandler.pickLocal(pReq) as? PickResponse.PickedPosition ?: return@launch
+			
+			val pos = pRes.pos
+			val facing = when (side) {
+				GameServerSide.HOST -> HOST_FACING
+				GameServerSide.GUEST -> GUEST_FACING
+			}
+			
+			currentPoints -= pieceType.pointCost
+			Player.currentPlayer!!.deployPiece(pieceType, pos, facing)
+			
+			deployMenu()
 		}
 	}
 	

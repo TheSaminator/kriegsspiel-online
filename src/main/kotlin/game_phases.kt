@@ -8,6 +8,11 @@ sealed class GamePhase {
 		var hostIsDone = false
 		var guestIsDone = false
 		
+		val localIsDone get() = when(Game.currentSide!!) {
+			GameServerSide.HOST -> hostIsDone
+			GameServerSide.GUEST -> guestIsDone
+		}
+		
 		val bothAreDone get() = hostIsDone && guestIsDone
 		
 		suspend fun awaitBothDone() {
