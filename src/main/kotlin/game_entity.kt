@@ -41,7 +41,9 @@ class GameSessionData(val mapSize: Vec2) {
 		if (Game.currentSide == GameServerSide.HOST)
 			GamePacket.send(GamePacket.PieceAddedOrChanged(piece))
 		
-		if (GamePhase.currentPhase != GamePhase.Deployment)
+		if (GamePhase.currentPhase == GamePhase.Deployment)
+			GameSidebar.deployMenu()
+		else
 			GameSidebar.updateSidebar()
 	}
 	
@@ -52,7 +54,9 @@ class GameSessionData(val mapSize: Vec2) {
 			if (Game.currentSide == GameServerSide.HOST)
 				GamePacket.send(GamePacket.PieceDeleted(id))
 			
-			if (GamePhase.currentPhase != GamePhase.Deployment)
+			if (GamePhase.currentPhase == GamePhase.Deployment)
+				GameSidebar.deployMenu()
+			else
 				GameSidebar.updateSidebar()
 		}
 	}
