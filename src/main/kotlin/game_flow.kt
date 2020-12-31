@@ -64,6 +64,8 @@ object Game {
 		
 		GameSessionData.currentSession = null
 		
+		GameSidebar.clearSidebar()
+		
 		GameField.eraseEverything()
 		
 		ChatBox.disable()

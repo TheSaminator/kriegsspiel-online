@@ -271,7 +271,7 @@ object GameField {
 }
 
 object GameSidebar {
-	private val selection by lazy {
+	private val sidebar by lazy {
 		document.getElementById("piece-selection").unsafeCast<HTMLDivElement>()
 	}
 	
@@ -286,20 +286,20 @@ object GameSidebar {
 	private var deployJob: Job? = null
 	
 	fun deployMenu() {
-		selection.clear()
+		sidebar.clear()
 		
 		if (GamePhase.Deployment.localIsDone)
-			selection.append {
-				selection.clear()
+			sidebar.append {
+				sidebar.clear()
 				
-				selection.append {
+				sidebar.append {
 					p(classes = "all-info") {
 						+"Wait for the game to begin"
 					}
 				}
 			}
 		else
-			selection.append {
+			sidebar.append {
 				div(classes = "button-set col") {
 					p(classes = "info") {
 						+"You have $currentPoints points left to spend."
@@ -423,18 +423,18 @@ object GameSidebar {
 	}
 	
 	fun updateSidebar() {
-		selection.clear()
+		sidebar.clear()
 		
 		val piece = selectedPieceId?.let { GameSessionData.currentSession!!.pieceByIdOrNull(it) }
 		
 		if (piece == null) {
-			selection.append {
+			sidebar.append {
 				p(classes = "all-info") {
 					+"Click a game piece to select it"
 				}
 			}
 		} else {
-			selection.append {
+			sidebar.append {
 				p(classes = "info") {
 					+piece.type.displayName
 				}
@@ -488,7 +488,7 @@ object GameSidebar {
 		}
 		
 		if (GamePhase.currentPhase == GamePhase.PlayTurn(Game.currentSide!!)) {
-			selection.append {
+			sidebar.append {
 				hr()
 				
 				div(classes = "button-set col") {
@@ -516,7 +516,7 @@ object GameSidebar {
 				}
 			}
 		} else {
-			selection.append {
+			sidebar.append {
 				hr()
 				
 				p(classes = "info") {
@@ -524,5 +524,9 @@ object GameSidebar {
 				}
 			}
 		}
+	}
+	
+	fun clearSidebar() {
+		sidebar.clear()
 	}
 }
