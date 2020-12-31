@@ -1,6 +1,7 @@
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
 
 @Serializable
 sealed class Ability {
@@ -15,20 +16,17 @@ sealed class Ability {
 		private val ANGLE_BUFFER get() = PI / 8
 		private val DISTANCE_BUFFER get() = 50.0
 		
-		private val GamePiece.minDistance: Double
-			get() = pieceRadius
-		
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.minDistance / distancePerAction < currentPiece.action
+			return currentPiece.pieceRadius / distancePerAction < currentPiece.action
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
 			val pickReq = PickRequest.PickPosition(
 				PickBoundaryUnitBased(
 					currentPiece.location,
-					currentPiece.minDistance,
+					currentPiece.pieceRadius,
 					distancePerAction * currentPiece.action + DISTANCE_BUFFER,
-					currentPiece.facing.asAngle(flipY = true),
+					currentPiece.facing,
 					ANGLE_BUFFER
 				),
 				currentPiece.location,
@@ -39,7 +37,7 @@ sealed class Ability {
 			
 			val newLocation = pickRes.pos
 			val dLocation = newLocation - currentPiece.location
-			val newFacing = dLocation.angle.asAngle(flipY = true)
+			val newFacing = dLocation.angle.asAngle()
 			val newAction = (currentPiece.action - dLocation.magnitude / distancePerAction).coerceAtLeast(0.0)
 			
 			currentPiece.location = newLocation
@@ -77,15 +75,13 @@ sealed class Ability {
 	@Serializable
 	data class Attack(
 		val maxAngle: Double,
+		val minDistance: Double,
 		val maxDistance: Double,
 		val softAttackPower: Double,
 		val hardAttackPower: Double,
 		val actionConsumed: Double,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
-		private val GamePiece.minDistance: Double
-			get() = pieceRadius
-		
 		// Flanking multiplier is calculated as ((attacker.facingNormal dot target.facingNormal) + flankWeight) / (flankWeight - 1)
 		// For the soft attack weight of 3, the flanking multiplier ranges from 1 at minimum to 2 at maximum.
 		// For the hard attack weight of 9, the flanking multiplier ranges from 1 at minimum to 1.25 at maximum.
@@ -106,9 +102,9 @@ sealed class Ability {
 			val pickReq = PickRequest.PickPiece(
 				PickBoundaryUnitBased(
 					currentPiece.location,
-					currentPiece.minDistance,
-					maxDistance,
-					currentPiece.facing.asAngle(flipY = true),
+					currentPiece.pieceRadius + minDistance,
+					currentPiece.pieceRadius + maxDistance,
+					currentPiece.facing,
 					maxAngle
 				),
 				currentPiece.owner.other
@@ -119,7 +115,9 @@ sealed class Ability {
 			val targetHardness = targetPiece.type.stats.hardness
 			val targetSoftness = 1 - targetHardness
 			
-			val dotProduct = Vec2.normal(currentPiece.facing) dot Vec2.normal(targetPiece.facing)
+			val attackFacing = (targetPiece.location - currentPiece.location).angle
+			
+			val dotProduct = cos(attackFacing - targetPiece.facing)
 			val softAttack = softAttackPower * targetSoftness * getFlankingMultiplier(dotProduct, SOFT_FLANK_WEIGHT)
 			val hardAttack = hardAttackPower * targetHardness * getFlankingMultiplier(dotProduct, HARD_FLANK_WEIGHT)
 			
@@ -158,22 +156,27 @@ fun standardPieceAbilities(
 	turnSpeedPerRound: Double,
 	
 	maxAttackAngle: Double,
+	minAttackDistance: Double,
 	maxAttackDistance: Double,
 	softAttack: Double,
 	hardAttack: Double,
 	attackActionConsumed: Double,
-	canMoveAfterAttacking: Boolean
+	canMoveAfterAttacking: Boolean,
+	
+	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
 	"Turn" to Ability.Rotate(turnSpeedPerRound),
 	"Attack" to Ability.Attack(
 		maxAttackAngle,
+		minAttackDistance,
 		maxAttackDistance,
 		softAttack,
 		hardAttack,
 		attackActionConsumed,
 		canMoveAfterAttacking
-	),
+	)
+) + extraAbilities + mapOf(
 	"Skip Turn" to Ability.SkipTurn
 )
 
@@ -201,6 +204,7 @@ enum class PieceType(
 				turnSpeedPerRound = 3 * PI,
 				
 				maxAttackAngle = PI / 8,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 300.0,
 				softAttack = 300.0,
 				hardAttack = 50.0,
@@ -220,6 +224,7 @@ enum class PieceType(
 				turnSpeedPerRound = 3 * PI,
 				
 				maxAttackAngle = PI / 8,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 400.0,
 				softAttack = 450.0,
 				hardAttack = 75.0,
@@ -239,6 +244,7 @@ enum class PieceType(
 				turnSpeedPerRound = 6 * PI,
 				
 				maxAttackAngle = PI / 6,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 300.0,
 				softAttack = 300.0,
 				hardAttack = 30.0,
@@ -258,6 +264,7 @@ enum class PieceType(
 				turnSpeedPerRound = 6 * PI,
 				
 				maxAttackAngle = PI / 6,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 400.0,
 				softAttack = 450.0,
 				hardAttack = 45.0,
@@ -277,6 +284,7 @@ enum class PieceType(
 				turnSpeedPerRound = 4.5 * PI,
 				
 				maxAttackAngle = PI / 4,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 400.0,
 				softAttack = 800.0,
 				hardAttack = 400.0,
@@ -296,6 +304,7 @@ enum class PieceType(
 				turnSpeedPerRound = 3 * PI,
 				
 				maxAttackAngle = PI / 4,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 400.0,
 				softAttack = 900.0,
 				hardAttack = 700.0,
@@ -315,6 +324,7 @@ enum class PieceType(
 				turnSpeedPerRound = 2 * PI,
 				
 				maxAttackAngle = PI / 6,
+				minAttackDistance = 400.0,
 				maxAttackDistance = 1200.0,
 				softAttack = 1500.0,
 				hardAttack = 500.0,
@@ -334,6 +344,7 @@ enum class PieceType(
 				turnSpeedPerRound = 2 * PI,
 				
 				maxAttackAngle = PI / 4,
+				minAttackDistance = 500.0,
 				maxAttackDistance = 1500.0,
 				softAttack = 2000.0,
 				hardAttack = 300.0,
@@ -353,6 +364,7 @@ enum class PieceType(
 				turnSpeedPerRound = 2 * PI,
 				
 				maxAttackAngle = PI / 6,
+				minAttackDistance = 0.0,
 				maxAttackDistance = 500.0,
 				softAttack = 500.0,
 				hardAttack = 1500.0,

@@ -27,14 +27,8 @@ data class Vec2(val x: Double, val y: Double) {
 		y * cos(radians) + x * sin(radians),
 	)
 	
-	val magnitude2: Double
-		get() = this dot this
-	
 	val magnitude: Double
 		get() = hypot(x, y)
-	
-	val normalize: Vec2
-		get() = this / magnitude
 	
 	val angle: Double
 		get() = atan2(x, y)

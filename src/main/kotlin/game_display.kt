@@ -180,7 +180,7 @@ object GameField {
 		gamePieces.append(G()) {
 			id = piece.id
 			cssClass = "game-piece"
-			transform = "translate(${piece.location.x} ${piece.location.y}) rotate(${piece.facing * 180 / PI})"
+			transform = "translate(${piece.location.x} ${piece.location.y}) rotate(${piece.facing.asAngle(flipY = true) * 180 / PI})"
 			
 			val outerRadius = piece.type.imageRadius + 15
 			val healthRadius = piece.type.imageRadius + 7.5
@@ -464,9 +464,7 @@ object GameSidebar {
 								id = "use-ability-${abilityName.toLowerCase()}"
 								+abilityName
 								
-								if (!ability.canUse(piece))
-									classes = setOf("disabled")
-								else
+								if (ability.canUse(piece))
 									onClickFunction = { e ->
 										e.preventDefault()
 										
@@ -480,6 +478,8 @@ object GameSidebar {
 											updateSidebar()
 										}
 									}
+								else
+									classes = setOf("disabled")
 							}
 						}
 					}
@@ -496,9 +496,7 @@ object GameSidebar {
 						id = "end-turn-btn"
 						+"End Turn"
 						
-						if (!GameSessionData.currentSession!!.canEndTurn)
-							classes = setOf("disabled")
-						else
+						if (GameSessionData.currentSession!!.canEndTurn)
 							onClickFunction = { e ->
 								e.preventDefault()
 								
@@ -512,6 +510,8 @@ object GameSidebar {
 									updateSidebar()
 								}
 							}
+						else
+							classes = setOf("disabled")
 					}
 				}
 			}

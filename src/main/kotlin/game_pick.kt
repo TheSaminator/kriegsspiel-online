@@ -39,7 +39,7 @@ data class PickBoundaryCircle(
 	val radius: Double
 ) : PickBoundary() {
 	override fun isInBoundary(pos: Vec2): Boolean {
-		return (pos - center).magnitude2 < radius * radius
+		return (pos - center).magnitude < radius
 	}
 }
 
@@ -52,16 +52,22 @@ data class PickBoundaryUnitBased(
 	val maxAngleDiff: Double
 ) : PickBoundary() {
 	override fun isInBoundary(pos: Vec2): Boolean {
-		if ((pos - center).magnitude2 > maxRadius * maxRadius)
+		console.log("Checking distance ${(pos - center).magnitude} up to $maxRadius")
+		
+		if ((pos - center).magnitude > maxRadius)
 			return false
 		
+		console.log("Checking distance ${(pos - center).magnitude} at least $minRadius")
+		
 		if (minRadius != null) {
-			if ((pos - center).magnitude2 < minRadius * minRadius)
+			if ((pos - center).magnitude < minRadius)
 				return false
 		}
 		
-		val angleRange = (angleOrigin - maxAngleDiff)..(angleOrigin + maxAngleDiff)
-		val currAngle = (pos - center).angle
+		val angleRange = -maxAngleDiff..maxAngleDiff
+		val currAngle = (angleOrigin - (pos - center).angle).asAngle()
+		
+		console.log("Checking angle $currAngle in $maxAngleDiff")
 		
 		if (currAngle !in angleRange)
 			return false
@@ -109,7 +115,7 @@ object PickHandler {
 		if (toAngle isEqualTo 0.0)
 			return ""
 		
-		val fromNormal = angleReq.fromAngle.asAngle(flipX = false, flipY = true)
+		val fromNormal = angleReq.fromAngle.asAngle()
 		val toNormal = toAngle.asAngle()
 		
 		val begin = Vec2.polar(angleReq.displayArcRadius, fromNormal) + angleReq.center
@@ -148,7 +154,7 @@ object PickHandler {
 			return false
 		
 		if (posReq.restrictDistFromUnits != null && GameSessionData.currentSession!!.allPieces().any { piece ->
-				(pos - piece.location).magnitude2 < (piece.type.imageRadius + 15 + posReq.restrictDistFromUnits).let { it * it }
+				(pos - piece.location).magnitude < piece.type.imageRadius + 15 + posReq.restrictDistFromUnits
 			})
 			return false
 		
@@ -235,7 +241,7 @@ object PickHandler {
 				listeners.register("mouseup", object : EventListener {
 					override fun handleEvent(event: Event) {
 						if (checkAngleValid(pickRequest, angle)) {
-							val setAngle = angle.asAngle(flipY = true)
+							val setAngle = angle.asAngle()
 							
 							wrappedResponder(PickResponse.PickedAngle(setAngle))
 						}
