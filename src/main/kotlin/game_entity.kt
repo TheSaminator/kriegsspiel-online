@@ -87,9 +87,10 @@ class GameSessionData(val mapSize: Vec2) {
 	companion object {
 		var currentSession: GameSessionData? = null
 		
-		val SIZE_RANGE = 1500.0..2500.0
+		val WIDTH_RANGE = 2500.0..4500.0
+		val HEIGHT_RANGE = 1500.0..3500.0
 		
-		fun randomSize() = Vec2(SIZE_RANGE.random(), SIZE_RANGE.random())
+		fun randomSize() = Vec2(WIDTH_RANGE.random(), HEIGHT_RANGE.random())
 	}
 }
 

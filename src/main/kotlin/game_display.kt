@@ -270,18 +270,20 @@ object GameField {
 	}
 }
 
+object DeployConstants {
+	const val POINTS_TO_SPEND = 1000
+	const val DEPLOY_ZONE_WIDTH = 500.0
+	
+	const val HOST_FACING = PI / 2
+	const val GUEST_FACING = PI * 3 / 2
+}
+
 object GameSidebar {
 	private val sidebar by lazy {
 		document.getElementById("piece-selection").unsafeCast<HTMLDivElement>()
 	}
 	
-	const val POINTS_TO_SPEND = 1000
-	const val DEPLOY_ZONE_WIDTH = 300.0
-	
-	const val HOST_FACING = PI / 2
-	const val GUEST_FACING = PI * 3 / 2
-	
-	var currentPoints = POINTS_TO_SPEND
+	var currentPoints = DeployConstants.POINTS_TO_SPEND
 	
 	private var deployJob: Job? = null
 	
@@ -327,7 +329,7 @@ object GameSidebar {
 								e.preventDefault()
 								
 								Player.currentPlayer!!.clearDeploying()
-								currentPoints = POINTS_TO_SPEND
+								currentPoints = DeployConstants.POINTS_TO_SPEND
 								
 								deployMenu()
 							}
@@ -365,7 +367,7 @@ object GameSidebar {
 		val mapSize = GameSessionData.currentSession!!.mapSize
 		val side = Game.currentSide!!
 		
-		val width = DEPLOY_ZONE_WIDTH
+		val width = DeployConstants.DEPLOY_ZONE_WIDTH
 		val height = mapSize.y
 		
 		val centerX = when (side) {
@@ -392,8 +394,8 @@ object GameSidebar {
 			
 			val pos = pRes.pos
 			val facing = when (side) {
-				GameServerSide.HOST -> HOST_FACING
-				GameServerSide.GUEST -> GUEST_FACING
+				GameServerSide.HOST -> DeployConstants.HOST_FACING
+				GameServerSide.GUEST -> DeployConstants.GUEST_FACING
 			}
 			
 			currentPoints -= pieceType.pointCost

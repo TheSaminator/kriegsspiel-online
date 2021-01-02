@@ -74,3 +74,9 @@ Units can also Skip Turn, if not all of their Action is consumed, this lets them
 Unit stats can be viewed in [src/main/kotlin/game_data.kt](./src/main/kotlin/game_data.kt) in the enum class `PieceType`.
 
 The game is turn-based, so each side has to wait until the other side is done its turn.
+
+## To Be Implemented
+
+* [ ] Fog of war
+* [ ] Supply system
+* [ ] Map terrain
