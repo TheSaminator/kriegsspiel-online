@@ -77,6 +77,7 @@ The game is turn-based, so each side has to wait until the other side is done it
 
 ## To Be Implemented
 
-* [ ] Fog of war
+* [x] Fog of war
 * [ ] Supply system
 * [ ] Map terrain
+* [ ] Air warfare

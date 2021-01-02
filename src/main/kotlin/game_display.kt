@@ -193,29 +193,31 @@ object GameField {
 				r = outerRadius.toString()
 			}
 			
-			if (piece.health isEqualTo 1.0)
-				circle {
-					fill = "none"
-					stroke = piece.healthBarColor
-					strokeWidth = "5"
-					
-					cx = "0"
-					cy = "0"
-					r = healthRadius.toString()
-				}
-			else
-				path {
-					fill = "none"
-					stroke = piece.healthBarColor
-					strokeWidth = "5"
-					
-					val begin = Vec2(0.0, -healthRadius)
-					val end = begin.rotateBy(piece.health * 2 * PI)
-					
-					val largeArc = if (piece.health > 0.5) "1" else "0"
-					
-					d = "M ${begin.x} ${begin.y} A $healthRadius $healthRadius 0 $largeArc 1 ${end.x} ${end.y}"
-				}
+			if (piece.canBeIdentified) {
+				if (piece.health isEqualTo 1.0)
+					circle {
+						fill = "none"
+						stroke = piece.healthBarColor
+						strokeWidth = "5"
+						
+						cx = "0"
+						cy = "0"
+						r = healthRadius.toString()
+					}
+				else
+					path {
+						fill = "none"
+						stroke = piece.healthBarColor
+						strokeWidth = "5"
+						
+						val begin = Vec2(0.0, -healthRadius)
+						val end = begin.rotateBy(piece.health * 2 * PI)
+						
+						val largeArc = if (piece.health > 0.5) "1" else "0"
+						
+						d = "M ${begin.x} ${begin.y} A $healthRadius $healthRadius 0 $largeArc 1 ${end.x} ${end.y}"
+					}
+			}
 			
 			image {
 				val w = piece.type.imageWidth
@@ -226,7 +228,7 @@ object GameField {
 				width = w.toString()
 				height = h.toString()
 				
-				href = piece.type.getImagePath(piece.owner)
+				href = piece.type.getImagePath(piece.owner, piece.canBeIdentified)
 			}
 		}
 		
@@ -437,16 +439,22 @@ object GameSidebar {
 			}
 		} else {
 			sidebar.append {
-				p(classes = "info") {
-					+piece.type.displayName
-				}
-				
-				div(classes = "measure-bar") {
-					+"Health"
-					span("meter red-green") {
-						span("emptiness") {
-							style = "width: ${((1 - piece.health) * 100).roundToInt()}%"
+				if (piece.canBeIdentified) {
+					p(classes = "info") {
+						+piece.type.displayName
+					}
+					
+					div(classes = "measure-bar") {
+						+"Health"
+						span("meter red-green") {
+							span("emptiness") {
+								style = "width: ${((1 - piece.health) * 100).roundToInt()}%"
+							}
 						}
+					}
+				} else {
+					p(classes = "info") {
+						+"Unidentified"
 					}
 				}
 				

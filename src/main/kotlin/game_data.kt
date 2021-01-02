@@ -374,8 +374,8 @@ enum class PieceType(
 		)
 	);
 	
-	fun getImagePath(side: GameServerSide): String {
-		return "uniticons/${if (side == Game.currentSide) "player" else "opponent"}/${name.toLowerCase()}.png"
+	fun getImagePath(side: GameServerSide, identified: Boolean): String {
+		return "uniticons/${if (side == Game.currentSide) "player" else "opponent"}/${if (identified) name.toLowerCase() else "unknown"}.png"
 	}
 	
 	val imageWidth: Double

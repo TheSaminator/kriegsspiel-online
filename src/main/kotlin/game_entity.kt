@@ -13,30 +13,31 @@ class GameSessionData(val mapSize: Vec2) {
 	fun pieceById(id: String) = pieces.single { it.id == id }
 	fun pieceByIdOrNull(id: String) = pieces.singleOrNull { it.id == id }
 	
-	fun markDirty(id: String) {
+	fun markDirty(id: String, redraw: Boolean = true) {
 		val dirty = pieceByIdOrNull(id)
 		
-		if (dirty == null) {
-			GameField.undrawPiece(id)
-			
-			if (Game.currentSide == GameServerSide.HOST)
+		if (redraw)
+			GameField.redrawAllPieces(pieces)
+		
+		if (Game.currentSide == GameServerSide.HOST) {
+			if (dirty == null)
 				GamePacket.send(GamePacket.PieceDeleted(id))
-		} else {
-			GameField.drawPiece(dirty)
-			
-			if (Game.currentSide == GameServerSide.HOST)
+			else
 				GamePacket.send(GamePacket.PieceAddedOrChanged(dirty))
 		}
 		
-		if (GamePhase.currentPhase != GamePhase.Deployment)
+		if (GamePhase.currentPhase == GamePhase.Deployment)
+			GameSidebar.deployMenu()
+		else
 			GameSidebar.updateSidebar()
 	}
 	
-	fun addOrReplace(piece: GamePiece) {
+	fun addOrReplace(piece: GamePiece, redraw: Boolean = true) {
 		pieces.removeAll { it.id == piece.id }
 		pieces.add(piece)
 		
-		GameField.drawPiece(piece)
+		if (redraw)
+			GameField.redrawAllPieces(pieces)
 		
 		if (Game.currentSide == GameServerSide.HOST)
 			GamePacket.send(GamePacket.PieceAddedOrChanged(piece))
@@ -47,9 +48,10 @@ class GameSessionData(val mapSize: Vec2) {
 			GameSidebar.updateSidebar()
 	}
 	
-	fun removeById(id: String) {
+	fun removeById(id: String, redraw: Boolean = true) {
 		if (pieces.removeAll { it.id == id }) {
-			GameField.undrawPiece(id)
+			if (redraw)
+				GameField.redrawAllPieces(pieces)
 			
 			if (Game.currentSide == GameServerSide.HOST)
 				GamePacket.send(GamePacket.PieceDeleted(id))
@@ -63,8 +65,10 @@ class GameSessionData(val mapSize: Vec2) {
 	
 	fun removeAllByOwner(owner: GameServerSide) {
 		allPiecesWithOwner(owner).map { it.id }.forEach { id ->
-			removeById(id)
+			removeById(id, false)
 		}
+		
+		GameField.redrawAllPieces(pieces)
 	}
 	
 	val canEndTurn: Boolean
@@ -73,8 +77,10 @@ class GameSessionData(val mapSize: Vec2) {
 	fun endTurn(player: GameServerSide) {
 		pieces.filter { it.owner == player }.forEach { piece ->
 			piece.doNextTurn()
-			markDirty(piece.id)
+			markDirty(piece.id, false)
 		}
+		
+		GameField.redrawAllPieces(pieces)
 	}
 	
 	val winner: GameServerSide?
@@ -87,8 +93,8 @@ class GameSessionData(val mapSize: Vec2) {
 	companion object {
 		var currentSession: GameSessionData? = null
 		
-		val WIDTH_RANGE = 2500.0..4500.0
-		val HEIGHT_RANGE = 1500.0..3500.0
+		val WIDTH_RANGE = 3500.0..4500.0
+		val HEIGHT_RANGE = 1500.0..2500.0
 		
 		fun randomSize() = Vec2(WIDTH_RANGE.random(), HEIGHT_RANGE.random())
 	}
@@ -119,6 +125,17 @@ data class GamePiece(
 		skipTurn = false
 		attacked = false
 	}
+	
+	val visionRange: Double
+		get() = 500.0
+	
+	val canBeIdentified: Boolean
+		get() = Game.currentSide == owner || canBeIdentifiedByEnemy
+	
+	val canBeIdentifiedByEnemy: Boolean
+		get() = GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).any { otherPiece ->
+			(location - otherPiece.location).magnitude < visionRange
+		}
 	
 	val pieceRadius: Double
 		get() = type.imageRadius + 15
