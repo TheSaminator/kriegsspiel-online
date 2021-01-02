@@ -3,6 +3,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 
+@Suppress("DuplicatedCode")
 @Serializable
 sealed class Ability {
 	protected val GamePiece.player: Player
@@ -140,6 +141,50 @@ sealed class Ability {
 	}
 	
 	@Serializable
+	data class Heal(
+		val maxAngle: Double,
+		val minDistance: Double,
+		val maxDistance: Double,
+		val healthRestored: Double,
+		val actionConsumed: Double,
+		val canMoveAfterHealing: Boolean
+	) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return currentPiece.action >= actionConsumed && !currentPiece.attacked
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			val pickReq = PickRequest.PickPiece(
+				PickBoundaryUnitBased(
+					currentPiece.location,
+					currentPiece.pieceRadius + minDistance,
+					currentPiece.pieceRadius + maxDistance,
+					currentPiece.facing,
+					maxAngle
+				),
+				currentPiece.owner
+			)
+			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPiece ?: return
+			val targetPiece = GameSessionData.currentSession!!.pieceById(pickRes.pieceId)
+			
+			val deltaHealth = healthRestored / targetPiece.type.stats.maxHealth
+			targetPiece.health += deltaHealth
+			
+			if (targetPiece.health > 1.0)
+				targetPiece.health = 1.0
+			
+			GameSessionData.currentSession!!.markDirty(targetPiece.id)
+			
+			currentPiece.attacked = true
+			
+			if (canMoveAfterHealing)
+				currentPiece.action -= actionConsumed
+			else
+				currentPiece.action = 0.0
+		}
+	}
+	
+	@Serializable
 	object SkipTurn : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return !currentPiece.skipTurn
@@ -230,6 +275,37 @@ enum class PieceType(
 				hardAttack = 75.0,
 				attackActionConsumed = 0.25,
 				canMoveAfterAttacking = false
+			)
+		)
+	),
+	MEDIC(
+		"Combat Medic",
+		150,
+		PieceStats(
+			maxHealth = 1500.0,
+			hardness = 0.05,
+			abilities = standardPieceAbilities(
+				moveSpeedPerRound = 600.0,
+				turnSpeedPerRound = 3 * PI,
+				
+				maxAttackAngle = PI / 8,
+				minAttackDistance = 0.0,
+				maxAttackDistance = 300.0,
+				softAttack = 300.0,
+				hardAttack = 50.0,
+				attackActionConsumed = 0.25,
+				canMoveAfterAttacking = false,
+				
+				extraAbilities = mapOf(
+					"Heal" to Ability.Heal(
+						maxAngle = PI / 4,
+						minDistance = 0.0,
+						maxDistance = 200.0,
+						healthRestored = 800.0,
+						actionConsumed = 0.5,
+						canMoveAfterHealing = false
+					)
+				)
 			)
 		)
 	),
@@ -382,6 +458,7 @@ enum class PieceType(
 		get() = when (this) {
 			INFANTRY -> 500.0
 			ELITE_INFANTRY -> 500.0
+			MEDIC -> 500.0
 			CAVALRY -> 400.0
 			ELITE_CAVALRY -> 400.0
 			TANKS -> 500.0
@@ -395,6 +472,7 @@ enum class PieceType(
 		get() = when (this) {
 			INFANTRY -> 300.0
 			ELITE_INFANTRY -> 300.0
+			MEDIC -> 300.0
 			CAVALRY -> 400.0
 			ELITE_CAVALRY -> 400.0
 			TANKS -> 400.0
