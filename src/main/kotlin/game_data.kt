@@ -291,8 +291,8 @@ enum class PieceType(
 				maxAttackAngle = PI / 8,
 				minAttackDistance = 0.0,
 				maxAttackDistance = 300.0,
-				softAttack = 300.0,
-				hardAttack = 50.0,
+				softAttack = 150.0,
+				hardAttack = 25.0,
 				attackActionConsumed = 0.25,
 				canMoveAfterAttacking = false,
 				
