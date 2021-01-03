@@ -26,6 +26,7 @@ Both players start out with 1000 points to spend on an army. The following table
 | :--------------: | ---------: |
 | Infantry         |         50 |
 | Stormtroopers    |        100 |
+| Combat Medic     |        150 |
 | Cavalry          |         75 |
 | Winged Hussars   |        125 |
 | Light Tanks      |         80 |
