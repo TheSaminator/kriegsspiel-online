@@ -183,17 +183,6 @@ sealed class Ability {
 				currentPiece.action = 0.0
 		}
 	}
-	
-	@Serializable
-	object SkipTurn : Ability() {
-		override fun canUse(currentPiece: GamePiece): Boolean {
-			return !currentPiece.skipTurn
-		}
-		
-		override suspend fun use(currentPiece: GamePiece) {
-			currentPiece.skipTurn = true
-		}
-	}
 }
 
 fun standardPieceAbilities(
@@ -221,9 +210,7 @@ fun standardPieceAbilities(
 		attackActionConsumed,
 		canMoveAfterAttacking
 	)
-) + extraAbilities + mapOf(
-	"Skip Turn" to Ability.SkipTurn
-)
+) + extraAbilities
 
 @Serializable
 data class PieceStats(

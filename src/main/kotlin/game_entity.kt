@@ -71,9 +71,6 @@ class GameSessionData(val mapSize: Vec2) {
 		GameField.redrawAllPieces(pieces)
 	}
 	
-	val canEndTurn: Boolean
-		get() = pieces.any { it.owner == Game.currentSide!! } && pieces.filter { it.owner == Game.currentSide!! }.all { it.isDoneTurn }
-	
 	fun endTurn(player: GameServerSide) {
 		pieces.filter { it.owner == player }.forEach { piece ->
 			piece.doNextTurn()
@@ -114,15 +111,10 @@ data class GamePiece(
 	var health = 1.0
 	
 	var action = 1.0
-	var skipTurn = false
 	var attacked = false
-	
-	val isDoneTurn: Boolean
-		get() = action <= 0.0 || skipTurn
 	
 	fun doNextTurn() {
 		action = 1.0
-		skipTurn = false
 		attacked = false
 	}
 	

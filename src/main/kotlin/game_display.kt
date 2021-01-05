@@ -506,22 +506,19 @@ object GameSidebar {
 						id = "end-turn-btn"
 						+"End Turn"
 						
-						if (GameSessionData.currentSession!!.canEndTurn)
-							onClickFunction = { e ->
-								e.preventDefault()
+						onClickFunction = { e ->
+							e.preventDefault()
+							
+							val btn = document.getElementById("end-turn-btn").unsafeCast<HTMLAnchorElement>()
+							
+							btn.addClass("disabled")
+							
+							GlobalScope.launch {
+								Player.currentPlayer!!.endTurn()
 								
-								val btn = document.getElementById("end-turn-btn").unsafeCast<HTMLAnchorElement>()
-								
-								btn.addClass("disabled")
-								
-								GlobalScope.launch {
-									Player.currentPlayer!!.endTurn()
-									
-									updateSidebar()
-								}
+								updateSidebar()
 							}
-						else
-							classes = setOf("disabled")
+						}
 					}
 				}
 			}
