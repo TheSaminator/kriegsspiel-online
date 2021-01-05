@@ -14,9 +14,6 @@ repositories {
 		url = uri("https://dl.bintray.com/kotlin/kotlinx")
 	}
 	maven {
-		url = uri("https://dl.bintray.com/kotlin/kotlin-js-wrappers")
-	}
-	maven {
 		url = uri("https://dl.bintray.com/nwillc/maven")
 	}
 }
@@ -33,12 +30,6 @@ kotlin {
 	js {
 		browser {
 			binaries.executable()
-			webpackTask {
-				cssSupport.enabled = true
-			}
-			runTask {
-				cssSupport.enabled = true
-			}
 		}
 	}
 }
