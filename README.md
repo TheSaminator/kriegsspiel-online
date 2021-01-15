@@ -79,5 +79,5 @@ The game is turn-based, so each side has to wait until the other side is done it
 
 * [x] Fog of war
 * [x] Medic units
-* [ ] Supply system
-* [ ] Map terrain
+* [ ] ~~Supply system~~
+    * After playtesting, I have found that this makes the game less fun

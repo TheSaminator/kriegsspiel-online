@@ -14,8 +14,10 @@ object Game {
 	suspend fun beginRemote() = beginWith(GameServerSide.GUEST)
 	
 	suspend fun doLocal(): GameServerSide {
-		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize()).also { gsd ->
-			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize))
+		val battleType = Popup.ChooseBattleType.display()
+		
+		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(), battleType).also { gsd ->
+			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize, gsd.battleType))
 			GameField.drawEverything(gsd)
 		}
 		

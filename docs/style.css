@@ -296,6 +296,18 @@ input[type=submit]:disabled {
 	height: 1em;
 }
 
+.measure-bar .meter.blue-gradient {
+	background: linear-gradient(to right, #369, #5af);
+	padding: 0;
+	height: 1em;
+}
+
+.measure-bar .meter.purple-gradient {
+	background: linear-gradient(to right, #639, #a5f);
+	padding: 0;
+	height: 1em;
+}
+
 .measure-bar .meter.orange-blue {
 	background: linear-gradient(to right, #c84, #48c);
 	padding: 0;

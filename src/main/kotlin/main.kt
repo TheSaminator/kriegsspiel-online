@@ -5,7 +5,12 @@ import kotlinx.coroutines.launch
 lateinit var mainJob: Job
 
 fun main() {
+	if (::mainJob.isInitialized)
+		mainJob.cancel()
+	
 	mainJob = MainScope().launch {
+		GamePhase.Deployment.reset()
+		
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)
 			"YOU HAVE WON THE BATTLE!"

@@ -52,10 +52,7 @@ object WebRTCSignalling {
 					GlobalScope.launch {
 						Popup.Message("CONNECTION ERROR: $errorMessage", true, "RETURN TO MAIN MENU").display()
 						
-						mainJob.cancel()
-						mainJob = MainScope().launch {
-							gameMain()
-						}
+						main()
 					}
 				}
 			}

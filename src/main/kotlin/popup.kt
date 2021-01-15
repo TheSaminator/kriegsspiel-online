@@ -165,6 +165,23 @@ sealed class Popup<T> {
 		}
 	}
 	
+	object ChooseBattleType : Popup<BattleType>() {
+		override fun TagConsumer<*>.render(callback: (BattleType) -> Unit) {
+			div(classes = "button-set col") {
+				BattleType.values().forEach { bt ->
+					a(href = "#") {
+						+bt.displayName
+						onClickFunction = { e ->
+							e.preventDefault()
+							
+							callback(bt)
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	class LoadingScreenWithResult<T>(val loadingText: String, val successText: String, val loadAction: suspend () -> T) : Popup<T>() {
 		override fun TagConsumer<*>.render(callback: (T) -> Unit) {
 			val nextButtonId = "next-button"

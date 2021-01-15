@@ -11,6 +11,7 @@ import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.svg.SVGCircleElement
 import org.w3c.dom.svg.SVGGElement
 import org.w3c.dom.svg.SVGPathElement
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -49,15 +50,12 @@ data class PickBoundaryUnitBased(
 	val minRadius: Double?,
 	val maxRadius: Double,
 	val angleOrigin: Double,
+	val minAngleDiff: Double?,
 	val maxAngleDiff: Double
 ) : PickBoundary() {
 	override fun isInBoundary(pos: Vec2): Boolean {
-		console.log("Checking distance ${(pos - center).magnitude} up to $maxRadius")
-		
 		if ((pos - center).magnitude > maxRadius)
 			return false
-		
-		console.log("Checking distance ${(pos - center).magnitude} at least $minRadius")
 		
 		if (minRadius != null) {
 			if ((pos - center).magnitude < minRadius)
@@ -67,10 +65,14 @@ data class PickBoundaryUnitBased(
 		val angleRange = -maxAngleDiff..maxAngleDiff
 		val currAngle = (angleOrigin - (pos - center).angle).asAngle()
 		
-		console.log("Checking angle $currAngle in $maxAngleDiff")
-		
 		if (currAngle !in angleRange)
 			return false
+		
+		if (minAngleDiff != null) {
+			val subAngleRange = -minAngleDiff..minAngleDiff
+			if (currAngle in subAngleRange)
+				return false
+		}
 		
 		return true
 	}
@@ -143,10 +145,13 @@ object PickHandler {
 	}
 	
 	private fun checkAngleValid(angleReq: PickRequest.PickAngle, toAngle: Double): Boolean {
+		if (angleReq.maxAngleDiff == null || angleReq.maxAngleDiff >= PI)
+			return true
+		
 		val fromNormal = angleReq.fromAngle.asAngle()
 		val toNormal = toAngle.asAngle()
 		
-		return angleReq.maxAngleDiff?.let { abs(fromNormal - toNormal) <= it } != false
+		return angleReq.maxAngleDiff.let { abs(fromNormal - toNormal) <= it }
 	}
 	
 	private fun checkPosValid(posReq: PickRequest.PickPosition, pos: Vec2): Boolean {

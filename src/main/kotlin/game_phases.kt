@@ -19,6 +19,11 @@ sealed class GamePhase {
 			while (!bothAreDone)
 				delay(100)
 		}
+		
+		fun reset() {
+			hostIsDone = false
+			guestIsDone = false
+		}
 	}
 	
 	@Serializable

@@ -87,13 +87,11 @@ object GameField {
 	
 	private lateinit var gameFieldPanZoom: SVGPanZoomInstance
 	
-	const val MAP_COLOR = "#194"
-	
-	fun drawMap(size: Vec2) {
+	fun drawMap(size: Vec2, type: BattleType) {
 		mapField.clear()
 		
 		mapField.append(RECT()) {
-			fill = MAP_COLOR
+			fill = type.mapColor
 			width = size.x.toString()
 			height = size.y.toString()
 		}
@@ -121,6 +119,27 @@ object GameField {
 		gameFieldPanZoom.fit().center()
 	}
 	
+	private fun drawPickBoundaryArc(origin: Vec2, minAngle: Double, maxAngle: Double, minRadius: Double?, maxRadius: Double): String {
+		val (outerX0, outerY0) = Vec2.polar(maxRadius, minAngle) + origin
+		val (outerX1, outerY1) = Vec2.polar(maxRadius, maxAngle) + origin
+		val largeArc = if (abs(maxAngle - minAngle) > PI) 1 else 0
+		
+		val endPart = "L $outerX0 $outerY0 A ${maxRadius} ${maxRadius} 0 $largeArc 0 $outerX1 $outerY1 Z"
+		
+		val beginPart = if (minRadius != null) {
+			val (innerX0, innerY0) = Vec2.polar(minRadius, minAngle) + origin
+			val (innerX1, innerY1) = Vec2.polar(minRadius, maxAngle) + origin
+			
+			"M $innerX1 $innerY1 A $minRadius $minRadius 0 $largeArc 1 $innerX0 $innerY0"
+		} else {
+			val (innerX, innerY) = origin
+			
+			"M $innerX $innerY"
+		}
+		
+		return "$beginPart $endPart"
+	}
+	
 	fun drawPickBoundary(bounds: PickBoundary?) {
 		val d = when (bounds) {
 			null -> ""
@@ -146,32 +165,64 @@ object GameField {
 				"M $x0 $y0 A $r $r 0 0 1 $x1 $y1 A $r $r 0 1 1 $x0 $y0 Z"
 			}
 			is PickBoundaryUnitBased -> {
-				val minRad = bounds.minRadius
-				val theta0 = bounds.angleOrigin - bounds.maxAngleDiff
-				val theta1 = bounds.angleOrigin + bounds.maxAngleDiff
-				val largeArc = if (abs(theta0 - theta1) > PI) 1 else 0
-				
-				val (outerX0, outerY0) = Vec2.polar(bounds.maxRadius, theta0) + bounds.center
-				val (outerX1, outerY1) = Vec2.polar(bounds.maxRadius, theta1) + bounds.center
-				
-				val endPart = "L $outerX0 $outerY0 A ${bounds.maxRadius} ${bounds.maxRadius} 0 $largeArc 0 $outerX1 $outerY1 Z"
-				
-				val beginPart = if (minRad != null) {
-					val (innerX0, innerY0) = Vec2.polar(minRad, theta0) + bounds.center
-					val (innerX1, innerY1) = Vec2.polar(minRad, theta1) + bounds.center
-					
-					"M $innerX1 $innerY1 A $minRad $minRad 0 $largeArc 1 $innerX0 $innerY0"
+				if (bounds.minAngleDiff == null) {
+					drawPickBoundaryArc(
+						bounds.center,
+						bounds.angleOrigin - bounds.maxAngleDiff,
+						bounds.angleOrigin + bounds.maxAngleDiff,
+						bounds.minRadius,
+						bounds.maxRadius
+					)
 				} else {
-					val (innerX, innerY) = bounds.center
+					val leftArc = drawPickBoundaryArc(
+						bounds.center,
+						bounds.angleOrigin - bounds.maxAngleDiff,
+						bounds.angleOrigin - bounds.minAngleDiff,
+						bounds.minRadius,
+						bounds.maxRadius
+					)
 					
-					"M $innerX $innerY"
+					val rightArc = drawPickBoundaryArc(
+						bounds.center,
+						bounds.angleOrigin + bounds.minAngleDiff,
+						bounds.angleOrigin + bounds.maxAngleDiff,
+						bounds.minRadius,
+						bounds.maxRadius
+					)
+					
+					"$leftArc $rightArc"
 				}
-				
-				"$beginPart $endPart"
 			}
 		}
 		
 		selectionPath.setAttribute("d", d)
+	}
+	
+	private fun G.drawCircleMeter(amount: Double, radius: Double, color: String) {
+		if (amount isEqualTo 1.0) {
+			circle {
+				fill = "none"
+				stroke = color
+				strokeWidth = "5"
+				
+				cx = "0"
+				cy = "0"
+				r = radius.toString()
+			}
+		} else {
+			path {
+				fill = "none"
+				stroke = color
+				strokeWidth = "5"
+				
+				val begin = Vec2(0.0, -radius)
+				val end = begin.rotateBy(amount * 2 * PI)
+				
+				val largeArc = if (amount > 0.5) "1" else "0"
+				
+				d = "M ${begin.x} ${begin.y} A $radius $radius 0 $largeArc 1 ${end.x} ${end.y}"
+			}
+		}
 	}
 	
 	fun drawPiece(piece: GamePiece) {
@@ -183,7 +234,6 @@ object GameField {
 			transform = "translate(${piece.location.x} ${piece.location.y}) rotate(${piece.facing.asAngle(flipY = true) * 180 / PI})"
 			
 			val outerRadius = piece.type.imageRadius + 15
-			val healthRadius = piece.type.imageRadius + 7.5
 			
 			circle {
 				cssClass = "game-piece-back"
@@ -194,29 +244,18 @@ object GameField {
 			}
 			
 			if (piece.canBeIdentified) {
-				if (piece.health isEqualTo 1.0)
-					circle {
-						fill = "none"
-						stroke = piece.healthBarColor
-						strokeWidth = "5"
-						
-						cx = "0"
-						cy = "0"
-						r = healthRadius.toString()
-					}
-				else
-					path {
-						fill = "none"
-						stroke = piece.healthBarColor
-						strokeWidth = "5"
-						
-						val begin = Vec2(0.0, -healthRadius)
-						val end = begin.rotateBy(piece.health * 2 * PI)
-						
-						val largeArc = if (piece.health > 0.5) "1" else "0"
-						
-						d = "M ${begin.x} ${begin.y} A $healthRadius $healthRadius 0 $largeArc 1 ${end.x} ${end.y}"
-					}
+				if (piece.type.stats is SpacePieceStats) {
+					val healthRadius = piece.type.imageRadius + 2.5
+					val shieldRadius = piece.type.imageRadius + 12.5
+					
+					drawCircleMeter(piece.health, healthRadius, piece.healthBarColor)
+					
+					drawCircleMeter(piece.shield, shieldRadius, piece.shieldBarColor)
+				} else {
+					val healthRadius = piece.type.imageRadius + 7.5
+					
+					drawCircleMeter(piece.health, healthRadius, piece.healthBarColor)
+				}
 			}
 			
 			image {
@@ -258,7 +297,7 @@ object GameField {
 	}
 	
 	fun drawEverything(gameSessionData: GameSessionData) {
-		drawMap(gameSessionData.mapSize)
+		drawMap(gameSessionData.mapSize, gameSessionData.battleType)
 		redrawAllPieces(gameSessionData.allPieces())
 	}
 	
@@ -308,14 +347,17 @@ object GameSidebar {
 					p(classes = "info") {
 						+"You have $currentPoints points left to spend."
 					}
-					PieceType.values().forEach { pieceType ->
+					
+					PieceType.values().filter {
+						it.requiredBattleType == GameSessionData.currentSession!!.battleType
+					}.forEach { pieceType ->
 						a(href = "#") {
 							+"${pieceType.displayName} (${pieceType.pointCost})"
 							
 							if (currentPoints < pieceType.pointCost)
 								classes = setOf("disabled")
 							else
-								onClickFunction = onClickFunction@{ e ->
+								onClickFunction = { e ->
 									e.preventDefault()
 									
 									deployPiece(pieceType)
@@ -449,6 +491,23 @@ object GameSidebar {
 						span("meter red-green") {
 							span("emptiness") {
 								style = "width: ${((1 - piece.health) * 100).roundToInt()}%"
+							}
+						}
+					}
+					
+					if (piece.type.stats is SpacePieceStats) {
+						div(classes = "measure-bar") {
+							+"Shield"
+							
+							val color = if (piece.shieldDepleted)
+								"purple-gradient"
+							else
+								"blue-gradient"
+							
+							span("meter $color") {
+								span("emptiness") {
+									style = "width: ${((1 - piece.shield) * 100).roundToInt()}%"
+								}
 							}
 						}
 					}

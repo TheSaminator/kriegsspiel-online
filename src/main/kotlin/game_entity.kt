@@ -1,7 +1,7 @@
 import kotlinx.serialization.Serializable
 
 @Serializable
-class GameSessionData(val mapSize: Vec2) {
+class GameSessionData(val mapSize: Vec2, val battleType: BattleType) {
 	private val pieces = mutableSetOf<GamePiece>()
 	
 	fun allPieces() = setOf<GamePiece>() + pieces
@@ -110,16 +110,59 @@ data class GamePiece(
 ) {
 	var health = 1.0
 	
+	var shield = 1.0
+	var shieldDepleted = false
+	
 	var action = 1.0
 	var attacked = false
+	
+	fun attack(damage: Double) {
+		if (type.stats is SpacePieceStats && !shieldDepleted) {
+			val dShield = damage / type.stats.maxShield
+			if (dShield >= shield) {
+				val dHealth = (damage - shield * type.stats.maxShield) / type.stats.maxHealth
+				health -= dHealth
+				
+				shield = 0.0
+				shieldDepleted = true
+				
+				if (health <= 0.0)
+					GameSessionData.currentSession!!.removeById(id)
+				else
+					GameSessionData.currentSession!!.markDirty(id)
+			} else {
+				shield -= dShield
+				
+				GameSessionData.currentSession!!.markDirty(id)
+			}
+		} else {
+			health -= damage / type.stats.maxHealth
+			
+			if (health <= 0.0)
+				GameSessionData.currentSession!!.removeById(id)
+			else
+				GameSessionData.currentSession!!.markDirty(id)
+		}
+	}
 	
 	fun doNextTurn() {
 		action = 1.0
 		attacked = false
+		
+		if (type.stats is SpacePieceStats) {
+			if (shieldDepleted) {
+				shield += SHIELD_RECHARGE_PER_TURN / type.stats.maxShield
+				
+				if (shield >= 1.0) {
+					shield = 1.0
+					shieldDepleted = false
+				}
+			}
+		}
 	}
 	
 	val visionRange: Double
-		get() = 500.0
+		get() = if (type.stats is SpacePieceStats) 1000.0 else 500.0
 	
 	val canBeIdentified: Boolean
 		get() = Game.currentSide == owner || canBeIdentifiedByEnemy
@@ -137,4 +180,14 @@ data class GamePiece(
 			"rgb(${((1.0 - health) * 510).toInt()}, 255, 0)"
 		else
 			"rgb(255, ${(health * 510).toInt()}, 0)"
+	
+	val shieldBarColor: String
+		get() = if (shieldDepleted)
+			"rgb(170, 85, 255)"
+		else
+			"rgb(85, 170, 255)"
+	
+	companion object {
+		const val SHIELD_RECHARGE_PER_TURN = 25.0
+	}
 }
