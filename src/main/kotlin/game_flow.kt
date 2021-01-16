@@ -16,7 +16,7 @@ object Game {
 	suspend fun doLocal(): GameServerSide {
 		val battleType = Popup.ChooseBattleType.display()
 		
-		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(), battleType).also { gsd ->
+		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(battleType), battleType).also { gsd ->
 			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize, gsd.battleType))
 			GameField.drawEverything(gsd)
 		}

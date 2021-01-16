@@ -4,13 +4,13 @@
 
 ## Where to Play
 
-Kriegsspiel Online can be played on the Github Pages instance at https://thesaminator.github.io/kriegsspiel-online/
+Kriegsspiel Online can be played on the Netlify instance at https://kriegsspiel-online.netlify.app/
 
 ## Who to Play
 
 Kriegsspiel Online is played with two players.
 
-## How to Play
+## How to Play (Land Battles)
 
 ### Step 1: Host or Join
 
@@ -20,20 +20,7 @@ To join a game, you must select your friend's game ID from a dropdown box.
 
 ### Step 2: Unit Deployment
 
-Both players start out with 1000 points to spend on an army. The following table details unit point costs:
-
-| Unit             | Point Cost |
-| :--------------: | ---------: |
-| Infantry         |         50 |
-| Stormtroopers    |        100 |
-| Combat Medic     |        150 |
-| Cavalry          |         75 |
-| Winged Hussars   |        125 |
-| Light Tanks      |         80 |
-| Heavy Tanks      |        120 |
-| Artillery        |         60 |
-| Rocket Artillery |        120 |
-| Anti-Tank Guns   |        100 |
+Both players start out with 1000 points to spend on an army. Each unit has a varying point cost.
 
 To deploy a unit, click on the button with the unit type's name and select a position on the map.
 
@@ -75,9 +62,17 @@ Unit stats can be viewed in [src/main/kotlin/game_data.kt](./src/main/kotlin/gam
 
 The game is turn-based, so each side has to wait until the other side is done its turn.
 
+## How to Play (Space Battles)
+
+Space battles are much like land battles, except in SPACE!
+
+Starships' main armaments are broadside cannon arrays. Their auxiliary armaments
+are things like torpedoes or the Cruiser's Nova Lance.
+
 ## To Be Implemented
 
 * [x] Fog of war
 * [x] Medic units
-* [ ] ~~Supply system~~
+* [x] ~~Supply system~~
     * After playtesting, I have found that this makes the game less fun
+* [ ] More ships for space warfare

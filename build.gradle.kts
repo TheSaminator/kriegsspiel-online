@@ -30,10 +30,34 @@ kotlin {
 	js {
 		browser {
 			binaries.executable()
+			distribution {
+				directory = File("$projectDir/publish/")
+			}
+			webpackTask {
+				devtool = ""
+			}
 		}
 	}
+}
+
+tasks.getByName<Delete>("clean") {
+	delete(files("$projectDir/publish/"))
 }
 
 tasks.withType<Kotlin2JsCompile>().configureEach {
 	kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
 }
+
+tasks.create(
+	"name" to "cleanAndBuild",
+	"group" to "application",
+	"dependsOn" to listOf(
+		tasks.getByName("clean"),
+		tasks.getByName("browserDistributeResources").apply {
+			mustRunAfter("clean")
+		},
+		tasks.getByName("browserDistribution").apply {
+			mustRunAfter("clean")
+		}
+	)
+)

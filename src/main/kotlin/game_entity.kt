@@ -90,10 +90,16 @@ class GameSessionData(val mapSize: Vec2, val battleType: BattleType) {
 	companion object {
 		var currentSession: GameSessionData? = null
 		
-		val WIDTH_RANGE = 3500.0..4500.0
-		val HEIGHT_RANGE = 1500.0..2500.0
+		val LAND_WIDTH_RANGE = 3500.0..4500.0
+		val LAND_HEIGHT_RANGE = 1500.0..2500.0
 		
-		fun randomSize() = Vec2(WIDTH_RANGE.random(), HEIGHT_RANGE.random())
+		val SPACE_WIDTH_RANGE = 3000.0..5000.0
+		val SPACE_HEIGHT_RANGE = 2000.0..4000.0
+		
+		fun randomSize(battleType: BattleType) = when (battleType) {
+			BattleType.LAND_BATTLE -> Vec2(LAND_WIDTH_RANGE.random(), LAND_HEIGHT_RANGE.random())
+			BattleType.SPACE_BATTLE -> Vec2(SPACE_WIDTH_RANGE.random(), SPACE_HEIGHT_RANGE.random())
+		}
 	}
 }
 
