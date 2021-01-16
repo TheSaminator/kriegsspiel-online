@@ -244,7 +244,7 @@ object GameField {
 			}
 			
 			if (piece.canBeIdentified) {
-				if (piece.type.stats is SpacePieceStats) {
+				if (piece.type.requiredBattleType == BattleType.SPACE_BATTLE) {
 					val healthRadius = piece.type.imageRadius + 2.5
 					val shieldRadius = piece.type.imageRadius + 12.5
 					

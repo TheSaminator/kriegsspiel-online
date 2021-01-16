@@ -76,6 +76,18 @@ sealed class Ability {
 		}
 	}
 	
+	data class ChargeHeavyWeapon(val actionConsumed: Double) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return currentPiece.action > actionConsumed && !currentPiece.heavyWeaponCharged
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			currentPiece.action -= actionConsumed
+			
+			currentPiece.heavyWeaponCharged = true
+		}
+	}
+	
 	// Land Battle abilities
 	
 	@Serializable
@@ -85,6 +97,7 @@ sealed class Ability {
 		val maxDistance: Double,
 		val softAttackPower: Double,
 		val hardAttackPower: Double,
+		val requiresCharge: Boolean,
 		val actionConsumed: Double,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
@@ -133,6 +146,8 @@ sealed class Ability {
 			targetPiece.attack(totalAttack)
 			
 			currentPiece.attacked = true
+			if (requiresCharge)
+				currentPiece.heavyWeaponCharged = false
 			
 			if (canMoveAfterAttacking)
 				currentPiece.action -= actionConsumed
@@ -195,11 +210,12 @@ sealed class Ability {
 		val minDistance: Double,
 		val maxDistance: Double,
 		val attackPower: Double,
+		val requiresCharge: Boolean,
 		val actionConsumed: Double,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked
+			return currentPiece.action >= actionConsumed && !currentPiece.attacked && (currentPiece.heavyWeaponCharged || !requiresCharge)
 		}
 		
 		private val SPACE_FLANK_WEIGHT get() = 5.0
@@ -231,6 +247,8 @@ sealed class Ability {
 			targetPiece.attack(totalAttack)
 			
 			currentPiece.attacked = true
+			if (requiresCharge)
+				currentPiece.heavyWeaponCharged = false
 			
 			if (canMoveAfterAttacking)
 				currentPiece.action -= actionConsumed
@@ -247,11 +265,12 @@ sealed class Ability {
 		val maxDistance: Double,
 		val aoeRadius: Double,
 		val attackPower: Double,
+		val requiresCharge: Boolean,
 		val actionConsumed: Double,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked
+			return currentPiece.action >= actionConsumed && !currentPiece.attacked && (currentPiece.heavyWeaponCharged || !requiresCharge)
 		}
 		
 		private val SPACE_FLANK_WEIGHT get() = 5.0
@@ -288,6 +307,8 @@ sealed class Ability {
 			}
 			
 			currentPiece.attacked = true
+			if (requiresCharge)
+				currentPiece.heavyWeaponCharged = false
 			
 			if (canMoveAfterAttacking)
 				currentPiece.action -= actionConsumed
@@ -319,6 +340,7 @@ fun standardLandPieceAbilities(
 		maxAttackDistance,
 		softAttack,
 		hardAttack,
+		false,
 		attackActionConsumed,
 		canMoveAfterAttacking
 	)
@@ -346,6 +368,7 @@ fun standardSpacePieceAbilities(
 		minAttackDistance,
 		maxAttackDistance,
 		attackStrength,
+		false,
 		attackActionConsumed,
 		canMoveAfterAttacking
 	)
@@ -603,10 +626,10 @@ enum class PieceType(
 	
 	SPACE_FRIGATE(
 		"Frigate",
-		50,
+		40,
 		SpacePieceStats(
-			maxHealth = 500.0,
-			maxShield = 200.0,
+			maxHealth = 750.0,
+			maxShield = 400.0,
 			abilities = standardSpacePieceAbilities(
 				moveSpeedPerRound = 400.0,
 				turnSpeedPerRound = 1.4 * PI,
@@ -625,8 +648,8 @@ enum class PieceType(
 		"Light Cruiser",
 		90,
 		SpacePieceStats(
-			maxHealth = 750.0,
-			maxShield = 300.0,
+			maxHealth = 875.0,
+			maxShield = 500.0,
 			abilities = standardSpacePieceAbilities(
 				moveSpeedPerRound = 350.0,
 				turnSpeedPerRound = 1.3 * PI,
@@ -647,6 +670,7 @@ enum class PieceType(
 						maxDistance = 800.0,
 						aoeRadius = 150.0,
 						attackPower = 50.0,
+						requiresCharge = false,
 						actionConsumed = 0.5,
 						canMoveAfterAttacking = true
 					)
@@ -656,10 +680,10 @@ enum class PieceType(
 	),
 	SPACE_CRUISER(
 		"Cruiser",
-		120,
+		160,
 		SpacePieceStats(
 			maxHealth = 1000.0,
-			maxShield = 400.0,
+			maxShield = 600.0,
 			abilities = standardSpacePieceAbilities(
 				moveSpeedPerRound = 300.0,
 				turnSpeedPerRound = 1.2 * PI,
@@ -673,13 +697,17 @@ enum class PieceType(
 				canMoveAfterAttacking = false,
 				
 				extraAbilities = mapOf(
-					"Fire Nova Lance" to Ability.AttackAreaSpace(
+					"Charge Plasma Lance" to Ability.ChargeHeavyWeapon(
+						actionConsumed = 0.5
+					),
+					"Fire Plasma Lance" to Ability.AttackAreaSpace(
 						minAngle = null,
-						maxAngle = PI / 6,
-						minDistance = 400.0,
-						maxDistance = 1200.0,
-						aoeRadius = 200.0,
-						attackPower = 250.0,
+						maxAngle = PI / 8,
+						minDistance = 200.0,
+						maxDistance = 800.0,
+						aoeRadius = 100.0,
+						attackPower = 150.0,
+						requiresCharge = true,
 						actionConsumed = 1.0,
 						canMoveAfterAttacking = false
 					)
@@ -689,10 +717,10 @@ enum class PieceType(
 	),
 	SPACE_BATTLESHIP(
 		"Battleship",
-		140,
+		250,
 		SpacePieceStats(
-			maxHealth = 1500.0,
-			maxShield = 750.0,
+			maxHealth = 1250.0,
+			maxShield = 800.0,
 			abilities = standardSpacePieceAbilities(
 				moveSpeedPerRound = 250.0,
 				turnSpeedPerRound = 1.1 * PI,
@@ -713,6 +741,7 @@ enum class PieceType(
 						maxDistance = 900.0,
 						aoeRadius = 150.0,
 						attackPower = 150.0,
+						requiresCharge = false,
 						actionConsumed = 0.5,
 						canMoveAfterAttacking = true
 					)

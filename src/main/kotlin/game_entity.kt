@@ -122,6 +122,8 @@ data class GamePiece(
 	var action = 1.0
 	var attacked = false
 	
+	var heavyWeaponCharged = false
+	
 	fun attack(damage: Double) {
 		if (type.stats is SpacePieceStats && !shieldDepleted) {
 			val dShield = damage / type.stats.maxShield
@@ -168,7 +170,7 @@ data class GamePiece(
 	}
 	
 	val visionRange: Double
-		get() = if (type.stats is SpacePieceStats) 1000.0 else 500.0
+		get() = if (type.requiredBattleType == BattleType.SPACE_BATTLE) 1000.0 else 500.0
 	
 	val canBeIdentified: Boolean
 		get() = Game.currentSide == owner || canBeIdentifiedByEnemy
@@ -194,6 +196,6 @@ data class GamePiece(
 			"rgb(85, 170, 255)"
 	
 	companion object {
-		const val SHIELD_RECHARGE_PER_TURN = 25.0
+		const val SHIELD_RECHARGE_PER_TURN = 100.0
 	}
 }
