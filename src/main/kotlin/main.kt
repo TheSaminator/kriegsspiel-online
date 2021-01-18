@@ -34,7 +34,9 @@ suspend fun gameMain(): GameServerSide {
 suspend fun hostGame(): GameServerSide {
 	ExitHandler.attach()
 	
-	if (!WebRTCSignalling.host { Popup.HostScreen(it).display() }) {
+	val name = Popup.ChooseHostNameScreen.display() ?: return gameMain()
+	
+	if (!WebRTCSignalling.host(name) { Popup.HostScreen(name, it).display() }) {
 		return gameMain()
 	}
 	

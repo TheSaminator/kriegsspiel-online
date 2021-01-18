@@ -72,13 +72,14 @@ object WebRTCSignalling {
 		ws.awaitEvent("open")
 	}
 	
-	suspend fun host(useId: suspend (String) -> Boolean): Boolean {
+	suspend fun host(name: String, useId: suspend (String) -> Boolean): Boolean {
 		initConnection()
 		
 		val offer = WebRTC.host1()
 		
 		val offerPacket = jsonString {
 			it.type = "host-offer"
+			it.name = name
 			it.offer = offer
 		}
 		
@@ -105,7 +106,7 @@ object WebRTCSignalling {
 		return notCancelled
 	}
 	
-	suspend fun join(getId: suspend (List<String>) -> String?): Boolean {
+	suspend fun join(chooseOffer: suspend (List<WebRTCOpenSession>) -> WebRTCOpenSession?): Boolean {
 		initConnection()
 		
 		val listDataPacket = jsonString {
@@ -119,14 +120,14 @@ object WebRTCSignalling {
 		ws.send(listDataPacket)
 		
 		val list = listDeferred.await()
-		val id = getId(list.map { it.id })
-		val offer = list.firstOrNull { it.id == id }?.offer ?: return false
+		val sess = chooseOffer(list) ?: return false
+		val offer = sess.offer
 		
 		val answer = WebRTC.join(offer)
 		
 		val answerPacket = jsonString {
 			it.type = "join-answer"
-			it.id = id
+			it.id = sess.id
 			it.answer = answer
 		}
 		
@@ -143,7 +144,7 @@ object WebRTCSignalling {
 }
 
 @Serializable
-data class WebRTCOpenSession(val id: String, val offer: String)
+data class WebRTCOpenSession(val id: String, val name: String, val offer: String)
 
 @Serializable
 data class WebRTCHostId(val id: String)
