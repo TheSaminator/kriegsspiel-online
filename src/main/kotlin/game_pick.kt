@@ -51,7 +51,7 @@ data class PickBoundaryUnitBased(
 	val maxRadius: Double,
 	val angleOrigin: Double,
 	val minAngleDiff: Double?,
-	val maxAngleDiff: Double
+	val maxAngleDiff: Double?
 ) : PickBoundary() {
 	override fun isInBoundary(pos: Vec2): Boolean {
 		if ((pos - center).magnitude > maxRadius)
@@ -62,16 +62,18 @@ data class PickBoundaryUnitBased(
 				return false
 		}
 		
-		val angleRange = -maxAngleDiff..maxAngleDiff
-		val currAngle = (angleOrigin - (pos - center).angle).asAngle()
-		
-		if (currAngle !in angleRange)
-			return false
-		
-		if (minAngleDiff != null) {
-			val subAngleRange = -minAngleDiff..minAngleDiff
-			if (currAngle in subAngleRange)
+		if (maxAngleDiff != null) {
+			val angleRange = -maxAngleDiff..maxAngleDiff
+			val currAngle = (angleOrigin - (pos - center).angle).asAngle()
+			
+			if (currAngle !in angleRange)
 				return false
+			
+			if (minAngleDiff != null) {
+				val subAngleRange = -minAngleDiff..minAngleDiff
+				if (currAngle in subAngleRange)
+					return false
+			}
 		}
 		
 		return true

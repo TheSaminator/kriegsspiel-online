@@ -14,12 +14,17 @@ object Game {
 	suspend fun beginRemote() = beginWith(GameServerSide.GUEST)
 	
 	suspend fun doLocal(): GameServerSide {
-		val battleType = Popup.ChooseBattleType.display()
+		val battleType = Popup.NameableChoice(BattleType.values().toList(), BattleType::displayName).display()
 		
 		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(battleType), battleType).also { gsd ->
 			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize, gsd.battleType))
 			GameField.drawEverything(gsd)
 		}
+		
+		if (battleType.usesSkins)
+			GamePhase.Deployment.chosenSkin = Popup.NameableChoice(BattleFactionSkin.values().filter {
+				it.forBattleType == battleType
+			}, BattleFactionSkin::displayName).display()
 		
 		GameSidebar.deployMenu()
 		
@@ -46,6 +51,12 @@ object Game {
 	suspend fun doRemote(): GameServerSide {
 		while (GameSessionData.currentSession == null)
 			delay(100)
+		
+		val battleType = GameSessionData.currentSession!!.battleType
+		if (battleType.usesSkins)
+			GamePhase.Deployment.chosenSkin = Popup.NameableChoice(BattleFactionSkin.values().filter {
+				it.forBattleType == battleType
+			}, BattleFactionSkin::displayName).display()
 		
 		GameSidebar.deployMenu()
 		

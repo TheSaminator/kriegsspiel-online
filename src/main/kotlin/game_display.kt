@@ -165,32 +165,57 @@ object GameField {
 				"M $x0 $y0 A $r $r 0 0 1 $x1 $y1 A $r $r 0 1 1 $x0 $y0 Z"
 			}
 			is PickBoundaryUnitBased -> {
-				if (bounds.minAngleDiff == null) {
-					drawPickBoundaryArc(
-						bounds.center,
-						bounds.angleOrigin - bounds.maxAngleDiff,
-						bounds.angleOrigin + bounds.maxAngleDiff,
-						bounds.minRadius,
-						bounds.maxRadius
-					)
-				} else {
-					val leftArc = drawPickBoundaryArc(
-						bounds.center,
-						bounds.angleOrigin - bounds.maxAngleDiff,
-						bounds.angleOrigin - bounds.minAngleDiff,
-						bounds.minRadius,
-						bounds.maxRadius
-					)
-					
-					val rightArc = drawPickBoundaryArc(
-						bounds.center,
-						bounds.angleOrigin + bounds.minAngleDiff,
-						bounds.angleOrigin + bounds.maxAngleDiff,
-						bounds.minRadius,
-						bounds.maxRadius
-					)
-					
-					"$leftArc $rightArc"
+				when {
+					bounds.minAngleDiff == null && bounds.maxAngleDiff != null -> {
+						drawPickBoundaryArc(
+							bounds.center,
+							bounds.angleOrigin - bounds.maxAngleDiff,
+							bounds.angleOrigin + bounds.maxAngleDiff,
+							bounds.minRadius,
+							bounds.maxRadius
+						)
+					}
+					bounds.maxAngleDiff == null -> {
+						val inner = if (bounds.minRadius != null) {
+							val r0 = bounds.minRadius
+							
+							val x0 = bounds.center.x
+							val x1 = bounds.center.x + r0
+							val y0 = bounds.center.y - r0
+							val y1 = bounds.center.y
+							
+							"M $x0 $y0 A $r0 $r0 0 0 1 $x1 $y1 A $r0 $r0 0 1 1 $x0 $y0 Z "
+						} else ""
+						
+						val r1 = bounds.maxRadius
+						
+						val x2 = bounds.center.x
+						val x3 = bounds.center.x + r1
+						val y2 = bounds.center.y - r1
+						val y3 = bounds.center.y
+						
+						inner + "M $x2 $y2 A $r1 $r1 0 0 1 $x3 $y3 A $r1 $r1 0 1 1 $x2 $y2 Z"
+					}
+					bounds.minAngleDiff != null -> {
+						val leftArc = drawPickBoundaryArc(
+							bounds.center,
+							bounds.angleOrigin - bounds.maxAngleDiff,
+							bounds.angleOrigin - bounds.minAngleDiff,
+							bounds.minRadius,
+							bounds.maxRadius
+						)
+						
+						val rightArc = drawPickBoundaryArc(
+							bounds.center,
+							bounds.angleOrigin + bounds.minAngleDiff,
+							bounds.angleOrigin + bounds.maxAngleDiff,
+							bounds.minRadius,
+							bounds.maxRadius
+						)
+						
+						"$leftArc $rightArc"
+					}
+					else -> error("Logic error")
 				}
 			}
 		}
@@ -267,7 +292,7 @@ object GameField {
 				width = w.toString()
 				height = h.toString()
 				
-				href = piece.type.getImagePath(piece.owner, piece.canBeIdentified)
+				href = piece.imagePath
 			}
 		}
 		
@@ -349,7 +374,7 @@ object GameSidebar {
 					}
 					
 					PieceType.values().filter {
-						it.requiredBattleType == GameSessionData.currentSession!!.battleType
+						it.requiredBattleType == GameSessionData.currentSession!!.battleType && it.factionSkin == GamePhase.Deployment.chosenSkin
 					}.forEach { pieceType ->
 						a(href = "#") {
 							+"${pieceType.displayName} (${pieceType.pointCost})"
@@ -380,6 +405,27 @@ object GameSidebar {
 						else
 							classes = setOf("disabled")
 					}
+					
+					val battleType = GameSessionData.currentSession!!.battleType
+					if (battleType.usesSkins)
+						a(href = "#") {
+							+"CHANGE SKIN"
+							
+							onClickFunction = { e ->
+								e.preventDefault()
+								
+								GlobalScope.launch {
+									GamePhase.Deployment.chosenSkin = Popup.NameableChoice(BattleFactionSkin.values().filter {
+										it.forBattleType == battleType
+									}, BattleFactionSkin::displayName).display()
+									
+									Player.currentPlayer!!.clearDeploying()
+									currentPoints = DeployConstants.POINTS_TO_SPEND
+									
+									deployMenu()
+								}
+							}
+						}
 					
 					a(href = "#") {
 						id = "finish-deploy"

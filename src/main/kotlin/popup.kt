@@ -165,16 +165,16 @@ sealed class Popup<T> {
 		}
 	}
 	
-	object ChooseBattleType : Popup<BattleType>() {
-		override fun TagConsumer<*>.render(callback: (BattleType) -> Unit) {
+	class NameableChoice<T>(val values: List<T>, val getName: T.() -> String) : Popup<T>() {
+		override fun TagConsumer<*>.render(callback: (T) -> Unit) {
 			div(classes = "button-set col") {
-				BattleType.values().forEach { bt ->
+				values.forEach { value ->
 					a(href = "#") {
-						+bt.displayName
+						+value.getName()
 						onClickFunction = { e ->
 							e.preventDefault()
 							
-							callback(bt)
+							callback(value)
 						}
 					}
 				}

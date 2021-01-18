@@ -5,13 +5,15 @@ import kotlinx.serialization.Serializable
 sealed class GamePhase {
 	@Serializable
 	object Deployment : GamePhase() {
+		var chosenSkin: BattleFactionSkin? = null
 		var hostIsDone = false
 		var guestIsDone = false
 		
-		val localIsDone get() = when(Game.currentSide!!) {
-			GameServerSide.HOST -> hostIsDone
-			GameServerSide.GUEST -> guestIsDone
-		}
+		val localIsDone
+			get() = when (Game.currentSide!!) {
+				GameServerSide.HOST -> hostIsDone
+				GameServerSide.GUEST -> guestIsDone
+			}
 		
 		val bothAreDone get() = hostIsDone && guestIsDone
 		
@@ -21,6 +23,7 @@ sealed class GamePhase {
 		}
 		
 		fun reset() {
+			chosenSkin = null
 			hostIsDone = false
 			guestIsDone = false
 		}

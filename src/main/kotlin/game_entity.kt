@@ -180,6 +180,19 @@ data class GamePiece(
 			(location - otherPiece.location).magnitude < visionRange
 		}
 	
+	val imagePath: String
+		get() = "uniticons/${if (owner == Game.currentSide) "player" else "opponent"}/${
+			if (canBeIdentified) type.name.toLowerCase() else (when (type.requiredBattleType) {
+				BattleType.LAND_BATTLE -> "land"
+				BattleType.SPACE_BATTLE -> "space"
+			} + when (type.factionSkin) {
+				BattleFactionSkin.IMPERIUM -> "_in"
+				BattleFactionSkin.SPACE_MARINES -> "_sm"
+				BattleFactionSkin.STARFLEET -> "_sf"
+				null -> ""
+			} + "_unknown")
+		}.png"
+	
 	val pieceRadius: Double
 		get() = type.imageRadius + 15
 	
@@ -196,6 +209,6 @@ data class GamePiece(
 			"rgb(85, 170, 255)"
 	
 	companion object {
-		const val SHIELD_RECHARGE_PER_TURN = 100.0
+		const val SHIELD_RECHARGE_PER_TURN = 75.0
 	}
 }

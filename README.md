@@ -75,4 +75,4 @@ are things like torpedoes or the Cruiser's Nova Lance.
 * [x] Medic units
 * [x] ~~Supply system~~
     * After playtesting, I have found that this makes the game less fun
-* [ ] More ships for space warfare
+* [x] More ships for space warfare
