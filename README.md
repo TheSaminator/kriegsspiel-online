@@ -66,8 +66,10 @@ The game is turn-based, so each side has to wait until the other side is done it
 
 Space battles are much like land battles, except in SPACE!
 
-Starships' main armaments are broadside cannon arrays. Their auxiliary armaments
-are things like torpedoes or the Cruiser's Nova Lance.
+Imperial Navy ships' main armaments are broadside cannon arrays.
+Their auxiliary armaments are things like torpedoes or the Cruiser's Nova Lance.
+Space Marine Corps ships are similar. Starfleet ships are different,
+using beam arrays to fire in a wide range.
 
 ## To Be Implemented
 
