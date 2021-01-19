@@ -2,6 +2,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
+var playerName: String? = null
 lateinit var mainJob: Job
 
 fun main() {
@@ -34,9 +35,9 @@ suspend fun gameMain(): GameServerSide {
 suspend fun hostGame(): GameServerSide {
 	ExitHandler.attach()
 	
-	val name = Popup.ChooseHostNameScreen.display() ?: return gameMain()
+	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return gameMain()
 	
-	if (!WebRTCSignalling.host(name) { Popup.HostScreen(name, it).display() }) {
+	if (!WebRTCSignalling.host { Popup.HostScreen(it).display() }) {
 		return gameMain()
 	}
 	
@@ -50,6 +51,8 @@ suspend fun hostGame(): GameServerSide {
 
 suspend fun joinGame(): GameServerSide {
 	ExitHandler.attach()
+	
+	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return gameMain()
 	
 	if (!WebRTCSignalling.join { Popup.JoinScreen(it).display() }) {
 		return gameMain()

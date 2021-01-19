@@ -72,14 +72,14 @@ object WebRTCSignalling {
 		ws.awaitEvent("open")
 	}
 	
-	suspend fun host(name: String, useId: suspend (String) -> Boolean): Boolean {
+	suspend fun host(useId: suspend (String) -> Boolean): Boolean {
 		initConnection()
 		
 		val offer = WebRTC.host1()
 		
 		val offerPacket = jsonString {
 			it.type = "host-offer"
-			it.name = name
+			it.name = playerName!!
 			it.offer = offer
 		}
 		
@@ -102,6 +102,8 @@ object WebRTCSignalling {
 		
 		if (!notCancelled)
 			awaitAnswerJob.cancel()
+		
+		GamePacket.send(GamePacket.HostReady)
 		
 		return notCancelled
 	}

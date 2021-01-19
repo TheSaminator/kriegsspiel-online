@@ -10,13 +10,13 @@ import org.w3c.dom.events.EventListener
 object WebRTC {
 	private lateinit var rtcPeerConnection: RTCPeerConnection
 	
-	private fun rebootConn() {
-		if (this::rtcPeerConnection.isInitialized)
+	fun closeConn() {
+		if (this::rtcPeerConnection.isInitialized && rtcPeerConnection.connectionState != "closed")
 			rtcPeerConnection.close()
 	}
 	
 	suspend fun host1(): String {
-		rebootConn()
+		closeConn()
 		rtcPeerConnection = RTCPeerConnection(getRtcConfig())
 		
 		dataChannel = rtcPeerConnection.createDataChannel(DATA_CHANNEL_LABEL, configure {
@@ -47,7 +47,7 @@ object WebRTC {
 	}
 	
 	suspend fun join(offerStr: String): String {
-		rebootConn()
+		closeConn()
 		rtcPeerConnection = RTCPeerConnection(getRtcConfig())
 		
 		dataChannel = rtcPeerConnection.createDataChannel(DATA_CHANNEL_LABEL, configure {

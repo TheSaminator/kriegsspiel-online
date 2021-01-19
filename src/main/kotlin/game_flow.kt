@@ -14,6 +14,8 @@ object Game {
 	suspend fun beginRemote() = beginWith(GameServerSide.GUEST)
 	
 	suspend fun doLocal(): GameServerSide {
+		GamePacket.awaitJoinAccept()
+		
 		val battleType = Popup.NameableChoice(BattleType.values().toList(), BattleType::displayName).display()
 		
 		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(battleType), battleType).also { gsd ->
@@ -49,6 +51,8 @@ object Game {
 	}
 	
 	suspend fun doRemote(): GameServerSide {
+		GamePacket.awaitJoinAccept()
+		
 		while (GameSessionData.currentSession == null)
 			delay(100)
 		
@@ -68,9 +72,6 @@ object Game {
 	}
 	
 	fun end() {
-		if (currentSide == null)
-			throw IllegalStateException("Game not initialized yet!")
-		
 		currentSide = null
 		
 		ExitHandler.detach()
@@ -82,6 +83,8 @@ object Game {
 		GameField.eraseEverything()
 		
 		ChatBox.disable()
+		
+		WebRTC.closeConn()
 	}
 	
 	var currentSide: GameServerSide? = null

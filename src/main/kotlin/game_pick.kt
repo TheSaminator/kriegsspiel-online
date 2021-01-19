@@ -334,6 +334,6 @@ object PickHandler {
 	
 	suspend fun pickRemote(pickRequest: PickRequest): PickResponse {
 		GamePacket.send(GamePacket.PickReq(pickRequest))
-		return GamePacket.receivePickResponse()
+		return GamePacket.awaitPickResponse()
 	}
 }

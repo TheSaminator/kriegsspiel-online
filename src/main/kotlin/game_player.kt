@@ -98,7 +98,7 @@ sealed class Player(val side: GameServerSide) {
 		
 		override suspend fun useAbility(pieceId: String, abilityName: String) {
 			GamePacket.send(GamePacket.PieceAbilityUsed(pieceId, abilityName))
-			GamePacket.receiveAbilityDone()
+			GamePacket.awaitAbilityDone()
 		}
 	}
 	

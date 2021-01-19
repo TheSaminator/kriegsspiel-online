@@ -1,5 +1,6 @@
 import kotlinx.browser.document
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.dom.addClass
 import kotlinx.dom.clear
@@ -49,6 +50,11 @@ sealed class Popup<T> {
 			isPopupPresent = false
 		}
 		
+		suspend fun awaitPopupClose() {
+			while (isPopupPresent)
+				delay(100)
+		}
+		
 		var isPopupPresent = false
 			private set
 	}
@@ -77,21 +83,21 @@ sealed class Popup<T> {
 		}
 	}
 	
-	object ChooseHostNameScreen : Popup<String?>() {
+	object ChooseNameScreen : Popup<String?>() {
 		override fun TagConsumer<*>.render(callback: (String?) -> Unit) {
-			val hostGameId = "host-game-id"
-			val hostGameErrorId = "host-game-error"
+			val nameGameId = "name-game-id"
+			val nameGameErrorId = "name-game-error"
 			
 			p {
-				+"Please enter a game name below:"
+				+"Please enter your player name below:"
 			}
 			
 			input(InputType.text) {
-				id = hostGameId
+				id = nameGameId
 			}
 			
 			p(classes = "error") {
-				id = hostGameErrorId
+				id = nameGameErrorId
 			}
 			
 			div(classes = "button-set row") {
@@ -104,14 +110,14 @@ sealed class Popup<T> {
 					}
 				}
 				a(href = "#") {
-					+"Host"
+					+"Continue"
 					onClickFunction = { e ->
 						e.preventDefault()
-						val hostGameInput = document.getElementById(hostGameId).unsafeCast<HTMLInputElement>()
+						val nameGameInput = document.getElementById(nameGameId).unsafeCast<HTMLInputElement>()
 						
-						val gameName = hostGameInput.value
+						val gameName = nameGameInput.value
 						if (gameName.isBlank()) {
-							val hostGameError = document.getElementById(hostGameErrorId).unsafeCast<HTMLSpanElement>()
+							val hostGameError = document.getElementById(nameGameErrorId).unsafeCast<HTMLSpanElement>()
 							hostGameError.innerHTML = "You must enter a Game Name."
 						} else {
 							callback(gameName)
@@ -122,12 +128,12 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class HostScreen(val offerName: String, val offerId: String) : Popup<Boolean>() {
+	class HostScreen(val offerId: String) : Popup<Boolean>() {
 		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
 			p {
 				+"Your game ID is "
 				code {
-					+"$offerName ($offerId)"
+					+"${playerName!!} ($offerId)"
 				}
 				+". Copy it and send it to the person with whom you want to start a game. Once you have shared the ID, click Continue to wait for a connection."
 			}
@@ -158,7 +164,7 @@ sealed class Popup<T> {
 			val joinGameErrorId = "join-game-error"
 			
 			p {
-				+"To join a game, please select the game ID and host name from below:"
+				+"To join a game as ${playerName!!}, please select the game ID and host name from below:"
 				
 				select {
 					id = joinGameId
@@ -201,6 +207,33 @@ sealed class Popup<T> {
 						} else {
 							callback(sessions.singleOrNull { it.id == gameId })
 						}
+					}
+				}
+			}
+		}
+	}
+	
+	class YesNoDialogue(val acceptText: String = "Accept", val rejectText: String = "Reject", val describeRequest: P.() -> Unit): Popup<Boolean>() {
+		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
+			p {
+				describeRequest()
+			}
+			
+			div(classes = "button-set row") {
+				a(href = "#") {
+					+rejectText
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(false)
+					}
+				}
+				a(href = "#") {
+					+acceptText
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(true)
 					}
 				}
 			}

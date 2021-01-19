@@ -1,5 +1,4 @@
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -12,6 +11,37 @@ sealed class GamePacket {
 				
 				GlobalScope.launch {
 					when (packet) {
+						is HostReady -> {
+							send(JoinRequest(playerName!!))
+						}
+						is JoinRequest -> {
+							if (Game.currentSide != GameServerSide.HOST)
+								throw IllegalStateException("Remote game must not receive join request!")
+							
+							GlobalScope.launch {
+								Popup.awaitPopupClose()
+								
+								val accepted = Popup.YesNoDialogue {
+									+"The player ${packet.name} has requested to join your game."
+								}.display()
+								
+								send(JoinResponse(accepted))
+								
+								if (accepted)
+									joinAcceptHandler?.invoke(Unit)
+								else
+									Game.end()
+							}
+						}
+						is JoinResponse -> {
+							if (Game.currentSide != GameServerSide.GUEST)
+								throw IllegalStateException("Local game must not receive join response!")
+							
+							if (packet.accepted)
+								joinAcceptHandler?.invoke(Unit)
+							else
+								Game.end()
+						}
 						is ChatMessage -> {
 							ChatBox.addMessage("Opponent", packet.text)
 						}
@@ -125,7 +155,7 @@ sealed class GamePacket {
 				GlobalScope.launch {
 					Game.end()
 					
-					Popup.Message("CONNECTION TERMINATED", true, "RETURN TO MAIN MENU").display()
+					Popup.Message("Connection cancelled.", true, "Return to Main Menu").display()
 					
 					main()
 				}
@@ -139,18 +169,30 @@ sealed class GamePacket {
 			WebRTC.sendData(jsonText)
 		}
 		
+		private var joinAcceptHandler: ((Unit) -> Unit)? = null
+		suspend fun awaitJoinAccept() = this::joinAcceptHandler.await()
+		
 		private var abilityDoneHandler: ((Boolean) -> Unit)? = null
-		suspend fun receiveAbilityDone() = this::abilityDoneHandler.await()
+		suspend fun awaitAbilityDone() = this::abilityDoneHandler.await()
 		
 		private var turnEndHandler: ((Unit) -> Unit)? = null
 		suspend fun awaitOpponentTurnEnd() = this::turnEndHandler.await()
 		
 		private var pickResponseHandler: ((PickResponse) -> Unit)? = null
-		suspend fun receivePickResponse() = this::pickResponseHandler.await()
+		suspend fun awaitPickResponse() = this::pickResponseHandler.await()
 		
 		private var gameWonHandler: ((GameServerSide) -> Unit)? = null
 		suspend fun awaitGameWon() = this::gameWonHandler.await()
 	}
+	
+	@Serializable
+	object HostReady : GamePacket()
+	
+	@Serializable
+	data class JoinRequest(val name: String) : GamePacket()
+	
+	@Serializable
+	data class JoinResponse(val accepted: Boolean) : GamePacket()
 	
 	@Serializable
 	data class ChatMessage(val text: String) : GamePacket()
