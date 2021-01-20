@@ -421,6 +421,21 @@ fun arrayedSpacePieceAbilities(
 		arrayActionConsumed,
 		canMoveAfterFiringArray
 	),
+) + (if (maxArrayAngle > PI / 2) {
+	mapOf(
+		"Fire Both Arrays" to Ability.AttackSpace(
+			PI - maxArrayAngle,
+			maxArrayAngle,
+			false,
+			0.0,
+			maxArrayDistance,
+			arrayStrength * 2,
+			false,
+			arrayActionConsumed * 1.5,
+			canMoveAfterFiringArray
+		)
+	)
+} else emptyMap()) + mapOf(
 	"Load Torpedo" to Ability.ChargeHeavyWeapon(
 		torpedoLoadActionConsumed
 	),
@@ -474,7 +489,7 @@ fun cannonedSpacePieceAbilities(
 		cannonActionConsumed,
 		canMoveAfterFiringCannons
 	),
-	"Fire Turret" to Ability.AttackSpace(
+	"Fire Turrets" to Ability.AttackSpace(
 		null,
 		null,
 		false,
