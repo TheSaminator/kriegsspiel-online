@@ -18,20 +18,16 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.HOST)
 								throw IllegalStateException("Remote game must not receive join request!")
 							
-							GlobalScope.launch {
-								Popup.awaitPopupClose()
-								
-								val accepted = Popup.YesNoDialogue {
-									+"The player ${packet.name} has requested to join your game."
-								}.display()
-								
-								send(JoinResponse(accepted))
-								
-								if (accepted)
-									joinAcceptHandler?.invoke(Unit)
-								else
-									Game.end()
-							}
+							val accepted = Popup.YesNoDialogue {
+								+"The player ${packet.name} has requested to join your game."
+							}.display()
+							
+							send(JoinResponse(accepted))
+							
+							if (accepted)
+								joinAcceptHandler?.invoke(Unit)
+							else
+								Game.end()
 						}
 						is JoinResponse -> {
 							if (Game.currentSide != GameServerSide.GUEST)
@@ -153,7 +149,8 @@ sealed class GamePacket {
 			
 			WebRTC.channelCloseHandler = {
 				GlobalScope.launch {
-					Game.end()
+					if (Game.currentSide != null)
+						Game.end()
 					
 					Popup.Message("Connection cancelled.", true, "Return to Main Menu").display()
 					
