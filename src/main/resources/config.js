@@ -1,4 +1,4 @@
 window.iceConfig = {
-	iceUrls: ["stun:stun.l.google.com:19302"],
-	fetchUrls: []
+	iceUrls: ["stun:franciscusrex.dev"],
+	fetchUrls: ["https://franciscusrex.dev/turn/confmaker.php?sitename=kriegsspiel"]
 };
