@@ -551,9 +551,9 @@ enum class BattleFactionSkin(
 	val displayName: String,
 	val forBattleType: BattleType
 ) {
-	IMPERIUM("Imperial Navy", BattleType.SPACE_BATTLE),
+	EMPIRE("Imperial Navy", BattleType.SPACE_BATTLE),
 	SPACE_MARINES("Space Marine Corps", BattleType.SPACE_BATTLE),
-	STARFLEET("Starfleet", BattleType.SPACE_BATTLE)
+	STAR_FLEET("Star Fleet", BattleType.SPACE_BATTLE)
 }
 
 @Serializable
@@ -808,7 +808,7 @@ enum class PieceType(
 				canMoveAfterAttacking = false,
 			)
 		),
-		BattleFactionSkin.IMPERIUM
+		BattleFactionSkin.EMPIRE
 	),
 	SPACE_LIGHT_CRUISER(
 		"Light Cruiser",
@@ -844,7 +844,7 @@ enum class PieceType(
 				)
 			)
 		),
-		BattleFactionSkin.IMPERIUM
+		BattleFactionSkin.EMPIRE
 	),
 	SPACE_CRUISER(
 		"Cruiser",
@@ -883,7 +883,7 @@ enum class PieceType(
 				)
 			)
 		),
-		BattleFactionSkin.IMPERIUM
+		BattleFactionSkin.EMPIRE
 	),
 	SPACE_BATTLESHIP(
 		"Battleship",
@@ -919,7 +919,7 @@ enum class PieceType(
 				)
 			)
 		),
-		BattleFactionSkin.IMPERIUM
+		BattleFactionSkin.EMPIRE
 	),
 	
 	SPACE_ESCORT(
@@ -1079,19 +1079,19 @@ enum class PieceType(
 				
 				maxArrayAngle = 2 * PI / 3,
 				maxArrayDistance = 300.0,
-				arrayStrength = 50.0,
+				arrayStrength = 35.0,
 				arrayActionConsumed = 0.25,
 				canMoveAfterFiringArray = false,
 				
 				maxTorpedoAngle = PI / 4,
 				maxTorpedoDistance = 400.0,
-				torpedoStrength = 100.0,
+				torpedoStrength = 85.0,
 				torpedoLoadActionConsumed = 0.501,
 				torpedoFireActionConsumed = 0.501,
 				canMoveAfterFiringTorpedo = false
 			)
 		),
-		BattleFactionSkin.STARFLEET
+		BattleFactionSkin.STAR_FLEET
 	),
 	SPACE_WARSHIP(
 		"Warship",
@@ -1105,12 +1105,12 @@ enum class PieceType(
 				
 				maxCannonAngle = PI / 6,
 				maxCannonDistance = 400.0,
-				cannonStrength = 150.0,
+				cannonStrength = 125.0,
 				cannonActionConsumed = 0.35,
 				canMoveAfterFiringCannons = true,
 				
 				maxTurretDistance = 300.0,
-				turretStrength = 75.0,
+				turretStrength = 65.0,
 				turretActionConsumed = 0.25,
 				canMoveAfterFiringTurret = true,
 				
@@ -1122,7 +1122,7 @@ enum class PieceType(
 				canMoveAfterFiringTorpedo = false
 			)
 		),
-		BattleFactionSkin.STARFLEET
+		BattleFactionSkin.STAR_FLEET
 	),
 	SPACE_ADVANCED_CRUISER(
 		"Advanced Cruiser",
@@ -1136,19 +1136,19 @@ enum class PieceType(
 				
 				maxArrayAngle = 2 * PI / 3,
 				maxArrayDistance = 350.0,
-				arrayStrength = 100.0,
+				arrayStrength = 85.0,
 				arrayActionConsumed = 0.25,
 				canMoveAfterFiringArray = false,
 				
 				maxTorpedoAngle = PI / 4,
 				maxTorpedoDistance = 400.0,
-				torpedoStrength = 150.0,
+				torpedoStrength = 125.0,
 				torpedoLoadActionConsumed = 0.501,
 				torpedoFireActionConsumed = 0.501,
 				canMoveAfterFiringTorpedo = false
 			)
 		),
-		BattleFactionSkin.STARFLEET
+		BattleFactionSkin.STAR_FLEET
 	),
 	SPACE_EXPLORATION_CRUISER(
 		"Exploration Cruiser",
@@ -1162,19 +1162,19 @@ enum class PieceType(
 				
 				maxArrayAngle = 2 * PI / 3,
 				maxArrayDistance = 350.0,
-				arrayStrength = 200.0,
+				arrayStrength = 175.0,
 				arrayActionConsumed = 0.25,
 				canMoveAfterFiringArray = false,
 				
 				maxTorpedoAngle = PI / 4,
 				maxTorpedoDistance = 400.0,
-				torpedoStrength = 150.0,
+				torpedoStrength = 125.0,
 				torpedoLoadActionConsumed = 0.501,
 				torpedoFireActionConsumed = 0.501,
 				canMoveAfterFiringTorpedo = false
 			)
 		),
-		BattleFactionSkin.STARFLEET
+		BattleFactionSkin.STAR_FLEET
 	),
 	;
 	

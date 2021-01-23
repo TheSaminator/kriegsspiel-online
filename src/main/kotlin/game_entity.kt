@@ -186,9 +186,9 @@ data class GamePiece(
 				BattleType.LAND_BATTLE -> "land"
 				BattleType.SPACE_BATTLE -> "space"
 			} + when (type.factionSkin) {
-				BattleFactionSkin.IMPERIUM -> "_in"
+				BattleFactionSkin.EMPIRE -> "_in"
 				BattleFactionSkin.SPACE_MARINES -> "_sm"
-				BattleFactionSkin.STARFLEET -> "_sf"
+				BattleFactionSkin.STAR_FLEET -> "_sf"
 				null -> ""
 			} + "_unknown")
 		}.png"
