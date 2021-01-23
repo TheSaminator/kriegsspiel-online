@@ -57,6 +57,16 @@ class TempEvents private constructor(val receiver: EventTarget, private val map:
 		map[event] = listener
 	}
 	
+	fun <T : Event> register(event: String, callback: (T) -> Unit) {
+		val listener = object : EventListener {
+			override fun handleEvent(event: Event) {
+				callback(event.unsafeCast<T>())
+			}
+		}
+		
+		register(event, listener)
+	}
+	
 	fun deregister() {
 		map.forEach { (e, l) ->
 			receiver.removeEventListener(e, l)

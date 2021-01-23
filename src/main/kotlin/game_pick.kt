@@ -4,8 +4,6 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.clear
 import kotlinx.serialization.Serializable
-import org.w3c.dom.events.Event
-import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.svg.SVGCircleElement
@@ -115,19 +113,21 @@ object PickHandler {
 		document.getElementById("game-picker").unsafeCast<SVGGElement>()
 	}
 	
-	private fun renderAnglePathD(angleReq: PickRequest.PickAngle, toAngle: Double): String {
-		if (toAngle isEqualTo 0.0)
-			return ""
-		
+	private fun renderAnglePathD(angleReq: PickRequest.PickAngle, toAngle: Double, toPos: Vec2): String {
 		val fromNormal = angleReq.fromAngle.asAngle()
-		val toNormal = toAngle.asAngle()
-		
 		val begin = Vec2.polar(angleReq.displayArcRadius, fromNormal) + angleReq.center
+		
+		val toNormal = toAngle.asAngle()
 		val end = Vec2.polar(angleReq.displayArcRadius, toNormal) + angleReq.center
+		
+		val pointer = toPos + Vec2.polar(5.0, toAngle)
+		
+		if (toNormal isEqualTo fromNormal)
+			return "M ${begin.x} ${begin.y} L ${pointer.x} ${pointer.y}"
 		
 		val sweep = if (sin(toNormal - fromNormal) < 0.0) "1" else "0"
 		
-		return "M ${begin.x} ${begin.y} A ${angleReq.displayArcRadius} ${angleReq.displayArcRadius} 0 0 $sweep ${end.x} ${end.y}"
+		return "M ${begin.x} ${begin.y} A ${angleReq.displayArcRadius} ${angleReq.displayArcRadius} 0 0 $sweep ${end.x} ${end.y} L ${pointer.x} ${pointer.y}"
 	}
 	
 	private fun renderPosPathD(posReq: PickRequest.PickPosition, pos: Vec2): String {
@@ -191,31 +191,26 @@ object PickHandler {
 	private fun beginRequest(pickRequest: PickRequest, responder: (PickResponse) -> Unit) {
 		isPicking = true
 		
-		val listeners = TempEvents(window)
+		val topListeners = TempEvents(window)
 		
 		val wrappedResponder: (PickResponse) -> Unit = {
 			cancelRequest()
 			
-			listeners.deregister()
+			topListeners.deregister()
 			
 			responder(it)
 		}
 		
-		val escapeListener = object : EventListener {
-			override fun handleEvent(event: Event) {
-				val keyEvent = event.unsafeCast<KeyboardEvent>()
-				
-				if (keyEvent.key == "Escape") {
-					keyEvent.preventDefault()
-					wrappedResponder(PickResponse.Cancel)
-				}
+		topListeners.register("keyup") { event: KeyboardEvent ->
+			if (event.key == "Escape") {
+				event.preventDefault()
+				wrappedResponder(PickResponse.Cancel)
 			}
 		}
 		
-		listeners.register("keyup", escapeListener)
-		
 		when (pickRequest) {
 			is PickRequest.PickAngle -> {
+				var point: Vec2
 				var angle = 0.0
 				
 				val pickerAngleId = "game-picker-angle"
@@ -227,32 +222,24 @@ object PickHandler {
 					stroke = if (checkAngleValid(pickRequest, angle)) "#0F0" else "#F00"
 					strokeWidth = "5"
 					
-					d = renderAnglePathD(pickRequest, angle)
+					d = ""
 				}
 				
 				val pickerAngle = document.getElementById(pickerAngleId) as SVGPathElement
 				
-				listeners.register("mousemove", object : EventListener {
-					override fun handleEvent(event: Event) {
-						val mouseEvent = event.unsafeCast<MouseEvent>()
-						
-						val (domX, domY) = mouseEvent.x to mouseEvent.y
-						val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
-						angle = (svgVec - pickRequest.center).angle
-						
-						pickerAngle.setAttribute("d", renderAnglePathD(pickRequest, angle))
-						pickerAngle.setAttribute("stroke", if (checkAngleValid(pickRequest, angle)) "#0F0" else "#F00")
-					}
-				})
+				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
+					val (domX, domY) = mouseEvent.x to mouseEvent.y
+					val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
+					point = svgVec
+					angle = (svgVec - pickRequest.center).angle
+					
+					pickerAngle.setAttribute("d", renderAnglePathD(pickRequest, angle, point))
+					pickerAngle.setAttribute("stroke", if (checkAngleValid(pickRequest, angle)) "#0F0" else "#F00")
+				}
 				
-				listeners.register("mouseup", object : EventListener {
-					override fun handleEvent(event: Event) {
-						if (checkAngleValid(pickRequest, angle)) {
-							val setAngle = angle.asAngle()
-							
-							wrappedResponder(PickResponse.PickedAngle(setAngle))
-						}
-					}
+				pickerAngle.addEventListener("click", {
+					if (checkAngleValid(pickRequest, angle))
+						wrappedResponder(PickResponse.PickedAngle(angle.asAngle()))
 				})
 			}
 			is PickRequest.PickPosition -> {
@@ -265,33 +252,27 @@ object PickHandler {
 				gamePick.append(PATH()) {
 					id = pickerPosId
 					
-					fill = "none"
+					fill = "rgba(0, 0, 0, 0.01)"
 					stroke = if (checkPosValid(pickRequest, position)) "#0F0" else "#F00"
 					strokeWidth = "5"
 					
-					d = renderPosPathD(pickRequest, position)
+					d = ""
 				}
 				
 				val pickerPos = document.getElementById(pickerPosId) as SVGPathElement
 				
-				listeners.register("mousemove", object : EventListener {
-					override fun handleEvent(event: Event) {
-						val mouseEvent = event.unsafeCast<MouseEvent>()
-						
-						val (domX, domY) = mouseEvent.x to mouseEvent.y
-						val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
-						position = svgVec
-						
-						pickerPos.setAttribute("d", renderPosPathD(pickRequest, position))
-						pickerPos.setAttribute("stroke", if (checkPosValid(pickRequest, position)) "#0F0" else "#F00")
-					}
-				})
+				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
+					val (domX, domY) = mouseEvent.x to mouseEvent.y
+					val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
+					position = svgVec
+					
+					pickerPos.setAttribute("d", renderPosPathD(pickRequest, position))
+					pickerPos.setAttribute("stroke", if (checkPosValid(pickRequest, position)) "#0F0" else "#F00")
+				}
 				
-				listeners.register("mouseup", object : EventListener {
-					override fun handleEvent(event: Event) {
-						if (checkPosValid(pickRequest, position))
-							wrappedResponder(PickResponse.PickedPosition(position))
-					}
+				pickerPos.addEventListener("click", {
+					if (checkPosValid(pickRequest, position))
+						wrappedResponder(PickResponse.PickedPosition(position))
 				})
 			}
 			is PickRequest.PickPiece -> {
@@ -316,7 +297,7 @@ object PickHandler {
 				pieces.map { it.id }.forEach { pieceId ->
 					val halo = document.getElementById("${pieceId}-pick-halo").unsafeCast<SVGCircleElement>()
 					
-					halo.addEventListener("click", { e ->
+					halo.addEventListener("click", {
 						wrappedResponder(PickResponse.PickedPiece(pieceId))
 					})
 				}

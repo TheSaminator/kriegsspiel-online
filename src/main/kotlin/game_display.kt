@@ -585,7 +585,9 @@ object GameSidebar {
 										
 										piece.type.stats.abilities.forEach { (abilityName, _) ->
 											val btn = document.getElementById("use-ability-${abilityName.toLowerCase()}") as HTMLAnchorElement
-											btn.onclick = null
+											btn.onclick = { e2 ->
+												e2.preventDefault()
+											}
 										}
 										
 										GlobalScope.launch {
