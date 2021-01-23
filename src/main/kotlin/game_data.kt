@@ -960,8 +960,8 @@ enum class PieceType(
 		),
 		BattleFactionSkin.SPACE_MARINES
 	),
-	SPACE_LIGHT_BARGE(
-		"Light Barge",
+	SPACE_STRIKE_CRUISER(
+		"Strike Cruiser",
 		90,
 		SpacePieceStats(
 			maxHealth = 875.0,
@@ -1205,7 +1205,7 @@ enum class PieceType(
 			SPACE_BATTLESHIP -> 480.0
 			
 			SPACE_ESCORT -> 260.0
-			SPACE_LIGHT_BARGE -> 260.0
+			SPACE_STRIKE_CRUISER -> 260.0
 			SPACE_BATTLE_BARGE -> 340.0
 			SPACE_CAPITAL_SHIP -> 480.0
 			
@@ -1234,7 +1234,7 @@ enum class PieceType(
 			SPACE_BATTLESHIP -> 920.0
 			
 			SPACE_ESCORT -> 600.0
-			SPACE_LIGHT_BARGE -> 660.0
+			SPACE_STRIKE_CRUISER -> 660.0
 			SPACE_BATTLE_BARGE -> 820.0
 			SPACE_CAPITAL_SHIP -> 950.0
 			

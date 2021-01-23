@@ -124,7 +124,7 @@ object GameField {
 		val (outerX1, outerY1) = Vec2.polar(maxRadius, maxAngle) + origin
 		val largeArc = if (abs(maxAngle - minAngle) > PI) 1 else 0
 		
-		val endPart = "L $outerX0 $outerY0 A ${maxRadius} ${maxRadius} 0 $largeArc 0 $outerX1 $outerY1 Z"
+		val endPart = "L $outerX0 $outerY0 A $maxRadius $maxRadius 0 $largeArc 0 $outerX1 $outerY1 Z"
 		
 		val beginPart = if (minRadius != null) {
 			val (innerX0, innerY0) = Vec2.polar(minRadius, minAngle) + origin
@@ -165,17 +165,8 @@ object GameField {
 				"M $x0 $y0 A $r $r 0 0 1 $x1 $y1 A $r $r 0 1 1 $x0 $y0 Z"
 			}
 			is PickBoundaryUnitBased -> {
-				when {
-					bounds.minAngleDiff == null && bounds.maxAngleDiff != null -> {
-						drawPickBoundaryArc(
-							bounds.center,
-							bounds.angleOrigin - bounds.maxAngleDiff,
-							bounds.angleOrigin + bounds.maxAngleDiff,
-							bounds.minRadius,
-							bounds.maxRadius
-						)
-					}
-					bounds.maxAngleDiff == null -> {
+				if (bounds.minAngleDiff == null) {
+					if (bounds.maxAngleDiff == null) {
 						val inner = if (bounds.minRadius != null) {
 							val r0 = bounds.minRadius
 							
@@ -195,27 +186,35 @@ object GameField {
 						val y3 = bounds.center.y
 						
 						inner + "M $x2 $y2 A $r1 $r1 0 0 1 $x3 $y3 A $r1 $r1 0 1 1 $x2 $y2 Z"
-					}
-					bounds.minAngleDiff != null -> {
-						val leftArc = drawPickBoundaryArc(
+					} else {
+						drawPickBoundaryArc(
 							bounds.center,
 							bounds.angleOrigin - bounds.maxAngleDiff,
-							bounds.angleOrigin - bounds.minAngleDiff,
-							bounds.minRadius,
-							bounds.maxRadius
-						)
-						
-						val rightArc = drawPickBoundaryArc(
-							bounds.center,
-							bounds.angleOrigin + bounds.minAngleDiff,
 							bounds.angleOrigin + bounds.maxAngleDiff,
 							bounds.minRadius,
 							bounds.maxRadius
 						)
-						
-						"$leftArc $rightArc"
 					}
-					else -> error("Logic error")
+				} else {
+					bounds.maxAngleDiff!!
+					
+					val leftArc = drawPickBoundaryArc(
+						bounds.center,
+						bounds.angleOrigin - bounds.maxAngleDiff,
+						bounds.angleOrigin - bounds.minAngleDiff,
+						bounds.minRadius,
+						bounds.maxRadius
+					)
+					
+					val rightArc = drawPickBoundaryArc(
+						bounds.center,
+						bounds.angleOrigin + bounds.minAngleDiff,
+						bounds.angleOrigin + bounds.maxAngleDiff,
+						bounds.minRadius,
+						bounds.maxRadius
+					)
+					
+					"$leftArc $rightArc"
 				}
 			}
 		}

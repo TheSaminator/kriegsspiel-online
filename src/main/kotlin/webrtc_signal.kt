@@ -2,6 +2,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.decodeFromDynamic
+import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 
 object WebRTCSignalling {
@@ -19,8 +20,8 @@ object WebRTCSignalling {
 		
 		ws = WebSocket("wss://franciscusrex.dev/rtc-signal/")
 		
-		ws.onmessage = { e ->
-			val packet = JSON.parse<dynamic>(e.data as String)
+		ws.addEventListener("message", { e ->
+			val packet = JSON.parse<dynamic>(e.unsafeCast<MessageEvent>().data as String)
 			
 			when (packet.type) {
 				"offer-id" -> {
@@ -50,15 +51,13 @@ object WebRTCSignalling {
 					val errorMessage = packet.message.unsafeCast<String>()
 					
 					GlobalScope.launch {
-						Popup.Message("CONNECTION ERROR: $errorMessage", true, "RETURN TO MAIN MENU").display()
+						Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
 						
 						main()
 					}
 				}
 			}
-			
-			Unit
-		}
+		})
 		
 		WebRTC.iceCandidateHandler = { candidate ->
 			val candidatePacket = jsonString {

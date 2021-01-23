@@ -131,8 +131,9 @@ object PickHandler {
 	}
 	
 	private fun renderPosPathD(posReq: PickRequest.PickPosition, pos: Vec2): String {
-		val line = if (posReq.origin != null)
-			"M ${posReq.origin.x} ${posReq.origin.y} L ${pos.x} ${pos.y}" else ""
+		val line = posReq.origin?.let { origin ->
+			"M ${origin.x} ${origin.y} L ${pos.x} ${pos.y}"
+		} ?: ""
 		
 		val circle = posReq.displayCircleRadius?.let { rad ->
 			val circleX0 = pos.x

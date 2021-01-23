@@ -42,21 +42,11 @@ sealed class Popup<T> {
 		
 		private fun show() {
 			popup.removeClass("hide")
-			isPopupPresent = true
 		}
 		
 		private fun hide() {
 			popup.addClass("hide")
-			isPopupPresent = false
 		}
-		
-		suspend fun awaitPopupClose() {
-			while (isPopupPresent)
-				delay(100)
-		}
-		
-		var isPopupPresent = false
-			private set
 	}
 	
 	object MainMenu : Popup<GameServerSide>() {
@@ -213,7 +203,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class YesNoDialogue(val acceptText: String = "Accept", val rejectText: String = "Reject", val describeRequest: P.() -> Unit): Popup<Boolean>() {
+	class YesNoDialogue(val acceptText: String = "Accept", val rejectText: String = "Reject", val describeRequest: P.() -> Unit) : Popup<Boolean>() {
 		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
 			p {
 				describeRequest()
