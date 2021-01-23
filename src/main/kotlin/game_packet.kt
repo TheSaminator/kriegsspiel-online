@@ -159,6 +159,9 @@ sealed class GamePacket {
 			}
 			
 			WebRTC.makeDataChannel()
+			
+			if (Game.currentSide == GameServerSide.HOST)
+				send(HostReady)
 		}
 		
 		fun send(packet: GamePacket) {

@@ -103,8 +103,6 @@ object WebRTCSignalling {
 		if (!notCancelled)
 			awaitAnswerJob.cancel()
 		
-		GamePacket.send(GamePacket.HostReady)
-		
 		return notCancelled
 	}
 	
