@@ -1,7 +1,7 @@
 import kotlinx.serialization.Serializable
 
 @Serializable
-class GameSessionData(val mapSize: Vec2, val battleType: BattleType) {
+class GameSessionData(val mapSize: Vec2, val battleType: BattleType, val battleSize: Int) {
 	private val pieces = mutableSetOf<GamePiece>()
 	
 	fun allPieces() = setOf<GamePiece>() + pieces

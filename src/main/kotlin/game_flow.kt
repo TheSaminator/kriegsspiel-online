@@ -1,6 +1,7 @@
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 
+@Suppress("DuplicatedCode")
 object Game {
 	private suspend fun beginWith(side: GameServerSide) {
 		currentSide = side
@@ -16,18 +17,23 @@ object Game {
 	suspend fun doLocal(): GameServerSide {
 		GamePacket.awaitJoinAccept()
 		
-		val battleType = Popup.NameableChoice(BattleType.values().toList(), BattleType::displayName).display()
+		val battleType = Popup.NameableChoice("Select battle type", BattleType.values().toList(), BattleType::displayName).display()
 		
-		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(battleType), battleType).also { gsd ->
-			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize, gsd.battleType))
+		val battleSize = Popup.NameableChoice("Select battle size", DeployConstants.pointLevels.keys.toList()) {
+			DeployConstants.pointLevels.getValue(it) + " ($it)"
+		}.display()
+		
+		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(battleType), battleType, battleSize).also { gsd ->
+			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize, gsd.battleType, battleSize))
 			GameField.drawEverything(gsd)
 		}
 		
 		if (battleType.usesSkins)
-			GamePhase.Deployment.chosenSkin = Popup.NameableChoice(BattleFactionSkin.values().filter {
+			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
 				it.forBattleType == battleType
 			}, BattleFactionSkin::displayName).display()
 		
+		GameSidebar.beginDeploy()
 		GameSidebar.deployMenu()
 		
 		GamePhase.Deployment.awaitBothDone()
@@ -58,10 +64,11 @@ object Game {
 		
 		val battleType = GameSessionData.currentSession!!.battleType
 		if (battleType.usesSkins)
-			GamePhase.Deployment.chosenSkin = Popup.NameableChoice(BattleFactionSkin.values().filter {
+			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
 				it.forBattleType == battleType
 			}, BattleFactionSkin::displayName).display()
 		
+		GameSidebar.beginDeploy()
 		GameSidebar.deployMenu()
 		
 		GamePhase.Deployment.awaitBothDone()

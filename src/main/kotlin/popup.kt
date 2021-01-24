@@ -1,6 +1,5 @@
 import kotlinx.browser.document
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.dom.addClass
 import kotlinx.dom.clear
@@ -230,12 +229,17 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class NameableChoice<T>(val values: List<T>, val getName: T.() -> String) : Popup<T>() {
+	class NameableChoice<T>(val headerText: String, val values: List<T>, val getName: (T) -> String) : Popup<T>() {
 		override fun TagConsumer<*>.render(callback: (T) -> Unit) {
+			p {
+				style = "text-align: center"
+				+headerText
+			}
+			
 			div(classes = "button-set col") {
 				values.forEach { value ->
 					a(href = "#") {
-						+value.getName()
+						+getName(value)
 						onClickFunction = { e ->
 							e.preventDefault()
 							

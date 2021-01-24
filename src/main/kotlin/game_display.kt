@@ -336,7 +336,14 @@ object GameField {
 }
 
 object DeployConstants {
-	const val POINTS_TO_SPEND = 1000
+	val pointLevels = mapOf(
+		500 to "Skirmish",
+		750 to "Small",
+		1000 to "Medium",
+		1500 to "Large",
+		2000 to "Armageddon"
+	)
+	
 	const val DEPLOY_ZONE_WIDTH = 500.0
 	
 	const val HOST_FACING = PI / 2
@@ -348,9 +355,13 @@ object GameSidebar {
 		document.getElementById("piece-selection").unsafeCast<HTMLDivElement>()
 	}
 	
-	var currentPoints = DeployConstants.POINTS_TO_SPEND
+	private var currentPoints = 0
 	
 	private var deployJob: Job? = null
+	
+	fun beginDeploy() {
+		currentPoints = GameSessionData.currentSession!!.battleSize
+	}
 	
 	fun deployMenu() {
 		sidebar.clear()
@@ -397,7 +408,7 @@ object GameSidebar {
 								e.preventDefault()
 								
 								Player.currentPlayer!!.clearDeploying()
-								currentPoints = DeployConstants.POINTS_TO_SPEND
+								currentPoints = GameSessionData.currentSession!!.battleSize
 								
 								deployMenu()
 							}
@@ -414,12 +425,12 @@ object GameSidebar {
 								e.preventDefault()
 								
 								GlobalScope.launch {
-									GamePhase.Deployment.chosenSkin = Popup.NameableChoice(BattleFactionSkin.values().filter {
+									GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
 										it.forBattleType == battleType
 									}, BattleFactionSkin::displayName).display()
 									
 									Player.currentPlayer!!.clearDeploying()
-									currentPoints = DeployConstants.POINTS_TO_SPEND
+									currentPoints = GameSessionData.currentSession!!.battleSize
 									
 									deployMenu()
 								}

@@ -45,7 +45,7 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.GUEST)
 								throw IllegalStateException("Local game must not receive map data!")
 							
-							GameSessionData.currentSession = GameSessionData(packet.size, packet.battleType).also { gsd ->
+							GameSessionData.currentSession = GameSessionData(packet.size, packet.battleType, packet.battleSize).also { gsd ->
 								GameField.drawEverything(gsd)
 							}
 						}
@@ -198,7 +198,7 @@ sealed class GamePacket {
 	data class ChatMessage(val text: String) : GamePacket()
 	
 	@Serializable
-	data class MapLoaded(val size: Vec2, val battleType: BattleType) : GamePacket()
+	data class MapLoaded(val size: Vec2, val battleType: BattleType, val battleSize: Int) : GamePacket()
 	
 	@Serializable
 	data class PieceDeployed(val pieceType: PieceType, val location: Vec2, val facing: Double) : GamePacket()
