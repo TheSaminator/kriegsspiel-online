@@ -151,10 +151,7 @@ object PickHandler {
 		if (angleReq.maxAngleDiff == null || angleReq.maxAngleDiff >= PI)
 			return true
 		
-		val fromNormal = angleReq.fromAngle.asAngle()
-		val toNormal = toAngle.asAngle()
-		
-		return angleReq.maxAngleDiff.let { abs(fromNormal - toNormal) <= it }
+		return abs((angleReq.fromAngle - toAngle).asAngle()) <= angleReq.maxAngleDiff
 	}
 	
 	private fun checkPosValid(posReq: PickRequest.PickPosition, pos: Vec2): Boolean {
