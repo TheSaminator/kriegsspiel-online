@@ -3,22 +3,18 @@ import externals.webrtc.RTCIceServer
 import externals.webrtc.iceServers
 import externals.webrtc.urls
 import kotlinx.browser.window
-import kotlinx.coroutines.asDeferred
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.await
 
 suspend fun getRtcConfig(): RTCConfiguration {
-	val rawUrls = window.asDynamic().iceConfig.iceUrls.unsafeCast<Array<String>>()
-	val iceRaw = rawUrls.map { configure<RTCIceServer> { urls = it } }
-	
-	val fetchUrls = window.asDynamic().iceConfig.fetchUrls.unsafeCast<Array<String>>()
-	val iceFetched = fetchUrls
-		.map { window.fetch(it).asDeferred() }
-		.awaitAll()
-		.map { it.json().asDeferred() }
-		.awaitAll()
-		.map { it.unsafeCast<RTCIceServer>() }
-	
 	return configure {
-		iceServers = (iceRaw + iceFetched).toTypedArray()
+		iceServers = arrayOf(
+			configure { urls = "stun:franciscusrex.dev" },
+			window
+				.fetch("https://franciscusrex.dev/turn/confmaker.php?sitename=kriegsspiel")
+				.await()
+				.json()
+				.await()
+				.unsafeCast<RTCIceServer>()
+		)
 	}
 }
