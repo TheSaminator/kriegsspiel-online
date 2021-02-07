@@ -252,6 +252,9 @@ object GameField {
 	fun drawPiece(piece: GamePiece) {
 		document.getElementById(piece.id)?.remove()
 		
+		if (!piece.canBeRendered)
+			return
+		
 		gamePieces.append(G()) {
 			id = piece.id
 			cssClass = "game-piece"

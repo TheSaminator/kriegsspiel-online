@@ -176,6 +176,9 @@ object PickHandler {
 		if (posReq.onSameSideAs == piece.owner.other)
 			return false
 		
+		if (!piece.canBeRendered)
+			return false
+		
 		return true
 	}
 	

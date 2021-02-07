@@ -122,13 +122,19 @@ data class GamePiece(
 	var action = 1.0
 	var attacked = false
 	
+	var isCloaked = false
 	var heavyWeaponCharged = false
 	
+	val canUseShield: Boolean
+		get() = type.stats is SpacePieceStats && !shieldDepleted && !isCloaked
+	
 	fun attack(damage: Double) {
-		if (type.stats is SpacePieceStats && !shieldDepleted) {
-			val dShield = damage / type.stats.maxShield
+		if (canUseShield) {
+			val stats = type.stats as SpacePieceStats
+			
+			val dShield = damage / stats.maxShield
 			if (dShield >= shield) {
-				val dHealth = (damage - shield * type.stats.maxShield) / type.stats.maxHealth
+				val dHealth = (damage - shield * stats.maxShield) / stats.maxHealth
 				health -= dHealth
 				
 				shield = 0.0
@@ -158,7 +164,7 @@ data class GamePiece(
 		attacked = false
 		
 		if (type.stats is SpacePieceStats) {
-			if (shieldDepleted) {
+			if (shieldDepleted && !isCloaked) {
 				shield += SHIELD_RECHARGE_PER_TURN / type.stats.maxShield
 				
 				if (shield >= 1.0) {
@@ -169,6 +175,17 @@ data class GamePiece(
 		}
 	}
 	
+	val cloakSeeRange: Double
+		get() = 150.0
+	
+	val canBeRendered: Boolean
+		get() = Game.currentSide == owner || canBeRenderedByEnemy
+	
+	val canBeRenderedByEnemy: Boolean
+		get() = !isCloaked || GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).any { otherPiece ->
+			(location - otherPiece.location).magnitude < otherPiece.cloakSeeRange
+		}
+	
 	val visionRange: Double
 		get() = if (type.requiredBattleType == BattleType.SPACE_BATTLE) 1000.0 else 500.0
 	
@@ -177,7 +194,7 @@ data class GamePiece(
 	
 	val canBeIdentifiedByEnemy: Boolean
 		get() = GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).any { otherPiece ->
-			(location - otherPiece.location).magnitude < visionRange
+			(location - otherPiece.location).magnitude < otherPiece.visionRange
 		}
 	
 	val imagePath: String
@@ -189,6 +206,7 @@ data class GamePiece(
 				BattleFactionSkin.EMPIRE -> "_in"
 				BattleFactionSkin.SPACE_MARINES -> "_sm"
 				BattleFactionSkin.STAR_FLEET -> "_sf"
+				BattleFactionSkin.KDF -> "_ke"
 				null -> ""
 			} + "_unknown")
 		}.png"

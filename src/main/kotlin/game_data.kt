@@ -217,7 +217,7 @@ sealed class Ability {
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked && (currentPiece.heavyWeaponCharged || !requiresCharge)
+			return currentPiece.action >= actionConsumed && !currentPiece.attacked && !currentPiece.isCloaked && (currentPiece.heavyWeaponCharged || !requiresCharge)
 		}
 		
 		private val SPACE_FLANK_WEIGHT get() = 5.0
@@ -317,6 +317,32 @@ sealed class Ability {
 				currentPiece.action -= actionConsumed
 			else
 				currentPiece.action = 0.0
+		}
+	}
+	
+	@Serializable
+	data class Cloak(val actionConsumed: Double) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return currentPiece.action > actionConsumed && !currentPiece.isCloaked
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			currentPiece.action -= actionConsumed
+			
+			currentPiece.isCloaked = true
+		}
+	}
+	
+	@Serializable
+	data class Decloak(val actionConsumed: Double) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return currentPiece.action > actionConsumed && currentPiece.isCloaked
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			currentPiece.action -= actionConsumed
+			
+			currentPiece.isCloaked = false
 		}
 	}
 }
@@ -516,6 +542,97 @@ fun cannonedSpacePieceAbilities(
 	)
 ) + extraAbilities
 
+fun arrayedAndCannonedSpacePieceAbilities(
+	moveSpeedPerRound: Double,
+	turnSpeedPerRound: Double,
+	
+	maxArrayAngle: Double,
+	maxArrayDistance: Double,
+	arrayStrength: Double,
+	arrayActionConsumed: Double,
+	canMoveAfterFiringArray: Boolean,
+	
+	maxCannonAngle: Double,
+	maxCannonDistance: Double,
+	cannonStrength: Double,
+	cannonActionConsumed: Double,
+	canMoveAfterFiringCannons: Boolean,
+	
+	maxTorpedoAngle: Double,
+	maxTorpedoDistance: Double,
+	torpedoStrength: Double,
+	torpedoLoadActionConsumed: Double,
+	torpedoFireActionConsumed: Double,
+	canMoveAfterFiringTorpedo: Boolean,
+	
+	extraAbilities: Map<String, Ability> = emptyMap()
+): Map<String, Ability> = mapOf(
+	"Move" to Ability.Move(moveSpeedPerRound),
+	"Turn" to Ability.Rotate(turnSpeedPerRound),
+	"Fire Fore Arrays" to Ability.AttackSpace(
+		null,
+		maxArrayAngle,
+		false,
+		0.0,
+		maxArrayDistance,
+		arrayStrength,
+		false,
+		arrayActionConsumed,
+		canMoveAfterFiringArray
+	),
+	"Fire Aft Arrays" to Ability.AttackSpace(
+		null,
+		maxArrayAngle,
+		true,
+		0.0,
+		maxArrayDistance,
+		arrayStrength,
+		false,
+		arrayActionConsumed,
+		canMoveAfterFiringArray
+	),
+) + (if (maxArrayAngle > PI / 2) {
+	mapOf(
+		"Fire Both Arrays" to Ability.AttackSpace(
+			PI - maxArrayAngle,
+			maxArrayAngle,
+			false,
+			0.0,
+			maxArrayDistance,
+			arrayStrength * 2,
+			false,
+			arrayActionConsumed * 1.5,
+			canMoveAfterFiringArray
+		)
+	)
+} else emptyMap()) + mapOf(
+	"Fire Cannons" to Ability.AttackSpace(
+		null,
+		maxCannonAngle,
+		false,
+		0.0,
+		maxCannonDistance,
+		cannonStrength,
+		false,
+		cannonActionConsumed,
+		canMoveAfterFiringCannons
+	),
+	"Load Torpedo" to Ability.ChargeHeavyWeapon(
+		torpedoLoadActionConsumed
+	),
+	"Fire Torpedo" to Ability.AttackSpace(
+		null,
+		maxTorpedoAngle,
+		false,
+		0.0,
+		maxTorpedoDistance,
+		torpedoStrength,
+		true,
+		torpedoFireActionConsumed,
+		canMoveAfterFiringTorpedo
+	)
+) + extraAbilities
+
 @Serializable
 sealed class PieceStats {
 	abstract val maxHealth: Double
@@ -555,7 +672,8 @@ enum class BattleFactionSkin(
 ) {
 	EMPIRE("Imperial Navy", BattleType.SPACE_BATTLE),
 	SPACE_MARINES("Space Marine Corps", BattleType.SPACE_BATTLE),
-	STAR_FLEET("Star Fleet", BattleType.SPACE_BATTLE)
+	STAR_FLEET("Star Fleet", BattleType.SPACE_BATTLE),
+	KDF("K.D.F.", BattleType.SPACE_BATTLE)
 }
 
 @Serializable
@@ -1121,7 +1239,12 @@ enum class PieceType(
 				torpedoStrength = 100.0,
 				torpedoLoadActionConsumed = 0.501,
 				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false
+				canMoveAfterFiringTorpedo = false,
+				
+				extraAbilities = mapOf(
+					"Cloak" to Ability.Cloak(0.6),
+					"Decloak" to Ability.Decloak(0.3),
+				)
 			)
 		),
 		BattleFactionSkin.STAR_FLEET
@@ -1178,6 +1301,153 @@ enum class PieceType(
 		),
 		BattleFactionSkin.STAR_FLEET
 	),
+	
+	SPACE_BIRD_OF_PREY(
+		"Bird-of-Prey",
+		40,
+		SpacePieceStats(
+			maxHealth = 750.0,
+			maxShield = 400.0,
+			abilities = cannonedSpacePieceAbilities(
+				moveSpeedPerRound = 640.0,
+				turnSpeedPerRound = 3 * PI,
+				
+				maxCannonAngle = PI / 6,
+				maxCannonDistance = 400.0,
+				cannonStrength = 125.0,
+				cannonActionConsumed = 0.35,
+				canMoveAfterFiringCannons = true,
+				
+				maxTurretDistance = 300.0,
+				turretStrength = 65.0,
+				turretActionConsumed = 0.25,
+				canMoveAfterFiringTurret = true,
+				
+				maxTorpedoAngle = PI / 4,
+				maxTorpedoDistance = 400.0,
+				torpedoStrength = 100.0,
+				torpedoLoadActionConsumed = 0.501,
+				torpedoFireActionConsumed = 0.501,
+				canMoveAfterFiringTorpedo = false,
+				
+				extraAbilities = mapOf(
+					"Cloak" to Ability.Cloak(0.6),
+					"Decloak" to Ability.Decloak(0.3),
+				)
+			)
+		),
+		BattleFactionSkin.KDF
+	),
+	SPACE_RAPTOR(
+		"Raptor",
+		90,
+		SpacePieceStats(
+			maxHealth = 875.0,
+			maxShield = 500.0,
+			abilities = cannonedSpacePieceAbilities(
+				moveSpeedPerRound = 480.0,
+				turnSpeedPerRound = 2.5 * PI,
+				
+				maxCannonAngle = PI / 6,
+				maxCannonDistance = 300.0,
+				cannonStrength = 175.0,
+				cannonActionConsumed = 0.35,
+				canMoveAfterFiringCannons = true,
+				
+				maxTurretDistance = 200.0,
+				turretStrength = 105.0,
+				turretActionConsumed = 0.25,
+				canMoveAfterFiringTurret = true,
+				
+				maxTorpedoAngle = PI / 4,
+				maxTorpedoDistance = 400.0,
+				torpedoStrength = 100.0,
+				torpedoLoadActionConsumed = 0.501,
+				torpedoFireActionConsumed = 0.501,
+				canMoveAfterFiringTorpedo = false,
+				
+				extraAbilities = mapOf(
+					"Cloak" to Ability.Cloak(0.6),
+					"Decloak" to Ability.Decloak(0.3),
+				)
+			)
+		),
+		BattleFactionSkin.KDF
+	),
+	SPACE_BATTLECRUISER(
+		"Battlecruiser",
+		160,
+		SpacePieceStats(
+			maxHealth = 1000.0,
+			maxShield = 600.0,
+			abilities = arrayedAndCannonedSpacePieceAbilities(
+				moveSpeedPerRound = 360.0,
+				turnSpeedPerRound = 2 * PI,
+				
+				maxArrayAngle = 2 * PI / 3,
+				maxArrayDistance = 350.0,
+				arrayStrength = 85.0,
+				arrayActionConsumed = 0.25,
+				canMoveAfterFiringArray = false,
+				
+				maxCannonAngle = PI / 6,
+				maxCannonDistance = 300.0,
+				cannonStrength = 155.0,
+				cannonActionConsumed = 0.35,
+				canMoveAfterFiringCannons = true,
+				
+				maxTorpedoAngle = PI / 4,
+				maxTorpedoDistance = 400.0,
+				torpedoStrength = 125.0,
+				torpedoLoadActionConsumed = 0.501,
+				torpedoFireActionConsumed = 0.501,
+				canMoveAfterFiringTorpedo = false,
+				
+				extraAbilities = mapOf(
+					"Cloak" to Ability.Cloak(0.6),
+					"Decloak" to Ability.Decloak(0.3),
+				)
+			)
+		),
+		BattleFactionSkin.KDF
+	),
+	SPACE_HEAVY_BATTLECRUISER(
+		"Heavy Battlecruiser",
+		250,
+		SpacePieceStats(
+			maxHealth = 1250.0,
+			maxShield = 800.0,
+			abilities = arrayedAndCannonedSpacePieceAbilities(
+				moveSpeedPerRound = 270.0,
+				turnSpeedPerRound = 1.75 * PI,
+				
+				maxArrayAngle = 2 * PI / 3,
+				maxArrayDistance = 350.0,
+				arrayStrength = 125.0,
+				arrayActionConsumed = 0.25,
+				canMoveAfterFiringArray = false,
+				
+				maxCannonAngle = PI / 6,
+				maxCannonDistance = 300.0,
+				cannonStrength = 145.0,
+				cannonActionConsumed = 0.35,
+				canMoveAfterFiringCannons = true,
+				
+				maxTorpedoAngle = PI / 4,
+				maxTorpedoDistance = 400.0,
+				torpedoStrength = 125.0,
+				torpedoLoadActionConsumed = 0.501,
+				torpedoFireActionConsumed = 0.501,
+				canMoveAfterFiringTorpedo = false,
+				
+				extraAbilities = mapOf(
+					"Cloak" to Ability.Cloak(0.6),
+					"Decloak" to Ability.Decloak(0.3),
+				)
+			)
+		),
+		BattleFactionSkin.KDF
+	),
 	;
 	
 	val requiredBattleType: BattleType
@@ -1213,6 +1483,11 @@ enum class PieceType(
 			SPACE_WARSHIP -> 500.0
 			SPACE_ADVANCED_CRUISER -> 400.0
 			SPACE_EXPLORATION_CRUISER -> 600.0
+			
+			SPACE_BIRD_OF_PREY -> 700.0
+			SPACE_RAPTOR -> 750.0
+			SPACE_BATTLECRUISER -> 750.0
+			SPACE_HEAVY_BATTLECRUISER -> 710.0
 		} * imageScaling
 	
 	val imageHeight: Double
@@ -1242,6 +1517,11 @@ enum class PieceType(
 			SPACE_WARSHIP -> 570.0
 			SPACE_ADVANCED_CRUISER -> 960.0
 			SPACE_EXPLORATION_CRUISER -> 680.0
+			
+			SPACE_BIRD_OF_PREY -> 640.0
+			SPACE_RAPTOR -> 780.0
+			SPACE_BATTLECRUISER -> 750.0
+			SPACE_HEAVY_BATTLECRUISER -> 730.0
 		} * imageScaling
 	
 	val imageRadius: Double
