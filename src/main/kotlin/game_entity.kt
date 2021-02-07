@@ -221,10 +221,14 @@ data class GamePiece(
 			"rgb(255, ${(health * 510).toInt()}, 0)"
 	
 	val shieldBarColor: String
-		get() = if (shieldDepleted)
-			"rgb(170, 85, 255)"
-		else
-			"rgb(85, 170, 255)"
+		get() {
+			val alpha = if (isCloaked) "0.4" else "1.0"
+			
+			return if (shieldDepleted)
+				"rgba(170, 85, 255, $alpha)"
+			else
+				"rgba(85, 170, 255, $alpha)"
+		}
 	
 	companion object {
 		const val SHIELD_RECHARGE_PER_TURN = 75.0
