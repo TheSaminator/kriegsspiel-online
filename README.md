@@ -14,13 +14,15 @@ Kriegsspiel Online is played with two players.
 
 ### Step 1: Host or Join
 
+Before hosting or joining, the player must enter a player name. The name is used to disambiguate open hosts or join requests - it isn't actually stored anywhere on disk.
+
 Hosting a game will give you a game ID that you can share with a friend.
 
 To join a game, you must select your friend's game ID from a dropdown box.
 
 ### Step 2: Unit Deployment
 
-Both players start out with 1000 points to spend on an army. Each unit has a varying point cost.
+Both players start out with a configurable number of points to spend on an army. Each unit has a varying point cost.
 
 To deploy a unit, click on the button with the unit type's name and select a position on the map.
 
@@ -67,9 +69,9 @@ The game is turn-based, so each side has to wait until the other side is done it
 Space battles are much like land battles, except in SPACE!
 
 Imperial Navy ships' main armaments are broadside cannon arrays.
-Their auxiliary armaments are things like torpedoes or the Cruiser's Nova Lance.
-Space Marine Corps ships are similar. Starfleet ships are different,
-using beam arrays to fire in a wide range.
+Their auxiliary armaments are things like torpedoes or the Cruiser's Plasma Lance.
+Space Marine Corps ships are similar. Star Fleet ships are different,
+using beam arrays to fire in a wide range. K.D.F. ships can cloak, or hide themselves from enemy ships.
 
 ## To Be Implemented
 
