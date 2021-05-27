@@ -1,4 +1,7 @@
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Suppress("DuplicatedCode")
@@ -15,7 +18,10 @@ object Game {
 	suspend fun beginRemote() = beginWith(GameServerSide.GUEST)
 	
 	suspend fun doLocal(): GameServerSide {
-		GamePacket.awaitJoinAccept()
+		if (!GamePacket.awaitJoinAccept()) {
+			end()
+			awaitCancellation()
+		}
 		
 		val battleType = Popup.NameableChoice("Select battle type", BattleType.values().toList(), BattleType::displayName).display()
 		
@@ -57,10 +63,15 @@ object Game {
 	}
 	
 	suspend fun doRemote(): GameServerSide {
-		GamePacket.awaitJoinAccept()
+		if (!Popup.TryLoadingScreen("Awaiting connection acceptance...", "Connection accepted!", "Connection rejected.") { GamePacket.awaitJoinAccept() }.display()) {
+			end()
+			awaitCancellation()
+		}
 		
-		while (GameSessionData.currentSession == null)
-			delay(100)
+		Popup.LoadingScreen("Awaiting battle parameters from host...", "Battle parameters received!") {
+			while (GameSessionData.currentSession == null)
+				delay(100)
+		}.display()
 		
 		val battleType = GameSessionData.currentSession!!.battleType
 		if (battleType.usesSkins)

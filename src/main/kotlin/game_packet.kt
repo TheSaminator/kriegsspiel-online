@@ -24,19 +24,13 @@ sealed class GamePacket {
 							
 							send(JoinResponse(accepted))
 							
-							if (accepted)
-								joinAcceptHandler?.invoke(Unit)
-							else
-								Game.end()
+							joinAcceptHandler?.invoke(accepted)
 						}
 						is JoinResponse -> {
 							if (Game.currentSide != GameServerSide.GUEST)
 								throw IllegalStateException("Local game must not receive join response!")
 							
-							if (packet.accepted)
-								joinAcceptHandler?.invoke(Unit)
-							else
-								Game.end()
+							joinAcceptHandler?.invoke(packet.accepted)
 						}
 						is ChatMessage -> {
 							ChatBox.addMessage("Opponent", packet.text)
@@ -169,7 +163,7 @@ sealed class GamePacket {
 			WebRTC.sendData(jsonText)
 		}
 		
-		private var joinAcceptHandler: ((Unit) -> Unit)? = null
+		private var joinAcceptHandler: ((Boolean) -> Unit)? = null
 		suspend fun awaitJoinAccept() = this::joinAcceptHandler.await()
 		
 		private var abilityDoneHandler: ((Boolean) -> Unit)? = null

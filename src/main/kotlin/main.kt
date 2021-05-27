@@ -14,9 +14,9 @@ fun main() {
 		
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)
-			"YOU HAVE WON THE BATTLE!"
+			"You have won the battle!"
 		else
-			"YOU HAVE BEEN DEFEATED!"
+			"You have been defeated."
 		
 		Popup.UncloseableMessage(message, true).display()
 	}

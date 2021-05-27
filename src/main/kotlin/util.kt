@@ -1,10 +1,7 @@
 import com.github.nwillc.ksvg.RenderMode
 import com.github.nwillc.ksvg.elements.Container
 import com.github.nwillc.ksvg.elements.Element
-import kotlinx.html.HTMLTag
-import kotlinx.html.unsafe
 import kotlinx.serialization.json.Json
-import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.EventTarget
