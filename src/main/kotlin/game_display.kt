@@ -589,7 +589,7 @@ object GameSidebar {
 					div(classes = "button-set col") {
 						piece.type.stats.abilities.forEach { (abilityName, ability) ->
 							a(href = "#") {
-								id = "use-ability-${abilityName.toLowerCase()}"
+								id = "use-ability-${abilityName.lowercase()}"
 								+abilityName
 								
 								if (ability.canUse(piece))
@@ -597,7 +597,7 @@ object GameSidebar {
 										e.preventDefault()
 										
 										piece.type.stats.abilities.forEach { (abilityName, _) ->
-											val btn = document.getElementById("use-ability-${abilityName.toLowerCase()}") as HTMLAnchorElement
+											val btn = document.getElementById("use-ability-${abilityName.lowercase()}") as HTMLAnchorElement
 											btn.onclick = { e2 ->
 												e2.preventDefault()
 											}

@@ -199,7 +199,7 @@ data class GamePiece(
 	
 	val imagePath: String
 		get() = "uniticons/${if (owner == Game.currentSide) "player" else "opponent"}/${
-			if (canBeIdentified) type.name.toLowerCase() else (when (type.requiredBattleType) {
+			if (canBeIdentified) type.name.lowercase() else (when (type.requiredBattleType) {
 				BattleType.LAND_BATTLE -> "land"
 				BattleType.SPACE_BATTLE -> "space"
 			} + when (type.factionSkin) {
