@@ -11,7 +11,7 @@ import org.w3c.dom.*
 
 sealed class Popup<T> {
 	protected abstract fun TagConsumer<*>.render(callback: (T) -> Unit)
-	internal fun renderInto(consumer: TagConsumer<*>, callback: (T) -> Unit) {
+	protected fun renderInto(consumer: TagConsumer<*>, callback: (T) -> Unit) {
 		consumer.render(callback)
 	}
 	

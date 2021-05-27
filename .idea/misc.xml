@@ -101,4 +101,7 @@
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
   </component>
+  <component name="SuppressKotlinCodeStyleNotification">
+    <option name="disableForAll" value="true" />
+  </component>
 </project>

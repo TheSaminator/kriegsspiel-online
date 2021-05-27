@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-	kotlin("js") version "1.4.21"
-	kotlin("plugin.serialization") version "1.4.21"
+	kotlin("js") version "1.5.10"
+	kotlin("plugin.serialization") version "1.5.10"
 }
 
 group = "io.github.thesaminator"
@@ -13,9 +13,9 @@ repositories {
 	maven {
 		url = uri("https://dl.bintray.com/kotlin/kotlinx")
 	}
-	maven {
-		url = uri("https://dl.bintray.com/nwillc/maven")
-	}
+	//maven {
+	//	url = uri("https://dl.bintray.com/nwillc/maven")
+	//}
 }
 
 dependencies {
@@ -23,7 +23,7 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
 	implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.7.2")
 	
-	implementation("com.github.nwillc:ksvg-js:3.0.0")
+	//implementation("com.github.nwillc:ksvg-js:3.0.0")
 }
 
 kotlin {

@@ -101,19 +101,7 @@ suspend fun <T> awaitCallback(block: (callback: (T) -> Unit) -> Unit): T = suspe
 }
 
 // Rendering
-fun <T : Element> HTMLTag.append(svgTag: T, block: T.() -> Unit) = unsafe {
-	val sb = StringBuilder()
-	svgTag.apply(block).render(sb, RenderMode.INLINE)
-	raw(sb.toString())
-}
-
 fun <T : Element> SVGElement.append(svgTag: T, block: T.() -> Unit) {
-	val sb = StringBuilder()
-	svgTag.apply(block).render(sb, RenderMode.INLINE)
-	innerHTML += sb.toString()
-}
-
-fun <T : Element> HTMLElement.append(svgTag: T, block: T.() -> Unit) {
 	val sb = StringBuilder()
 	svgTag.apply(block).render(sb, RenderMode.INLINE)
 	innerHTML += sb.toString()
@@ -131,33 +119,9 @@ fun Container.image(block: IMAGE.() -> Unit) = IMAGE(validation).also {
 }
 
 class IMAGE(validation: Boolean = false) : Element("image", validation) {
-	var x: String?
-		get() = attributes["x"]
-		set(value) {
-			attributes["x"] = value
-		}
-	
-	var y: String?
-		get() = attributes["y"]
-		set(value) {
-			attributes["y"] = value
-		}
-	
-	var width: String?
-		get() = attributes["width"]
-		set(value) {
-			attributes["width"] = value
-		}
-	
-	var height: String?
-		get() = attributes["height"]
-		set(value) {
-			attributes["height"] = value
-		}
-	
-	var href: String?
-		get() = attributes["href"]
-		set(value) {
-			attributes["href"] = value
-		}
+	var x: String? by attributes
+	var y: String? by attributes
+	var width: String? by attributes
+	var height: String? by attributes
+	var href: String? by attributes
 }
