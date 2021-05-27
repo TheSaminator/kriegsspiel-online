@@ -33,9 +33,6 @@ kotlin {
 			distribution {
 				directory = File("$projectDir/publish/")
 			}
-			webpackTask {
-				devtool = ""
-			}
 		}
 	}
 }
