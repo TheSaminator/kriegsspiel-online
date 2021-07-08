@@ -107,7 +107,7 @@ sealed class Popup<T> {
 						val gameName = nameGameInput.value
 						if (gameName.isBlank()) {
 							val hostGameError = document.getElementById(nameGameErrorId).unsafeCast<HTMLSpanElement>()
-							hostGameError.innerHTML = "You must enter a Game Name."
+							hostGameError.innerHTML = "You must enter a player name."
 						} else {
 							callback(gameName)
 						}

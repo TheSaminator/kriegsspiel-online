@@ -12,7 +12,7 @@ sealed class Ability {
 	abstract fun canUse(currentPiece: GamePiece): Boolean
 	abstract suspend fun use(currentPiece: GamePiece)
 	
-	// Same for both battle type
+	// Same for both battle types
 	
 	@Serializable
 	data class Move(val distancePerAction: Double) : Ability() {
@@ -24,11 +24,14 @@ sealed class Ability {
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
+			val moveMult = currentPiece.currentTerrainBlob?.type?.stats?.moveSpeedMult ?: 1.0
+			val moveRange = (distancePerAction * currentPiece.action + DISTANCE_BUFFER) * moveMult
+			
 			val pickReq = PickRequest.PickPosition(
 				PickBoundaryUnitBased(
 					currentPiece.location,
 					currentPiece.pieceRadius,
-					distancePerAction * currentPiece.action + DISTANCE_BUFFER,
+					moveRange,
 					currentPiece.facing,
 					null,
 					ANGLE_BUFFER
@@ -42,7 +45,7 @@ sealed class Ability {
 			val newLocation = pickRes.pos
 			val dLocation = newLocation - currentPiece.location
 			val newFacing = dLocation.angle.asAngle()
-			val newAction = (currentPiece.action - dLocation.magnitude / distancePerAction).coerceAtLeast(0.0)
+			val newAction = (currentPiece.action - (dLocation.magnitude / moveMult) / distancePerAction).coerceAtLeast(0.0)
 			
 			currentPiece.location = newLocation
 			currentPiece.facing = newFacing
@@ -103,8 +106,8 @@ sealed class Ability {
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		// Flanking multiplier is calculated as ((attacker.facingNormal dot target.facingNormal) + flankWeight) / (flankWeight - 1)
-		// For the soft attack weight of 3, the flanking multiplier ranges from 1 at minimum to 2 at maximum.
-		// For the hard attack weight of 9, the flanking multiplier ranges from 1 at minimum to 1.25 at maximum.
+		// For the soft flank weight of 3, the flanking multiplier ranges from 1 at minimum to 2 at maximum.
+		// For the hard flank weight of 9, the flanking multiplier ranges from 1 at minimum to 1.25 at maximum.
 		// Higher flank weight reduces the effect of flanking. Numbers less than or equal to 1 should NEVER be used.
 		
 		private val SOFT_FLANK_WEIGHT get() = 3.0
@@ -115,7 +118,7 @@ sealed class Ability {
 		}
 		
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
@@ -139,14 +142,25 @@ sealed class Ability {
 			
 			val attackFacing = (targetPiece.location - currentPiece.location).angle
 			
-			val dotProduct = cos(attackFacing - targetPiece.facing)
-			val softAttack = softAttackPower * targetSoftness * getFlankingMultiplier(dotProduct, SOFT_FLANK_WEIGHT)
-			val hardAttack = hardAttackPower * targetHardness * getFlankingMultiplier(dotProduct, HARD_FLANK_WEIGHT)
+			val terrainBlob = currentPiece.currentTerrainBlob
+			val terrainStats = terrainBlob?.type?.stats as? TerrainStats.Land
+			val softMult = terrainStats?.softAttackMult ?: 1.0
+			val hardMult = terrainStats?.hardAttackMult ?: 1.0
 			
-			val totalAttack = softAttack + hardAttack
+			val dotProduct = cos(attackFacing - targetPiece.facing)
+			val softAttack = softAttackPower * softMult * targetSoftness * getFlankingMultiplier(dotProduct, SOFT_FLANK_WEIGHT)
+			val hardAttack = hardAttackPower * hardMult * targetHardness * getFlankingMultiplier(dotProduct, HARD_FLANK_WEIGHT)
+			
+			val totalMult = if (terrainStats?.isHill == true) {
+				val hillAngle = (currentPiece.location - terrainBlob.center).angle
+				val hillDot = cos(attackFacing - hillAngle)
+				getFlankingMultiplier(hillDot, 3.0) - 0.5
+			} else 1.0
+			
+			val totalAttack = (softAttack + hardAttack) * totalMult
 			targetPiece.attack(totalAttack)
 			
-			currentPiece.attacked = true
+			currentPiece.hasAttacked = true
 			if (requiresCharge)
 				currentPiece.heavyWeaponCharged = false
 			
@@ -167,7 +181,7 @@ sealed class Ability {
 		val canMoveAfterHealing: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
@@ -193,7 +207,7 @@ sealed class Ability {
 			
 			GameSessionData.currentSession!!.markDirty(targetPiece.id)
 			
-			currentPiece.attacked = true
+			currentPiece.hasAttacked = true
 			
 			if (canMoveAfterHealing)
 				currentPiece.action -= actionConsumed
@@ -217,7 +231,7 @@ sealed class Ability {
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked && !currentPiece.isCloaked && (currentPiece.heavyWeaponCharged || !requiresCharge)
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && !currentPiece.isCloaked && (currentPiece.heavyWeaponCharged || !requiresCharge)
 		}
 		
 		private val SPACE_FLANK_WEIGHT get() = 5.0
@@ -245,10 +259,12 @@ sealed class Ability {
 			val attackFacing = (targetPiece.location - currentPiece.location).angle
 			val dotProduct = cos(attackFacing - targetPiece.facing)
 			
-			val totalAttack = attackPower * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
+			val attackMult = (currentPiece.currentTerrainBlob?.type?.stats as? TerrainStats.Space)?.attackMult ?: 1.0
+			
+			val totalAttack = attackPower * attackMult * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
 			targetPiece.attack(totalAttack)
 			
-			currentPiece.attacked = true
+			currentPiece.hasAttacked = true
 			if (requiresCharge)
 				currentPiece.heavyWeaponCharged = false
 			
@@ -273,7 +289,7 @@ sealed class Ability {
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.attacked && (currentPiece.heavyWeaponCharged || !requiresCharge)
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && (currentPiece.heavyWeaponCharged || !requiresCharge)
 		}
 		
 		private val SPACE_FLANK_WEIGHT get() = 5.0
@@ -298,6 +314,8 @@ sealed class Ability {
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPosition ?: return
 			
+			val attackMult = (currentPiece.currentTerrainBlob?.type?.stats as? TerrainStats.Space)?.attackMult ?: 1.0
+			
 			val piecesInAoe = GameSessionData.currentSession!!.allPieces().filter { (it.location - pickRes.pos).magnitude <= aoeRadius }
 			piecesInAoe.forEach { targetPiece ->
 				targetPiece.type.stats as SpacePieceStats
@@ -305,11 +323,11 @@ sealed class Ability {
 				val attackFacing = (targetPiece.location - currentPiece.location).angle
 				val dotProduct = cos(attackFacing - targetPiece.facing)
 				
-				val totalAttack = attackPower * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
+				val totalAttack = attackPower * attackMult * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
 				targetPiece.attack(totalAttack)
 			}
 			
-			currentPiece.attacked = true
+			currentPiece.hasAttacked = true
 			if (requiresCharge)
 				currentPiece.heavyWeaponCharged = false
 			
@@ -343,6 +361,26 @@ sealed class Ability {
 			currentPiece.action -= actionConsumed
 			
 			currentPiece.isCloaked = false
+			currentPiece.isCloakRevealed = false
+		}
+	}
+	
+	@Serializable
+	data class RevealCloak(val revealRange: Double, val actionConsumed: Double) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return currentPiece.action > actionConsumed && currentPiece.isCloaked
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			currentPiece.action -= actionConsumed
+			
+			currentPiece.isCloaked = false
+			
+			GameSessionData.currentSession!!.allPiecesWithOwner(currentPiece.owner.other).forEach { otherPiece ->
+				val inRange = (currentPiece.location - otherPiece.location).magnitude < revealRange
+				if (inRange && otherPiece.isCloaked)
+					otherPiece.isCloakRevealed = true
+			}
 		}
 	}
 }
@@ -656,7 +694,7 @@ data class SpacePieceStats(
 @Serializable
 enum class BattleType(
 	val displayName: String,
-	val mapColor: String
+	val defaultMapColor: String
 ) {
 	LAND_BATTLE("Land Battle", "#194"),
 	SPACE_BATTLE("Space Battle", "#444");
@@ -926,6 +964,10 @@ enum class PieceType(
 				attackStrength = 50.0,
 				attackActionConsumed = 0.25,
 				canMoveAfterAttacking = false,
+				
+				extraAbilities = mapOf(
+					"Reveal Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
+				)
 			)
 		),
 		BattleFactionSkin.EMPIRE
@@ -1108,7 +1150,8 @@ enum class PieceType(
 						requiresCharge = false,
 						actionConsumed = 0.5,
 						canMoveAfterAttacking = true
-					)
+					),
+					"Reveal Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
 				)
 			)
 		),
@@ -1208,7 +1251,11 @@ enum class PieceType(
 				torpedoStrength = 85.0,
 				torpedoLoadActionConsumed = 0.501,
 				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false
+				canMoveAfterFiringTorpedo = false,
+				
+				extraAbilities = mapOf(
+					"Reveal Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
+				)
 			)
 		),
 		BattleFactionSkin.STAR_FLEET
@@ -1527,8 +1574,9 @@ enum class PieceType(
 	val imageRadius: Double
 		get() = Vec2(imageWidth, imageHeight).magnitude / 2
 	
-	val imageScaling = when (requiredBattleType) {
-		BattleType.LAND_BATTLE -> 0.1
-		BattleType.SPACE_BATTLE -> 0.05
-	}
+	val imageScaling: Double
+		get() = when (requiredBattleType) {
+			BattleType.LAND_BATTLE -> 0.1
+			BattleType.SPACE_BATTLE -> 0.05
+		}
 }

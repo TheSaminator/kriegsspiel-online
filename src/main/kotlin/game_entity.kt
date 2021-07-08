@@ -1,7 +1,7 @@
 import kotlinx.serialization.Serializable
 
 @Serializable
-class GameSessionData(val mapSize: Vec2, val battleType: BattleType, val battleSize: Int) {
+class GameSessionData(val gameMap: GameMap, val battleSize: Int) {
 	private val pieces = mutableSetOf<GamePiece>()
 	
 	fun allPieces() = setOf<GamePiece>() + pieces
@@ -89,17 +89,6 @@ class GameSessionData(val mapSize: Vec2, val battleType: BattleType, val battleS
 	
 	companion object {
 		var currentSession: GameSessionData? = null
-		
-		val LAND_WIDTH_RANGE = 3500.0..4500.0
-		val LAND_HEIGHT_RANGE = 1500.0..2500.0
-		
-		val SPACE_WIDTH_RANGE = 3000.0..5000.0
-		val SPACE_HEIGHT_RANGE = 2000.0..4000.0
-		
-		fun randomSize(battleType: BattleType) = when (battleType) {
-			BattleType.LAND_BATTLE -> Vec2(LAND_WIDTH_RANGE.random(), LAND_HEIGHT_RANGE.random())
-			BattleType.SPACE_BATTLE -> Vec2(SPACE_WIDTH_RANGE.random(), SPACE_HEIGHT_RANGE.random())
-		}
 	}
 }
 
@@ -120,13 +109,16 @@ data class GamePiece(
 	var shieldDepleted = false
 	
 	var action = 1.0
-	var attacked = false
+	var hasAttacked = false
 	
 	var isCloaked = false
+	var isCloakRevealed = false
 	var heavyWeaponCharged = false
 	
 	val canUseShield: Boolean
-		get() = type.stats is SpacePieceStats && !shieldDepleted && !isCloaked
+		get() = type.stats is SpacePieceStats && !shieldDepleted && !isCloaked && !(currentTerrainBlob?.let { blob ->
+			blob.type.stats is TerrainStats.Space && blob.type.stats.forcesShieldsDown
+		} ?: false)
 	
 	fun attack(damage: Double) {
 		if (canUseShield) {
@@ -161,7 +153,21 @@ data class GamePiece(
 	
 	fun doNextTurn() {
 		action = 1.0
-		attacked = false
+		hasAttacked = false
+		
+		currentTerrainBlob?.let { blob ->
+			val takenDamage = blob.type.stats.damagePerTurn
+			if (blob.type.stats is TerrainStats.Space && blob.type.stats.dptIgnoresShields) {
+				health -= takenDamage / type.stats.maxHealth
+				
+				if (health <= 0.0)
+					GameSessionData.currentSession!!.removeById(id)
+				else
+					GameSessionData.currentSession!!.markDirty(id)
+			} else {
+				attack(takenDamage)
+			}
+		}
 		
 		if (type.stats is SpacePieceStats) {
 			if (shieldDepleted && !isCloaked) {
@@ -175,16 +181,22 @@ data class GamePiece(
 		}
 	}
 	
-	val cloakSeeRange: Double
-		get() = 150.0
-	
 	val canBeRendered: Boolean
 		get() = Game.currentSide == owner || canBeRenderedByEnemy
 	
 	val canBeRenderedByEnemy: Boolean
-		get() = !isCloaked || GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).any { otherPiece ->
-			(location - otherPiece.location).magnitude < otherPiece.cloakSeeRange
-		}
+		get() = (!isCloaked || isCloakRevealed) && !isHiddenByTerrain
+	
+	val currentTerrainBlob: TerrainBlob?
+		get() = GameSessionData.currentSession!!.gameMap.terrainBlobs.singleOrNull { (it.center - location).magnitude < it.radius }
+	
+	val isHiddenByTerrain: Boolean
+		get() = currentTerrainBlob?.let { blob ->
+			val hideRange = blob.type.stats.hideEnemyUnitRange
+			hideRange != null && GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).none { enemyPiece ->
+				(enemyPiece.location - location).magnitude < hideRange
+			}
+		} ?: false
 	
 	val visionRange: Double
 		get() = if (type.requiredBattleType == BattleType.SPACE_BATTLE) 1000.0 else 500.0

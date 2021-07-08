@@ -1,7 +1,5 @@
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Suppress("DuplicatedCode")
@@ -29,8 +27,8 @@ object Game {
 			DeployConstants.pointLevels.getValue(it) + " ($it)"
 		}.display()
 		
-		GameSessionData.currentSession = GameSessionData(GameSessionData.randomSize(battleType), battleType, battleSize).also { gsd ->
-			GamePacket.send(GamePacket.MapLoaded(gsd.mapSize, gsd.battleType, battleSize))
+		GameSessionData.currentSession = GameSessionData(GameMap.generateMap(battleType), battleSize).also { gsd ->
+			GamePacket.send(GamePacket.MapLoaded(gsd.gameMap, battleSize))
 			GameField.drawEverything(gsd)
 		}
 		
@@ -73,7 +71,7 @@ object Game {
 				delay(100)
 		}.display()
 		
-		val battleType = GameSessionData.currentSession!!.battleType
+		val battleType = GameSessionData.currentSession!!.gameMap.gameType
 		if (battleType.usesSkins)
 			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
 				it.forBattleType == battleType

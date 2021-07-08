@@ -3,11 +3,10 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 var playerName: String? = null
-lateinit var mainJob: Job
+var mainJob: Job? = null
 
 fun main() {
-	if (::mainJob.isInitialized)
-		mainJob.cancel()
+	mainJob?.cancel()
 	
 	mainJob = MainScope().launch {
 		GamePhase.Deployment.reset()

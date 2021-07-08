@@ -29,7 +29,7 @@ class CIRCLE(validation: Boolean = false) : Region("circle", validation) {
     var cx: String? by AttributeProperty(type = AttributeType.LengthOrPercentage)
 
     /**
-     * The r coordinate of the circle's center.
+     * The y coordinate of the circle's center.
      */
     var cy: String? by AttributeProperty(type = AttributeType.LengthOrPercentage)
 

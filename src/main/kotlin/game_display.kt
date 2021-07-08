@@ -1,5 +1,6 @@
 import SvgPanZoom.SVGPanZoomInstance
 import SvgPanZoom.Sizes
+import com.github.nwillc.ksvg.elements.CIRCLE
 import com.github.nwillc.ksvg.elements.G
 import com.github.nwillc.ksvg.elements.RECT
 import kotlinx.browser.document
@@ -87,13 +88,22 @@ object GameField {
 	
 	private lateinit var gameFieldPanZoom: SVGPanZoomInstance
 	
-	fun drawMap(size: Vec2, type: BattleType) {
+	fun drawMap(map: GameMap) {
 		mapField.clear()
 		
 		mapField.append(RECT()) {
-			fill = type.mapColor
-			width = size.x.toString()
-			height = size.y.toString()
+			fill = map.gameType.defaultMapColor
+			width = map.size.x.toString()
+			height = map.size.y.toString()
+		}
+		
+		map.terrainBlobs.forEach { blob ->
+			mapField.append(CIRCLE()) {
+				fill = blob.type.color
+				cx = blob.center.x.toString()
+				cy = blob.center.y.toString()
+				r = blob.radius.toString()
+			}
 		}
 		
 		if (this::gameFieldPanZoom.isInitialized)
@@ -324,7 +334,7 @@ object GameField {
 	}
 	
 	fun drawEverything(gameSessionData: GameSessionData) {
-		drawMap(gameSessionData.mapSize, gameSessionData.battleType)
+		drawMap(gameSessionData.gameMap)
 		redrawAllPieces(gameSessionData.allPieces())
 	}
 	
@@ -387,7 +397,7 @@ object GameSidebar {
 					}
 					
 					PieceType.values().filter {
-						it.requiredBattleType == GameSessionData.currentSession!!.battleType && it.factionSkin == GamePhase.Deployment.chosenSkin
+						it.requiredBattleType == GameSessionData.currentSession!!.gameMap.gameType && it.factionSkin == GamePhase.Deployment.chosenSkin
 					}.forEach { pieceType ->
 						a(href = "#") {
 							+"${pieceType.displayName} (${pieceType.pointCost})"
@@ -419,7 +429,7 @@ object GameSidebar {
 							classes = setOf("disabled")
 					}
 					
-					val battleType = GameSessionData.currentSession!!.battleType
+					val battleType = GameSessionData.currentSession!!.gameMap.gameType
 					if (battleType.usesSkins)
 						a(href = "#") {
 							+"CHANGE SKIN"
@@ -467,7 +477,7 @@ object GameSidebar {
 		if (currentPoints < pieceType.pointCost)
 			return
 		
-		val mapSize = GameSessionData.currentSession!!.mapSize
+		val mapSize = GameSessionData.currentSession!!.gameMap.size
 		val side = Game.currentSide!!
 		
 		val width = DeployConstants.DEPLOY_ZONE_WIDTH

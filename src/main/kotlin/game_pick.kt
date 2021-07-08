@@ -163,7 +163,14 @@ object PickHandler {
 			})
 			return false
 		
-		if (pos.x !in 0.0..GameSessionData.currentSession!!.mapSize.x || pos.y !in 0.0..GameSessionData.currentSession!!.mapSize.y)
+		if (pos.x !in 0.0..GameSessionData.currentSession!!.gameMap.size.x || pos.y !in 0.0..GameSessionData.currentSession!!.gameMap.size.y)
+			return false
+		
+		if (
+			GameSessionData.currentSession!!.gameMap.terrainBlobs.any {
+				it.type.stats is TerrainStats.Land && it.type.stats.isImpassible && (it.center - pos).magnitude < it.radius
+			}
+		)
 			return false
 		
 		return true

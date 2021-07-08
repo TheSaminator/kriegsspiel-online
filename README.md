@@ -80,3 +80,4 @@ using beam arrays to fire in a wide range. K.D.F. ships can cloak, or hide thems
 * [x] ~~Supply system~~
     * After playtesting, I have found that this makes the game less fun
 * [x] More ships for space warfare
+* [x] Different terrain on map
