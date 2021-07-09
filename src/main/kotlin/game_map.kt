@@ -14,7 +14,7 @@ sealed class TerrainStats {
 		val softAttackMult: Double,
 		val hardAttackMult: Double,
 		val isImpassible: Boolean,
-		val isHill: Boolean
+		val isHill: Boolean // Hills have special behavior when units move or attack
 	) : TerrainStats()
 	
 	@Serializable
@@ -46,7 +46,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 	FOREST(
 		"#062",
 		TerrainStats.Land(
-			hideEnemyUnitRange = 80.0,
+			hideEnemyUnitRange = 160.0,
 			damagePerTurn = 0.0,
 			moveSpeedMult = 0.75,
 			softAttackMult = 0.9,
@@ -72,7 +72,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
 			damagePerTurn = 0.0,
-			moveSpeedMult = 0.65,
+			moveSpeedMult = 1.0,
 			softAttackMult = 1.0,
 			hardAttackMult = 1.0,
 			isImpassible = false,
@@ -95,7 +95,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 	GAS_CLOUD(
 		"#999",
 		TerrainStats.Space(
-			hideEnemyUnitRange = 120.0,
+			hideEnemyUnitRange = 240.0,
 			damagePerTurn = 0.0,
 			moveSpeedMult = 0.8,
 			dptIgnoresShields = false,
@@ -106,7 +106,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 	ELECTROPLASMA_CLOUD(
 		"#86a",
 		TerrainStats.Space(
-			hideEnemyUnitRange = 100.0,
+			hideEnemyUnitRange = 200.0,
 			damagePerTurn = 0.0,
 			moveSpeedMult = 0.75,
 			dptIgnoresShields = false,
@@ -117,7 +117,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 	RADIOPLASMA_CLOUD(
 		"#6a8",
 		TerrainStats.Space(
-			hideEnemyUnitRange = 80.0,
+			hideEnemyUnitRange = 160.0,
 			damagePerTurn = 40.0,
 			moveSpeedMult = 0.7,
 			dptIgnoresShields = false,
@@ -133,16 +133,17 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 			is TerrainStats.Space -> BattleType.SPACE_BATTLE
 		}
 	
+	// They're the same right now, but they used to be different
 	val minRadius: Double
 		get() = when (requiredBattleType) {
-			BattleType.LAND_BATTLE -> 100.0
-			BattleType.SPACE_BATTLE -> 150.0
+			BattleType.LAND_BATTLE -> 200.0
+			BattleType.SPACE_BATTLE -> 200.0
 		}
 	
 	val maxRadius: Double
 		get() = when (requiredBattleType) {
-			BattleType.LAND_BATTLE -> 300.0
-			BattleType.SPACE_BATTLE -> 450.0
+			BattleType.LAND_BATTLE -> 600.0
+			BattleType.SPACE_BATTLE -> 600.0
 		}
 	
 	val radiusRange: ClosedFloatingPointRange<Double>
@@ -169,11 +170,12 @@ data class GameMap(
 	val terrainBlobs: Set<TerrainBlob>
 ) {
 	companion object {
-		val LAND_WIDTH_RANGE = 3500.0..4500.0
-		val LAND_HEIGHT_RANGE = 1500.0..2500.0
+		// Again, they're the same right now, but they used to be different
+		val LAND_WIDTH_RANGE = 3500.0..5500.0
+		val LAND_HEIGHT_RANGE = 2500.0..4500.0
 		
-		val SPACE_WIDTH_RANGE = 3000.0..5000.0
-		val SPACE_HEIGHT_RANGE = 2000.0..4000.0
+		val SPACE_WIDTH_RANGE = 3500.0..5500.0
+		val SPACE_HEIGHT_RANGE = 2500.0..4500.0
 		
 		fun randomSize(battleType: BattleType) = when (battleType) {
 			BattleType.LAND_BATTLE -> Vec2(LAND_WIDTH_RANGE.random(), LAND_HEIGHT_RANGE.random())

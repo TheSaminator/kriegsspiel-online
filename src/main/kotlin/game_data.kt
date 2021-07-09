@@ -2,6 +2,7 @@ import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.sin
 
 @Suppress("DuplicatedCode")
 @Serializable
@@ -24,7 +25,22 @@ sealed class Ability {
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			val moveMult = currentPiece.currentTerrainBlob?.type?.stats?.moveSpeedMult ?: 1.0
+			val terrainBlob = currentPiece.currentTerrainBlob
+			val terrainStats = terrainBlob?.type?.stats
+			
+			// Hills change speed multiplier depending on the direction of the slope
+			// When a unit is facing parallel to (towards or away from) the peak, then the speed mult is 0.6
+			// When a unit is facing perpendicular to the peak, then the speed multiplier is 0.9
+			val hillMult = if (terrainStats is TerrainStats.Land && terrainStats.isHill) {
+				val hillAngle = (currentPiece.location - terrainBlob.center).angle
+				val hillCross = sin(currentPiece.facing - hillAngle)
+				val hillX2 = hillCross * hillCross
+				(hillX2 * 0.3) + 0.6
+			} else 1.0
+			
+			val terrainMult = currentPiece.currentTerrainBlob?.type?.stats?.moveSpeedMult ?: 1.0
+			
+			val moveMult = hillMult * terrainMult
 			val moveRange = (distancePerAction * currentPiece.action + DISTANCE_BUFFER) * moveMult
 			
 			val pickReq = PickRequest.PickPosition(
@@ -151,9 +167,15 @@ sealed class Ability {
 			val softAttack = softAttackPower * softMult * targetSoftness * getFlankingMultiplier(dotProduct, SOFT_FLANK_WEIGHT)
 			val hardAttack = hardAttackPower * hardMult * targetHardness * getFlankingMultiplier(dotProduct, HARD_FLANK_WEIGHT)
 			
+			// Hills change attack power depending on uphill or downhill
+			// Attacking uphill has a damage multiplier of 0.5
+			// Attacking downhill has a damage mult of 1.5
 			val totalMult = if (terrainStats?.isHill == true) {
 				val hillAngle = (currentPiece.location - terrainBlob.center).angle
 				val hillDot = cos(attackFacing - hillAngle)
+				
+				// A flanking weight of 3.0 results in a range of 1.0 to 2.0
+				// Subtract 0.5 to get a range of 0.5 to 1.5
 				getFlankingMultiplier(hillDot, 3.0) - 0.5
 			} else 1.0
 			
@@ -841,18 +863,18 @@ enum class PieceType(
 	),
 	LAND_TANKS(
 		"Light Tanks",
-		80,
+		160,
 		LandPieceStats(
 			maxHealth = 2500.0,
 			hardness = 0.85,
 			abilities = standardLandPieceAbilities(
-				moveSpeedPerRound = 900.0,
+				moveSpeedPerRound = 700.0,
 				turnSpeedPerRound = 4.5 * PI,
 				
-				maxAttackAngle = PI / 4,
+				maxAttackAngle = PI / 10,
 				minAttackDistance = 0.0,
 				maxAttackDistance = 400.0,
-				softAttack = 800.0,
+				softAttack = 600.0,
 				hardAttack = 400.0,
 				attackActionConsumed = 0.125,
 				canMoveAfterAttacking = true
@@ -862,19 +884,19 @@ enum class PieceType(
 	),
 	LAND_HEAVY_TANKS(
 		"Heavy Tanks",
-		120,
+		250,
 		LandPieceStats(
 			maxHealth = 3500.0,
 			hardness = 0.95,
 			abilities = standardLandPieceAbilities(
-				moveSpeedPerRound = 600.0,
+				moveSpeedPerRound = 500.0,
 				turnSpeedPerRound = 3 * PI,
 				
-				maxAttackAngle = PI / 4,
+				maxAttackAngle = PI / 10,
 				minAttackDistance = 0.0,
 				maxAttackDistance = 400.0,
-				softAttack = 900.0,
-				hardAttack = 700.0,
+				softAttack = 700.0,
+				hardAttack = 500.0,
 				attackActionConsumed = 0.25,
 				canMoveAfterAttacking = true
 			)
@@ -894,8 +916,8 @@ enum class PieceType(
 				maxAttackAngle = PI / 6,
 				minAttackDistance = 400.0,
 				maxAttackDistance = 1200.0,
-				softAttack = 1500.0,
-				hardAttack = 500.0,
+				softAttack = 1200.0,
+				hardAttack = 600.0,
 				attackActionConsumed = 0.5,
 				canMoveAfterAttacking = false
 			)
@@ -915,8 +937,8 @@ enum class PieceType(
 				maxAttackAngle = PI / 4,
 				minAttackDistance = 500.0,
 				maxAttackDistance = 1500.0,
-				softAttack = 2000.0,
-				hardAttack = 300.0,
+				softAttack = 1400.0,
+				hardAttack = 700.0,
 				attackActionConsumed = 0.25,
 				canMoveAfterAttacking = false
 			)
@@ -936,8 +958,8 @@ enum class PieceType(
 				maxAttackAngle = PI / 6,
 				minAttackDistance = 0.0,
 				maxAttackDistance = 500.0,
-				softAttack = 500.0,
-				hardAttack = 1500.0,
+				softAttack = 400.0,
+				hardAttack = 1600.0,
 				attackActionConsumed = 0.375,
 				canMoveAfterAttacking = false
 			)
