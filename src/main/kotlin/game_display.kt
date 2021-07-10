@@ -249,7 +249,19 @@ object GameField {
 		}
 	}
 	
-	fun drawPiece(piece: GamePiece) {
+	private fun updatePieceEvents() {
+		val pieceElements = document.getElementsByClassName("game-piece")
+		
+		repeat(pieceElements.length) { i ->
+			val pieceElement = pieceElements[i].unsafeCast<SVGGElement>()
+			
+			pieceElement.onclick = { _ ->
+				GameSidebar.select(pieceElement.id)
+			}
+		}
+	}
+	
+	fun drawPiece(piece: GamePiece, updateEvents: Boolean) {
 		document.getElementById(piece.id)?.remove()
 		
 		if (!piece.canBeRendered)
@@ -298,15 +310,9 @@ object GameField {
 			}
 		}
 		
-		window.requestAnimationFrame {
-			val pieceElements = document.getElementsByClassName("game-piece")
-			
-			repeat(pieceElements.length) { i ->
-				val pieceElement = pieceElements[i].unsafeCast<SVGGElement>()
-				
-				pieceElement.onclick = { _ ->
-					GameSidebar.select(pieceElement.id)
-				}
+		if (updateEvents) {
+			window.requestAnimationFrame {
+				updatePieceEvents()
 			}
 		}
 	}
@@ -315,7 +321,11 @@ object GameField {
 		gamePieces.clear()
 		
 		pieces.forEach { piece ->
-			drawPiece(piece)
+			drawPiece(piece, false)
+		}
+		
+		window.requestAnimationFrame {
+			updatePieceEvents()
 		}
 	}
 	

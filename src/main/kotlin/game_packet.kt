@@ -104,7 +104,7 @@ sealed class GamePacket {
 								throw IllegalStateException("Local game must not receive piece notification!")
 							
 							GameSessionData.currentSession!!.addOrReplace(packet.piece)
-							GameField.drawPiece(packet.piece)
+							GameField.drawPiece(packet.piece, true)
 						}
 						is PieceDeleted -> {
 							if (Game.currentSide != GameServerSide.GUEST)
