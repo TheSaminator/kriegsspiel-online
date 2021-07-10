@@ -87,7 +87,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 			hideEnemyUnitRange = null,
 			damagePerTurn = 30.0,
 			moveSpeedMult = 0.85,
-			dptIgnoresShields = true,
+			dptIgnoresShields = false,
 			forcesShieldsDown = false,
 			attackMult = 1.0
 		)
@@ -118,9 +118,9 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		"#6a8",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 160.0,
-			damagePerTurn = 40.0,
+			damagePerTurn = 20.0,
 			moveSpeedMult = 0.7,
-			dptIgnoresShields = false,
+			dptIgnoresShields = true,
 			forcesShieldsDown = false,
 			attackMult = 1.0
 		)
@@ -133,27 +133,22 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 			is TerrainStats.Space -> BattleType.SPACE_BATTLE
 		}
 	
-	// They're the same right now, but they used to be different
 	val minRadius: Double
 		get() = when (requiredBattleType) {
 			BattleType.LAND_BATTLE -> 200.0
-			BattleType.SPACE_BATTLE -> 200.0
+			BattleType.SPACE_BATTLE -> 160.0
 		}
 	
 	val maxRadius: Double
 		get() = when (requiredBattleType) {
-			BattleType.LAND_BATTLE -> 600.0
-			BattleType.SPACE_BATTLE -> 600.0
+			BattleType.LAND_BATTLE -> 690.0
+			BattleType.SPACE_BATTLE -> 420.0
 		}
 	
 	val radiusRange: ClosedFloatingPointRange<Double>
 		get() = minRadius..maxRadius
 	
 	fun getRandomRadius(): Double = radiusRange.random()
-	
-	companion object {
-		fun getRandom(battleType: BattleType) = values().filter { it.requiredBattleType == battleType }.random()
-	}
 }
 
 @Serializable
@@ -170,30 +165,38 @@ data class GameMap(
 	val terrainBlobs: Set<TerrainBlob>
 ) {
 	companion object {
-		// Again, they're the same right now, but they used to be different
 		val LAND_WIDTH_RANGE = 3500.0..5500.0
 		val LAND_HEIGHT_RANGE = 2500.0..4500.0
 		
-		val SPACE_WIDTH_RANGE = 3500.0..5500.0
-		val SPACE_HEIGHT_RANGE = 2500.0..4500.0
+		val SPACE_WIDTH_RANGE = 3000.0..5000.0
+		val SPACE_HEIGHT_RANGE = 3000.0..5000.0
 		
 		fun randomSize(battleType: BattleType) = when (battleType) {
 			BattleType.LAND_BATTLE -> Vec2(LAND_WIDTH_RANGE.random(), LAND_HEIGHT_RANGE.random())
 			BattleType.SPACE_BATTLE -> Vec2(SPACE_WIDTH_RANGE.random(), SPACE_HEIGHT_RANGE.random())
 		}
 		
+		val LAND_MIN_DISTANCE_BETWEEN_BLOBS = 100.0
+		val SPACE_MIN_DISTANCE_BETWEEN_BLOBS = 200.0
+		
 		val MAX_TERRAIN_BLOBS = 20
 		
 		fun generateMap(battleType: BattleType): GameMap {
+			val minDistanceBetweenBlobs = when (battleType) {
+				BattleType.LAND_BATTLE -> LAND_MIN_DISTANCE_BETWEEN_BLOBS
+				BattleType.SPACE_BATTLE -> SPACE_MIN_DISTANCE_BETWEEN_BLOBS
+			}
+			
 			val size = randomSize(battleType)
 			
 			val blobs = mutableSetOf<TerrainBlob>()
+			val blobTypes = TerrainType.values().filter { it.requiredBattleType == battleType }
 			repeat(MAX_TERRAIN_BLOBS) { _ ->
-				val type = TerrainType.getRandom(battleType)
+				val type = blobTypes.random()
 				val radius = type.getRandomRadius()
 				val center = Vec2((radius..(size.x - radius)).random(), (radius..(size.y - radius)).random())
 				
-				if (blobs.none { (it.center - center).magnitude < (it.radius + radius) }) {
+				if (blobs.none { (it.center - center).magnitude < (it.radius + radius + minDistanceBetweenBlobs) }) {
 					blobs.add(TerrainBlob(type, center, radius))
 				}
 			}
