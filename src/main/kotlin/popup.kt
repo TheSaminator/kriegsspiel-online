@@ -153,7 +153,7 @@ sealed class Popup<T> {
 			val joinGameErrorId = "join-game-error"
 			
 			p {
-				+"To join a game as ${playerName!!}, please select the game ID and host name from below:"
+				+"To join a game as ${playerName!!}, please select the game ID from below:"
 				
 				select {
 					id = joinGameId

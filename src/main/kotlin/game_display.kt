@@ -111,7 +111,7 @@ object GameField {
 		
 		gameFieldPanZoom = svgPanZoom("#game-field", configure {
 			beforePan = { _, newPan ->
-				val sizes = js("this").getSizes().unsafeCast<Sizes>()
+				val sizes = js("this").unsafeCast<SVGPanZoomInstance>().getSizes()
 				
 				val leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + (sizes.width / 2)
 				val rightLimit = (sizes.width / 2) - (sizes.viewBox.x * sizes.realZoom)
