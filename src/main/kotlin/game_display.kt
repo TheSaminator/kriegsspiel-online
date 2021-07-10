@@ -164,16 +164,6 @@ object GameField {
 				
 				"M $x0 $y0 L $x1 $y0 L $x1 $y1 L $x0 $y1 Z"
 			}
-			is PickBoundaryCircle -> {
-				val r = bounds.radius
-				
-				val x0 = bounds.center.x
-				val x1 = bounds.center.x + r
-				val y0 = bounds.center.y - r
-				val y1 = bounds.center.y
-				
-				"M $x0 $y0 A $r $r 0 0 1 $x1 $y1 A $r $r 0 1 1 $x0 $y0 Z"
-			}
 			is PickBoundaryUnitBased -> {
 				if (bounds.minAngleDiff == null) {
 					if (bounds.maxAngleDiff == null) {

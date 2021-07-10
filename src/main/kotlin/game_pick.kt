@@ -33,16 +33,6 @@ data class PickBoundaryRectangle(
 }
 
 @Serializable
-data class PickBoundaryCircle(
-	val center: Vec2,
-	val radius: Double
-) : PickBoundary() {
-	override fun isInBoundary(pos: Vec2): Boolean {
-		return (pos - center).magnitude < radius
-	}
-}
-
-@Serializable
 data class PickBoundaryUnitBased(
 	val center: Vec2,
 	val minRadius: Double?,
