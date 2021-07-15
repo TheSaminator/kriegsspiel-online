@@ -81,3 +81,8 @@ using beam arrays to fire in a wide range. K.D.F. ships can cloak, or hide thems
     * After playtesting, I have found that this makes the game less fun
 * [x] More ships for space warfare
 * [x] Different terrain on map
+* [ ] Various quality-of-life improvements
+    * [ ] In-game encyclopedia of unit stats
+    * [ ] Undo button for movement actions
+    * [ ] "Are You Sure" popup for "Done Deploying" button
+    * [ ] Log of attacks with damage displayed, and a Post-Mortem after the game
