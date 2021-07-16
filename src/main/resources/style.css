@@ -341,6 +341,7 @@ input[type=submit]:disabled {
 
 table {
 	table-layout: fixed;
+	width: 30em;
 }
 
 td, th {

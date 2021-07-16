@@ -84,7 +84,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 					+"Hides pieces from the enemy outside range"
 				}
 				td {
-					+(stats.hideEnemyUnitRange?.toString() ?: "Doesn't hide pieces")
+					+(stats.hideEnemyUnitRange?.let { "$it lengths" } ?: "Doesn't hide pieces")
 				}
 			}
 			tr {
@@ -92,7 +92,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 					+"Pieces ending their turns in this terrain receive damage"
 				}
 				td {
-					+stats.damagePerTurn.toString()
+					+(stats.damagePerTurn.toString() + " HP")
 				}
 			}
 			tr {
@@ -134,7 +134,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 					+"Hides pieces from the enemy outside range"
 				}
 				td {
-					+(stats.hideEnemyUnitRange?.toString() ?: "Doesn't hide pieces")
+					+(stats.hideEnemyUnitRange?.let { "$it lengths" } ?: "Doesn't hide pieces")
 				}
 			}
 			tr {
@@ -142,7 +142,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 					+"Pieces ending their turns in this terrain receive damage"
 				}
 				td {
-					+stats.damagePerTurn.toString()
+					+(stats.damagePerTurn.toString() + " HP")
 				}
 			}
 			tr {
