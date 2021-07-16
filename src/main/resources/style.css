@@ -339,6 +339,10 @@ input[type=submit]:disabled {
 	transform: translate(-50%, -50%);
 }
 
+table {
+	table-layout: fixed;
+}
+
 td, th {
 	border: 0.1em solid #9ab;
 	margin: 0.3em;

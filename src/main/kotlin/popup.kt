@@ -485,7 +485,7 @@ sealed class Popup<T> {
 			div(classes = "button-set col") {
 				TerrainType.values().filter { it.requiredBattleType == type }.forEach { type ->
 					a(href = "#") {
-						+type.displayName
+						+type.displayName.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 						onClickFunction = { e ->
 							e.preventDefault()
 							
