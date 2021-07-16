@@ -18,8 +18,8 @@ sealed class Player(val side: GameServerSide) {
 					id = newGamePieceId(),
 					type = pieceType,
 					owner = side,
-					location = pos,
-					facing = facing
+					initialLocation = pos,
+					initialFacing = facing
 				)
 			)
 		}

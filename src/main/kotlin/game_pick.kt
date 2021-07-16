@@ -4,6 +4,7 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.clear
 import kotlinx.serialization.Serializable
+import org.w3c.dom.HTMLParagraphElement
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.svg.SVGCircleElement
@@ -103,6 +104,10 @@ object PickHandler {
 		document.getElementById("game-picker").unsafeCast<SVGGElement>()
 	}
 	
+	private val helpText by lazy {
+		document.getElementById("help-text").unsafeCast<HTMLParagraphElement>()
+	}
+	
 	private fun renderAnglePathD(angleReq: PickRequest.PickAngle, toAngle: Double, toPos: Vec2): String {
 		val fromNormal = angleReq.fromAngle.asAngle()
 		val begin = Vec2.polar(angleReq.displayArcRadius, fromNormal) + angleReq.center
@@ -181,6 +186,7 @@ object PickHandler {
 	
 	fun cancelRequest() {
 		isPicking = false
+		helpText.innerHTML = ""
 		
 		gamePick.clear()
 		GameField.drawPickBoundary(null)
@@ -188,6 +194,7 @@ object PickHandler {
 	
 	private fun beginRequest(pickRequest: PickRequest, responder: (PickResponse) -> Unit) {
 		isPicking = true
+		helpText.innerHTML = "Press the Escape key to cancel"
 		
 		val topListeners = TempEvents(window)
 		

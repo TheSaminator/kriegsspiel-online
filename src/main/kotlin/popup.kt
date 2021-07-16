@@ -48,15 +48,15 @@ sealed class Popup<T> {
 		}
 	}
 	
-	object MainMenu : Popup<GameServerSide>() {
-		override fun TagConsumer<*>.render(callback: (GameServerSide) -> Unit) {
+	object MainMenu : Popup<MainMenuAction>() {
+		override fun TagConsumer<*>.render(callback: (MainMenuAction) -> Unit) {
 			div(classes = "button-set col") {
 				a(href = "#") {
 					+"Host Game"
 					onClickFunction = { e ->
 						e.preventDefault()
 						
-						callback(GameServerSide.HOST)
+						callback(MainMenuAction.Play(GameServerSide.HOST))
 					}
 				}
 				
@@ -65,7 +65,16 @@ sealed class Popup<T> {
 					onClickFunction = { e ->
 						e.preventDefault()
 						
-						callback(GameServerSide.GUEST)
+						callback(MainMenuAction.Play(GameServerSide.GUEST))
+					}
+				}
+				
+				a(href = "#") {
+					+"View Kriegspedia"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(MainMenuAction.ViewKriegspedia)
 					}
 				}
 			}
@@ -349,6 +358,184 @@ sealed class Popup<T> {
 					style = "text-align: center"
 				
 				+message
+			}
+		}
+	}
+	
+	object KriegspediaStart : Popup<BattleType?>() {
+		override fun TagConsumer<*>.render(callback: (BattleType?) -> Unit) {
+			p {
+				style = "text-align: center"
+				
+				+"Kriegspedia - Start"
+			}
+			
+			div(classes = "button-set col") {
+				BattleType.values().forEach { type ->
+					a(href = "#") {
+						+type.displayName
+						onClickFunction = { e ->
+							e.preventDefault()
+							
+							callback(type)
+						}
+					}
+				}
+				
+				a(href = "#") {
+					+"Return to Main Menu"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(null)
+					}
+				}
+			}
+		}
+	}
+	
+	class KriegspediaIndex(val type: BattleType) : Popup<KriegspediaSection?>() {
+		override fun TagConsumer<*>.render(callback: (KriegspediaSection?) -> Unit) {
+			p {
+				style = "text-align: center"
+				
+				+"${type.displayName} - Index"
+			}
+			
+			div(classes = "button-set col") {
+				a(href = "#") {
+					+"Mechanics"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(KriegspediaSection.MECHANICS)
+					}
+				}
+				
+				a(href = "#") {
+					+"Pieces"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(KriegspediaSection.PIECES)
+					}
+				}
+				
+				a(href = "#") {
+					+"Terrains"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(KriegspediaSection.TERRAINS)
+					}
+				}
+				
+				a(href = "#") {
+					+"Back"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(null)
+					}
+				}
+			}
+		}
+	}
+	
+	class KriegspediaPieceList(val type: BattleType) : Popup<PieceType?>() {
+		override fun TagConsumer<*>.render(callback: (PieceType?) -> Unit) {
+			p {
+				style = "text-align: center"
+				
+				+"${type.displayName} - Pieces"
+			}
+			
+			div(classes = "button-set col") {
+				PieceType.values().filter { it.requiredBattleType == type }.forEach { type ->
+					a(href = "#") {
+						+type.displayName
+						onClickFunction = { e ->
+							e.preventDefault()
+							
+							callback(type)
+						}
+					}
+				}
+				
+				a(href = "#") {
+					+"Return to Index"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(null)
+					}
+				}
+			}
+		}
+	}
+	
+	class KriegspediaTerrainList(val type: BattleType) : Popup<TerrainType?>() {
+		override fun TagConsumer<*>.render(callback: (TerrainType?) -> Unit) {
+			p {
+				style = "text-align: center"
+				
+				+"${type.displayName} - Terrains"
+			}
+			
+			div(classes = "button-set col") {
+				TerrainType.values().filter { it.requiredBattleType == type }.forEach { type ->
+					a(href = "#") {
+						+type.displayName
+						onClickFunction = { e ->
+							e.preventDefault()
+							
+							callback(type)
+						}
+					}
+				}
+				
+				a(href = "#") {
+					+"Return to Index"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(null)
+					}
+				}
+			}
+		}
+	}
+	
+	class KriegspediaExplanation(val buildExpo: P.() -> Unit) : Popup<Unit>() {
+		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
+			p { buildExpo() }
+			
+			div(classes = "button-set row") {
+				a(href = "#") {
+					+"Back"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(Unit)
+					}
+				}
+			}
+		}
+	}
+	
+	class KriegspediaDataTable(val buildTable: TABLE.() -> Unit) : Popup<Unit>() {
+		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
+			table { buildTable() }
+			
+			div(classes = "button-set row") {
+				a(href = "#") {
+					+"Back"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(Unit)
+					}
+				}
 			}
 		}
 	}

@@ -51,9 +51,7 @@ object WebRTCSignalling {
 					val errorMessage = packet.message.unsafeCast<String>()
 					
 					GlobalScope.launch {
-						Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
-						
-						main()
+						Popup.UncloseableMessage("Connection error: $errorMessage", true).display()
 					}
 				}
 			}

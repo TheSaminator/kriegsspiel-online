@@ -100,15 +100,57 @@ data class GamePiece(
 	val id: String,
 	val type: PieceType,
 	val owner: GameServerSide,
-	var location: Vec2,
-	var facing: Double
+	private val initialLocation: Vec2,
+	private val initialFacing: Double
 ) {
+	val canUndoMove: Boolean
+		get() = (prevLocation != location || prevFacing != facing) && prevAction != action
+	
+	var prevLocation: Vec2 = initialLocation
+		private set
+	
+	var location: Vec2 = initialLocation
+		set(value) {
+			prevLocation = field
+			field = value
+		}
+	
+	var prevFacing: Double = initialFacing
+		private set
+	
+	var facing: Double = initialFacing
+		set(value) {
+			prevFacing = field
+			field = value
+		}
+	
+	var prevAction = 1.0
+		private set
+	
+	var action = 1.0
+		set(value) {
+			prevAction = field
+			field = value
+		}
+	
+	fun undoMove() {
+		val (newLocation, newFacing, newAction) = Triple(prevLocation, prevFacing, prevAction)
+		location = newLocation
+		facing = newFacing
+		action = newAction
+	}
+	
+	fun lockUndo() {
+		prevLocation = location
+		prevFacing = facing
+		prevAction = action
+	}
+	
 	var health = 1.0
 	
 	var shield = 1.0
 	var shieldDepleted = false
 	
-	var action = 1.0
 	var hasAttacked = false
 	
 	var isCloaked = false
@@ -120,8 +162,8 @@ data class GamePiece(
 			blob.type.stats is TerrainStats.Space && blob.type.stats.forcesShieldsDown
 		} ?: false)
 	
-	fun attack(damage: Double) {
-		if (canUseShield) {
+	fun attack(damage: Double, source: DamageSource) {
+		if (canUseShield && !source.ignoresShields) {
 			val stats = type.stats as SpacePieceStats
 			
 			val dShield = damage / stats.maxShield
@@ -149,6 +191,8 @@ data class GamePiece(
 			else
 				GameSessionData.currentSession!!.markDirty(id)
 		}
+		
+		ChatBox.notifyAttack(source, this, damage)
 	}
 	
 	fun doNextTurn() {
@@ -157,16 +201,7 @@ data class GamePiece(
 		
 		currentTerrainBlob?.let { blob ->
 			val takenDamage = blob.type.stats.damagePerTurn
-			if (blob.type.stats is TerrainStats.Space && blob.type.stats.dptIgnoresShields) {
-				health -= takenDamage / type.stats.maxHealth
-				
-				if (health <= 0.0)
-					GameSessionData.currentSession!!.removeById(id)
-				else
-					GameSessionData.currentSession!!.markDirty(id)
-			} else {
-				attack(takenDamage)
-			}
+			attack(takenDamage, DamageSource.Terrain(blob.type))
 		}
 		
 		if (type.stats is SpacePieceStats) {

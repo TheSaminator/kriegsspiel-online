@@ -1,5 +1,4 @@
 import SvgPanZoom.SVGPanZoomInstance
-import SvgPanZoom.Sizes
 import com.github.nwillc.ksvg.elements.CIRCLE
 import com.github.nwillc.ksvg.elements.G
 import com.github.nwillc.ksvg.elements.RECT
@@ -14,6 +13,7 @@ import kotlinx.html.*
 import kotlinx.html.dom.append
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.p
+import kotlinx.serialization.Serializable
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
@@ -35,7 +35,7 @@ object ChatBox {
 			input.value = ""
 			
 			if (message.isNotBlank()) {
-				addMessage("You", message)
+				addChatMessage("You", message)
 				GamePacket.send(GamePacket.ChatMessage(message))
 			}
 			
@@ -59,11 +59,64 @@ object ChatBox {
 		entry.removeEventListener("submit", sendMessageListener)
 	}
 	
-	fun addMessage(sender: String, message: String) {
+	fun addChatMessage(sender: String, message: String) {
 		history.append {
 			p(classes = "chat-message") {
-				strong { +"$sender: " }
+				strong { +"<$sender> " }
 				+message
+			}
+		}.last().scrollIntoView()
+	}
+	
+	fun notifyAttack(source: DamageSource, target: GamePiece, amount: Double) {
+		if (Game.currentSide == GameServerSide.HOST)
+			GamePacket.send(GamePacket.AttackMessage(source, target, amount))
+		
+		if (!target.canBeIdentified)
+			return
+		
+		val amountWritten = amount.toTruncatedString(1) + " damage "
+		
+		val isYours = target.owner == Game.currentSide!!
+		val owner = if (isYours) "Your " else "Opponent's "
+		val verb = if (target.health <= 0.0) " was killed by " else " took "
+		val ignoresShields = if (source.ignoresShields) ", ignoring shields" else ""
+		
+		val message = "$owner${target.type.displayName}$verb$amountWritten${source.toPrepositionalPhrase()}$ignoresShields"
+		
+		history.append {
+			p(classes = "chat-message") {
+				+message
+			}
+		}.last().scrollIntoView()
+	}
+}
+
+@Serializable
+sealed class DamageSource {
+	abstract val ignoresShields: Boolean
+	
+	@Serializable
+	data class Piece(val piece: GamePiece) : DamageSource() {
+		override val ignoresShields: Boolean
+			get() = false
+	}
+	
+	@Serializable
+	data class Terrain(val terrainType: TerrainType)  : DamageSource() {
+		override val ignoresShields: Boolean
+			get() = (terrainType.stats as? TerrainStats.Space)?.dptIgnoresShields == true
+	}
+	
+	fun toPrepositionalPhrase(): String {
+		return when (this) {
+			is Piece -> {
+				val isYours = piece.owner == Game.currentSide!!
+				val owner = if (isYours) "your" else "opponent's"
+				"from $owner ${piece.type.displayName}"
+			}
+			is Terrain -> {
+				"in ${terrainType.displayName} terrain"
 			}
 		}
 	}
@@ -459,12 +512,24 @@ object GameSidebar {
 							onClickFunction = { e ->
 								e.preventDefault()
 								
-								Player.currentPlayer!!.finishDeploying()
-								
-								if (GamePhase.Deployment.bothAreDone)
-									updateSidebar()
-								else
-									deployMenu()
+								GlobalScope.launch {
+									val popup = Popup.YesNoDialogue("Yes", "No") {
+										+"Are you sure you want to finish deploying? "
+										if (currentPoints > 0)
+											+"You won't be able to use your $currentPoints remaining points after the deployment phase!"
+										else
+											+"You won't be able to change your deployment after you confirm it!"
+									}
+									
+									if (popup.display()) {
+										Player.currentPlayer!!.finishDeploying()
+										
+										if (GamePhase.Deployment.bothAreDone)
+											updateSidebar()
+										else
+											deployMenu()
+									}
+								}
 							}
 						else
 							classes = setOf("disabled")

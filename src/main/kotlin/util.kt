@@ -23,6 +23,17 @@ infix fun Double.isGreaterThan(other: Double) = (this - other) >= EPSILON
 infix fun Double.isLessThanOrEqualTo(other: Double) = (this - other) < EPSILON
 infix fun Double.isGreaterThanOrEqualTo(other: Double) = (this - other) > -EPSILON
 
+fun Double.toTruncatedString(maxFractionalDigits: Int): String {
+	val parts = toString().split('.')
+	if (parts.size < 2)
+		return parts[0]
+	
+	val (whole, frac) = parts
+	
+	val clippedFrac = frac.substring(0, maxFractionalDigits.coerceAtMost(frac.length))
+	return "$whole.$clippedFrac"
+}
+
 fun ClosedFloatingPointRange<Double>.random(source: Random = Random) = source.nextDouble(start, endInclusive)
 
 // Detect shitty browser

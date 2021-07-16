@@ -86,25 +86,24 @@ sealed class Ability {
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedAngle ?: return
 			
+			val newLocation = currentPiece.location
 			val newFacing = pickRes.newAngle
 			val deltaAngle = abs(currentPiece.facing - newFacing)
 			val newAction = (currentPiece.action - deltaAngle / anglePerAction).coerceAtLeast(0.0)
 			
+			currentPiece.location = newLocation // prevent the Undo Move from messing up
 			currentPiece.facing = newFacing
 			currentPiece.action = newAction
 		}
 	}
 	
-	@Serializable
-	data class ChargeHeavyWeapon(val actionConsumed: Double) : Ability() {
+	object UndoMove : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action > actionConsumed && !currentPiece.heavyWeaponCharged
+			return currentPiece.canUndoMove
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			currentPiece.action -= actionConsumed
-			
-			currentPiece.heavyWeaponCharged = true
+			currentPiece.undoMove()
 		}
 	}
 	
@@ -117,7 +116,6 @@ sealed class Ability {
 		val maxDistance: Double,
 		val softAttackPower: Double,
 		val hardAttackPower: Double,
-		val requiresCharge: Boolean,
 		val actionConsumed: Double,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
@@ -180,16 +178,15 @@ sealed class Ability {
 			} else 1.0
 			
 			val totalAttack = (softAttack + hardAttack) * totalMult
-			targetPiece.attack(totalAttack)
-			
+			targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
 			currentPiece.hasAttacked = true
-			if (requiresCharge)
-				currentPiece.heavyWeaponCharged = false
 			
 			if (canMoveAfterAttacking)
 				currentPiece.action -= actionConsumed
 			else
 				currentPiece.action = 0.0
+			
+			currentPiece.lockUndo()
 		}
 	}
 	
@@ -235,10 +232,27 @@ sealed class Ability {
 				currentPiece.action -= actionConsumed
 			else
 				currentPiece.action = 0.0
+			
+			currentPiece.lockUndo()
 		}
 	}
 	
 	// Space Battle abilities
+	
+	@Serializable
+	data class ChargeHeavyWeapon(val actionConsumed: Double) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return currentPiece.action > actionConsumed && !currentPiece.heavyWeaponCharged
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			currentPiece.action -= actionConsumed
+			
+			currentPiece.heavyWeaponCharged = true
+			
+			currentPiece.lockUndo()
+		}
+	}
 	
 	@Serializable
 	data class AttackSpace(
@@ -284,7 +298,7 @@ sealed class Ability {
 			val attackMult = (currentPiece.currentTerrainBlob?.type?.stats as? TerrainStats.Space)?.attackMult ?: 1.0
 			
 			val totalAttack = attackPower * attackMult * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
-			targetPiece.attack(totalAttack)
+			targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
 			
 			currentPiece.hasAttacked = true
 			if (requiresCharge)
@@ -294,6 +308,8 @@ sealed class Ability {
 				currentPiece.action -= actionConsumed
 			else
 				currentPiece.action = 0.0
+			
+			currentPiece.lockUndo()
 		}
 	}
 	
@@ -346,7 +362,7 @@ sealed class Ability {
 				val dotProduct = cos(attackFacing - targetPiece.facing)
 				
 				val totalAttack = attackPower * attackMult * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
-				targetPiece.attack(totalAttack)
+				targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
 			}
 			
 			currentPiece.hasAttacked = true
@@ -357,6 +373,8 @@ sealed class Ability {
 				currentPiece.action -= actionConsumed
 			else
 				currentPiece.action = 0.0
+			
+			currentPiece.lockUndo()
 		}
 	}
 	
@@ -370,6 +388,8 @@ sealed class Ability {
 			currentPiece.action -= actionConsumed
 			
 			currentPiece.isCloaked = true
+			
+			currentPiece.lockUndo()
 		}
 	}
 	
@@ -384,6 +404,8 @@ sealed class Ability {
 			
 			currentPiece.isCloaked = false
 			currentPiece.isCloakRevealed = false
+			
+			currentPiece.lockUndo()
 		}
 	}
 	
@@ -403,6 +425,8 @@ sealed class Ability {
 				if (inRange && otherPiece.isCloaked)
 					otherPiece.isCloakRevealed = true
 			}
+			
+			currentPiece.lockUndo()
 		}
 	}
 }
@@ -422,14 +446,14 @@ fun standardLandPieceAbilities(
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
-	"Turn" to Ability.Rotate(turnSpeedPerRound),
+	"Rotate" to Ability.Rotate(turnSpeedPerRound),
+	"Undo Move" to Ability.UndoMove,
 	"Attack" to Ability.AttackLand(
 		maxAttackAngle,
 		minAttackDistance,
 		maxAttackDistance,
 		softAttack,
 		hardAttack,
-		false,
 		attackActionConsumed,
 		canMoveAfterAttacking
 	)
@@ -450,7 +474,8 @@ fun broadsideSpacePieceAbilities(
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
-	"Turn" to Ability.Rotate(turnSpeedPerRound),
+	"Rotate" to Ability.Rotate(turnSpeedPerRound),
+	"Undo Move" to Ability.UndoMove,
 	"Fire Main Batteries" to Ability.AttackSpace(
 		minAttackAngle,
 		maxAttackAngle,
@@ -484,7 +509,8 @@ fun arrayedSpacePieceAbilities(
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
-	"Turn" to Ability.Rotate(turnSpeedPerRound),
+	"Rotate" to Ability.Rotate(turnSpeedPerRound),
+	"Undo Move" to Ability.UndoMove,
 	"Fire Fore Arrays" to Ability.AttackSpace(
 		null,
 		maxArrayAngle,
@@ -563,7 +589,8 @@ fun cannonedSpacePieceAbilities(
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
-	"Turn" to Ability.Rotate(turnSpeedPerRound),
+	"Rotate" to Ability.Rotate(turnSpeedPerRound),
+	"Undo Move" to Ability.UndoMove,
 	"Fire Cannons" to Ability.AttackSpace(
 		null,
 		maxCannonAngle,
@@ -628,7 +655,8 @@ fun arrayedAndCannonedSpacePieceAbilities(
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
-	"Turn" to Ability.Rotate(turnSpeedPerRound),
+	"Rotate" to Ability.Rotate(turnSpeedPerRound),
+	"Undo Move" to Ability.UndoMove,
 	"Fire Fore Arrays" to Ability.AttackSpace(
 		null,
 		maxArrayAngle,
@@ -988,7 +1016,7 @@ enum class PieceType(
 				canMoveAfterAttacking = false,
 				
 				extraAbilities = mapOf(
-					"Reveal Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
+					"Scan Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
 				)
 			)
 		),
@@ -1173,7 +1201,7 @@ enum class PieceType(
 						actionConsumed = 0.5,
 						canMoveAfterAttacking = true
 					),
-					"Reveal Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
+					"Scan Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
 				)
 			)
 		),
@@ -1276,7 +1304,7 @@ enum class PieceType(
 				canMoveAfterFiringTorpedo = false,
 				
 				extraAbilities = mapOf(
-					"Reveal Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
+					"Scan Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
 				)
 			)
 		),

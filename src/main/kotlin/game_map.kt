@@ -29,9 +29,10 @@ sealed class TerrainStats {
 }
 
 @Serializable
-enum class TerrainType(val color: String, val stats: TerrainStats) {
+enum class TerrainType(val displayName: String, val color: String, val stats: TerrainStats) {
 	// Land terrain
 	DESERT(
+		"desert",
 		"#ed9",
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
@@ -44,6 +45,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		)
 	),
 	FOREST(
+		"forest",
 		"#062",
 		TerrainStats.Land(
 			hideEnemyUnitRange = 160.0,
@@ -56,6 +58,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		)
 	),
 	WATER(
+		"water",
 		"#7ad",
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
@@ -68,6 +71,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		)
 	),
 	HILL(
+		"hill",
 		"#2c6",
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
@@ -82,6 +86,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 	
 	// Space terrain
 	ASTEROID_THICKET(
+		"asteroid field",
 		"#876",
 		TerrainStats.Space(
 			hideEnemyUnitRange = null,
@@ -93,6 +98,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		)
 	),
 	GAS_CLOUD(
+		"gas cloud",
 		"#999",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 240.0,
@@ -104,6 +110,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		)
 	),
 	ELECTROPLASMA_CLOUD(
+		"electroplasma cloud",
 		"#86a",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 200.0,
@@ -115,6 +122,7 @@ enum class TerrainType(val color: String, val stats: TerrainStats) {
 		)
 	),
 	RADIOPLASMA_CLOUD(
+		"radioplasma cloud",
 		"#6a8",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 160.0,

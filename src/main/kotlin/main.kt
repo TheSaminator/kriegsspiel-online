@@ -1,16 +1,10 @@
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 var playerName: String? = null
-var mainJob: Job? = null
 
 fun main() {
-	mainJob?.cancel()
-	
-	mainJob = MainScope().launch {
-		GamePhase.Deployment.reset()
-		
+	MainScope().launch {
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)
 			"You have won the battle!"
@@ -21,13 +15,26 @@ fun main() {
 	}
 }
 
+sealed class MainMenuAction {
+	data class Play(val side: GameServerSide) : MainMenuAction()
+	object ViewKriegspedia : MainMenuAction()
+}
+
 suspend fun gameMain(): GameServerSide {
 	if (ExitHandler.isAttached)
 		ExitHandler.detach()
 	
-	return when (Popup.MainMenu.display()) {
-		GameServerSide.HOST -> hostGame()
-		GameServerSide.GUEST -> joinGame()
+	return when (val action = Popup.MainMenu.display()) {
+		is MainMenuAction.Play -> {
+			when (action.side) {
+				GameServerSide.HOST -> hostGame()
+				GameServerSide.GUEST -> joinGame()
+			}
+		}
+		MainMenuAction.ViewKriegspedia -> {
+			viewKriegspedia()
+			gameMain()
+		}
 	}
 }
 

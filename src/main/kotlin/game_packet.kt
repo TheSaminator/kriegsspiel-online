@@ -33,7 +33,13 @@ sealed class GamePacket {
 							joinAcceptHandler?.invoke(packet.accepted)
 						}
 						is ChatMessage -> {
-							ChatBox.addMessage("Opponent", packet.text)
+							ChatBox.addChatMessage("Opponent", packet.text)
+						}
+						is AttackMessage -> {
+							if (Game.currentSide != GameServerSide.GUEST)
+								throw IllegalStateException("Local game must not receive attack notification!")
+							
+							ChatBox.notifyAttack(packet.source, packet.target, packet.amount)
 						}
 						is MapLoaded -> {
 							if (Game.currentSide != GameServerSide.GUEST)
@@ -52,8 +58,8 @@ sealed class GamePacket {
 									id = newGamePieceId(),
 									type = packet.pieceType,
 									owner = GameServerSide.GUEST,
-									location = packet.location,
-									facing = packet.facing
+									initialLocation = packet.location,
+									initialFacing = packet.facing
 								)
 							)
 						}
@@ -146,9 +152,7 @@ sealed class GamePacket {
 					if (Game.currentSide != null)
 						Game.end()
 					
-					Popup.Message("Connection cancelled.", true, "Return to Main Menu").display()
-					
-					main()
+					Popup.UncloseableMessage("Connection cancelled.", true).display()
 				}
 			}
 			
@@ -190,6 +194,9 @@ sealed class GamePacket {
 	
 	@Serializable
 	data class ChatMessage(val text: String) : GamePacket()
+	
+	@Serializable
+	data class AttackMessage(val source: DamageSource, val target: GamePiece, val amount: Double) : GamePacket()
 	
 	@Serializable
 	data class MapLoaded(val map: GameMap, val battleSize: Int) : GamePacket()

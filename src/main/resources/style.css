@@ -52,7 +52,11 @@ html, body {
 	top: 50%;
 	left: 50%;
 
-	padding: 1.5em 15%;
+	padding: 1.5em;
+	min-width: 25%;
+	max-width: 45%;
+	max-height: 85%;
+	overflow-y: auto;
 
 	transform: translate(-50%, -50%);
 }
@@ -320,4 +324,22 @@ input[type=submit]:disabled {
 	margin: 0;
 	height: 1em;
 	float: right;
+}
+
+#help-text {
+	text-align: center;
+	vertical-align: center;
+
+	color: #fff;
+	text-shadow: 0 0 0.25em #000;
+
+	position: absolute;
+	top: 25%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+td, th {
+	border: 0.1em solid #9ab;
+	margin: 0.3em;
 }
