@@ -6,7 +6,9 @@ private fun P.explainLand() {
 	+"There are two main mechanics that govern land battles: Hardness and Flanking."
 	br
 	br
+	br
 	+"Hardness is a measure that each piece type has of how \"hard\" or armored that piece is. The hardness of a piece determines how much hard attack it receives vs how much soft attack it receives."
+	br
 	br
 	+"The precise calculation is: "
 	code { +"(attacker.hardAttack * target.hardness) + (attacker.softAttack * (1 - target.hardness))" }
@@ -14,16 +16,20 @@ private fun P.explainLand() {
 	code { +"hardness" }
 	+" ranges from 0.0 to 1.0, with 0% being totally soft and 100% being totally hard."
 	br
+	br
 	+"Pieces that are hard, such as light tanks and heavy tanks, tend to have high soft attack, while pieces that are soft, such as infantry and cavalry, tend to have low soft attack. This makes anti-tank guns and artillery an invaluable purchase when deploying."
 	br
 	br
+	br
 	+"Flanking is the other mechanic that governs land battles. Piece facing matters a lot in Kriegsspiel Online, and attacking a piece from the rear deals a lot more damage than attacking it from the front."
+	br
 	br
 	+"The flanking bonus is given by the formula "
 	code { +"(flankWeight + (attacker.facing dot target.facing)) / (flankWeight - 1)" }
 	+", where "
 	code { +"dot" }
 	+" calculates the dot product of two angles' normal vectors. Since these are normal vectors, the calculation is simplified to the cosine of the angular difference between the two pieces' facings."
+	br
 	br
 	code { +"flankWeight" }
 	+" determines how powerful the flanking bonus is. For soft attack, the flank weight is three, resulting in a flank multiplier that ranges from 100% minimum to 200% maximum."
@@ -34,8 +40,10 @@ private fun P.explainSpace() {
 	+"Space battles, unlike land battles, don't have any Hardness mechanic. However, it does keep the flanking mechanic. Attacking starships from their rear deals more damage than attacking them from their fore. "
 	+"The flank weight in space in 5, resulting in a flank multiplier that ranges from a minimum of 100% to a maximum of 150%."
 	br
-	+"Starships, unlike land pieces, have shields that absorb a certain amount damage before falling and needing to recharge. "
+	br
+	+"Starships, unlike land pieces, have shields that absorb a certain amount of damage before falling and needing to recharge. "
 	+"When a ship's shield bar is blue, that means its shields are up. When the bar is purple, that means its shields are recharging."
+	br
 	br
 	+"Unlike land battles, which use a single style for all pieces, space battles have different faction skins with different starship types available to them. These factions are the Imperial Navy, the Space Marine Corps, the Star Fleet, and the K.D.F."
 }
@@ -62,6 +70,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 			if (stats.isImpassible) {
 				tr {
 					td {
+						colSpan = "2"
 						style = "text-align: center"
 						+"This terrain is impassible. Units may not enter it at all."
 					}
