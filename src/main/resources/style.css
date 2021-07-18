@@ -339,6 +339,16 @@ input[type=submit]:disabled {
 	transform: translate(-50%, -50%);
 }
 
+#open-kriegspedia {
+	position: fixed;
+	bottom: 1.5em;
+	right: 1.5em;
+
+	width: 20%;
+
+	text-align: center;
+}
+
 table {
 	table-layout: fixed;
 	width: 30em;

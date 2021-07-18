@@ -1,4 +1,8 @@
+import kotlinx.browser.document
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.html.*
+import org.w3c.dom.HTMLAnchorElement
 import kotlin.math.PI
 import kotlin.math.roundToInt
 
@@ -17,7 +21,7 @@ private fun P.explainLand() {
 	+" ranges from 0.0 to 1.0, with 0% being totally soft and 100% being totally hard."
 	br
 	br
-	+"Pieces that are hard, such as light tanks and heavy tanks, tend to have high soft attack, while pieces that are soft, such as infantry and cavalry, tend to have low soft attack. This makes anti-tank guns and artillery an invaluable purchase when deploying."
+	+"Pieces that are hard, such as light tanks and heavy tanks, tend to have high soft attack, while pieces that are soft, such as infantry and cavalry, tend to have low hard attack. This makes anti-tank guns and artillery an invaluable purchase when deploying."
 	br
 	br
 	br
@@ -95,36 +99,40 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 					+(stats.damagePerTurn.toString() + " HP")
 				}
 			}
-			tr {
-				th {
-					+"Pieces in this terrain have their move speed modified by"
+			
+			if (stats.isHill) {
+				tr {
+					th {
+						+"This terrain uses special hill mechanics"
+					}
+					td {
+						+"Yes"
+					}
 				}
-				td {
-					+((stats.moveSpeedMult * 100).roundToInt().toString() + "%")
+			} else {
+				tr {
+					th {
+						+"Pieces in this terrain have their move speed modified by"
+					}
+					td {
+						+((stats.moveSpeedMult * 100).roundToInt().toString() + "%")
+					}
 				}
-			}
-			tr {
-				th {
-					+"Pieces in this terrain have their soft attack power modified by"
+				tr {
+					th {
+						+"Pieces in this terrain have their soft attack power modified by"
+					}
+					td {
+						+((stats.softAttackMult * 100).roundToInt().toString() + "%")
+					}
 				}
-				td {
-					+((stats.softAttackMult * 100).roundToInt().toString() + "%")
-				}
-			}
-			tr {
-				th {
-					+"Pieces in this terrain have their hard attack power modified by"
-				}
-				td {
-					+((stats.hardAttackMult * 100).roundToInt().toString() + "%")
-				}
-			}
-			tr {
-				th {
-					+"This terrain uses special hill mechanics"
-				}
-				td {
-					+(if (stats.isHill) "Yes" else "No")
+				tr {
+					th {
+						+"Pieces in this terrain have their hard attack power modified by"
+					}
+					td {
+						+((stats.hardAttackMult * 100).roundToInt().toString() + "%")
+					}
 				}
 			}
 		}
@@ -596,6 +604,19 @@ private fun TABLE.explainPieceType(type: PieceType) {
 				}
 			}
 		}
+	}
+}
+
+fun enableKriegspediaButton() {
+	val aElement = document.getElementById("kriegspedia-button").unsafeCast<HTMLAnchorElement>()
+	aElement.onclick = { e ->
+		e.preventDefault()
+		
+		GlobalScope.launch {
+			viewKriegspedia()
+		}
+		
+		Unit
 	}
 }
 

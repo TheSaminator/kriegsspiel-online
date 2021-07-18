@@ -383,7 +383,7 @@ sealed class Popup<T> {
 				}
 				
 				a(href = "#") {
-					+"Return to Main Menu"
+					+"Exit Kriegspedia"
 					onClickFunction = { e ->
 						e.preventDefault()
 						
@@ -463,7 +463,7 @@ sealed class Popup<T> {
 				}
 				
 				a(href = "#") {
-					+"Return to Index"
+					+"Back"
 					onClickFunction = { e ->
 						e.preventDefault()
 						
@@ -495,7 +495,7 @@ sealed class Popup<T> {
 				}
 				
 				a(href = "#") {
-					+"Return to Index"
+					+"Back"
 					onClickFunction = { e ->
 						e.preventDefault()
 						

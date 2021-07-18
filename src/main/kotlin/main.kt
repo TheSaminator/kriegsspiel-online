@@ -4,6 +4,8 @@ import kotlinx.coroutines.launch
 var playerName: String? = null
 
 fun main() {
+	enableKriegspediaButton()
+	
 	MainScope().launch {
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)

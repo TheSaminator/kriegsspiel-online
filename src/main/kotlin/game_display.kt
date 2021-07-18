@@ -103,7 +103,7 @@ sealed class DamageSource {
 	}
 	
 	@Serializable
-	data class Terrain(val terrainType: TerrainType)  : DamageSource() {
+	data class Terrain(val terrainType: TerrainType) : DamageSource() {
 		override val ignoresShields: Boolean
 			get() = (terrainType.stats as? TerrainStats.Space)?.dptIgnoresShields == true
 	}
