@@ -467,7 +467,7 @@ object GameSidebar {
 					}
 					
 					a(href = "#") {
-						+"CLEAR DEPLOYMENT"
+						+"Clear Deployment"
 						
 						if (GameSessionData.currentSession!!.anyPiecesWithOwner(Game.currentSide!!))
 							onClickFunction = { e ->
@@ -485,7 +485,7 @@ object GameSidebar {
 					val battleType = GameSessionData.currentSession!!.gameMap.gameType
 					if (battleType.usesSkins)
 						a(href = "#") {
-							+"CHANGE SKIN"
+							+"Change Skin"
 							
 							onClickFunction = { e ->
 								e.preventDefault()
@@ -506,7 +506,7 @@ object GameSidebar {
 					a(href = "#") {
 						id = "finish-deploy"
 						
-						+"DONE DEPLOYING"
+						+"Done Deploying"
 						
 						if (GameSessionData.currentSession!!.anyPiecesWithOwner(Game.currentSide!!))
 							onClickFunction = { e ->

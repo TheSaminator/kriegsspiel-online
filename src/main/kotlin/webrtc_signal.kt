@@ -53,7 +53,9 @@ object WebRTCSignalling {
 					val errorMessage = packet.message.unsafeCast<String>()
 					
 					GlobalScope.launch {
-						Popup.UncloseableMessage("Connection error: $errorMessage", true).display()
+						Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
+						
+						main()
 					}
 				}
 			}
@@ -99,7 +101,11 @@ object WebRTCSignalling {
 		
 		val notCancelled = useId(id)
 		
-		if (!notCancelled)
+		if (notCancelled)
+			Popup.LoadingScreen("Awaiting peer connection...") {
+				awaitAnswerJob.join()
+			}.display()
+		else
 			awaitAnswerJob.cancel()
 		
 		return notCancelled

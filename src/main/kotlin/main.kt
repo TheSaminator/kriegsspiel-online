@@ -1,12 +1,14 @@
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 var playerName: String? = null
 
+var mainJob: Job? = null
+
 fun main() {
-	enableKriegspediaButton()
-	
-	MainScope().launch {
+	mainJob?.cancel()
+	mainJob = MainScope().launch {
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)
 			"You have won the battle!"
@@ -25,6 +27,8 @@ sealed class MainMenuAction {
 suspend fun gameMain(): GameServerSide {
 	if (ExitHandler.isAttached)
 		ExitHandler.detach()
+	
+	enableKriegspediaButton()
 	
 	return when (val action = Popup.MainMenu.display()) {
 		is MainMenuAction.Play -> {
@@ -49,9 +53,9 @@ suspend fun hostGame(): GameServerSide {
 		return gameMain()
 	}
 	
-	Popup.LoadingScreen("CONNECTING...", "CONNECTED, CLICK TO CONTINUE") {
+	Popup.LoadingScreen("Establishing connection...") {
 		WebRTCSignalling.exchangeIce()
-	}
+	}.display()
 	
 	Game.beginLocal()
 	return Game.doLocal()
@@ -66,9 +70,9 @@ suspend fun joinGame(): GameServerSide {
 		return gameMain()
 	}
 	
-	Popup.LoadingScreen("CONNECTING...", "CONNECTED, CLICK TO CONTINUE") {
+	Popup.LoadingScreen("Establishing connection...") {
 		WebRTCSignalling.exchangeIce()
-	}
+	}.display()
 	
 	Game.beginRemote()
 	return Game.doRemote()

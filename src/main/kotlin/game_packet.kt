@@ -152,7 +152,9 @@ sealed class GamePacket {
 					if (Game.currentSide != null)
 						Game.end()
 					
-					Popup.UncloseableMessage("Connection cancelled.", true).display()
+					Popup.Message("Connection closed.", true, "Return to Main Menu").display()
+					
+					main()
 				}
 			}
 			

@@ -66,7 +66,7 @@ object Game {
 			awaitCancellation()
 		}
 		
-		Popup.LoadingScreen("Awaiting battle parameters from host...", "Battle parameters received!") {
+		Popup.LoadingScreen("Awaiting battle parameters from host...") {
 			while (GameSessionData.currentSession == null)
 				delay(100)
 		}.display()

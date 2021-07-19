@@ -11,7 +11,7 @@ import org.w3c.dom.*
 
 sealed class Popup<T> {
 	protected abstract fun TagConsumer<*>.render(callback: (T) -> Unit)
-	protected fun renderInto(consumer: TagConsumer<*>, callback: (T) -> Unit) {
+	private fun renderInto(consumer: TagConsumer<*>, callback: (T) -> Unit) {
 		consumer.render(callback)
 	}
 	
@@ -260,72 +260,44 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class LoadingScreenWithResult<T>(val loadingText: String, val successText: String, val loadAction: suspend () -> T) : Popup<T>() {
-		override fun TagConsumer<*>.render(callback: (T) -> Unit) {
-			val nextButtonId = "next-button"
-			div(classes = "button-set row") {
-				a(href = "#") {
-					id = nextButtonId
-					+loadingText
-					onClickFunction = { e ->
-						e.preventDefault()
-					}
-				}
-			}
-			
-			GlobalScope.launch {
-				val result = loadAction()
-				val nextButton = document.getElementById(nextButtonId).unsafeCast<HTMLAnchorElement>()
-				
-				nextButton.textContent = successText
-				nextButton.onclick = { e ->
-					e.preventDefault()
-					
-					callback(result)
-				}
-			}
-		}
-	}
-	
-	class LoadingScreen(val loadingText: String, val successText: String, val loadAction: suspend () -> Unit) : Popup<Unit>() {
+	class LoadingScreen(val loadingText: String, val loadAction: suspend () -> Unit) : Popup<Unit>() {
 		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
-			LoadingScreenWithResult(loadingText, successText, loadAction).renderInto(this, callback)
-		}
-	}
-	
-	class TryLoadingScreenWithResult<T : Any>(val loadingText: String, val successText: String, val failureText: String, val loadAction: suspend () -> T?) : Popup<T?>() {
-		override fun TagConsumer<*>.render(callback: (T?) -> Unit) {
-			val nextButtonId = "next-button"
-			div(classes = "button-set row") {
-				a(href = "#") {
-					id = nextButtonId
-					+loadingText
-					onClickFunction = { e ->
-						e.preventDefault()
-					}
-				}
+			p {
+				style = "text-align: center"
+				
+				+loadingText
 			}
 			
 			GlobalScope.launch {
-				val result = loadAction()
-				val nextButton = document.getElementById(nextButtonId).unsafeCast<HTMLAnchorElement>()
-				
-				nextButton.textContent = if (result != null) successText else failureText
-				nextButton.onclick = { e ->
-					e.preventDefault()
-					
-					callback(result)
-				}
+				loadAction()
+				callback(Unit)
 			}
 		}
 	}
 	
 	class TryLoadingScreen(val loadingText: String, val successText: String, val failureText: String, val loadAction: suspend () -> Boolean) : Popup<Boolean>() {
 		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
-			TryLoadingScreenWithResult(loadingText, successText, failureText) {
-				if (loadAction()) Unit else null
-			}.renderInto(this) { result ->
-				callback(result != null)
+			val nextButtonId = "next-button"
+			div(classes = "button-set row") {
+				a(href = "#") {
+					id = nextButtonId
+					+loadingText
+					onClickFunction = { e ->
+						e.preventDefault()
+					}
+				}
+			}
+			
+			GlobalScope.launch {
+				val result = loadAction()
+				val nextButton = document.getElementById(nextButtonId).unsafeCast<HTMLAnchorElement>()
+				
+				nextButton.textContent = if (result) successText else failureText
+				nextButton.onclick = { e ->
+					e.preventDefault()
+					
+					callback(result)
+				}
 			}
 		}
 	}
