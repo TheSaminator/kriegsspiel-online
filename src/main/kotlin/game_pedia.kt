@@ -217,7 +217,7 @@ private fun TABLE.explainPieceType(type: PieceType) {
 			+"Size on Map"
 		}
 		td {
-			+((type.imageRadius * 2).roundToInt().toString() + " lengths")
+			+(((type.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE) * 2).roundToInt().toString() + " lengths")
 		}
 	}
 	tr {

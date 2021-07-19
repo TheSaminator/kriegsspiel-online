@@ -325,7 +325,10 @@ object GameField {
 			cssClass = "game-piece"
 			transform = "translate(${piece.location.x} ${piece.location.y}) rotate(${piece.facing.asAngle(flipY = true) * 180 / PI})"
 			
-			val outerRadius = piece.type.imageRadius + 15
+			val outerRadius = piece.type.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE
+			val centerRadius = piece.type.imageRadius + (GamePiece.PIECE_RADIUS_OUTLINE / 2)
+			val centerInnerRadius = centerRadius - 5
+			val centerOuterRadius = centerRadius + 5
 			
 			circle {
 				cssClass = "game-piece-back"
@@ -337,16 +340,10 @@ object GameField {
 			
 			if (piece.canBeIdentified) {
 				if (piece.type.requiredBattleType == BattleType.SPACE_BATTLE) {
-					val healthRadius = piece.type.imageRadius + 2.5
-					val shieldRadius = piece.type.imageRadius + 12.5
-					
-					drawCircleMeter(piece.health, healthRadius, piece.healthBarColor)
-					
-					drawCircleMeter(piece.shield, shieldRadius, piece.shieldBarColor)
+					drawCircleMeter(piece.health, centerInnerRadius, piece.healthBarColor)
+					drawCircleMeter(piece.shield, centerOuterRadius, piece.shieldBarColor)
 				} else {
-					val healthRadius = piece.type.imageRadius + 7.5
-					
-					drawCircleMeter(piece.health, healthRadius, piece.healthBarColor)
+					drawCircleMeter(piece.health, centerRadius, piece.healthBarColor)
 				}
 			}
 			
@@ -560,8 +557,8 @@ object GameSidebar {
 				width, height
 			),
 			null,
-			pieceType.imageRadius + 15,
-			pieceType.imageRadius + 15
+			pieceType.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE,
+			pieceType.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE
 		)
 		
 		deployJob?.cancel()

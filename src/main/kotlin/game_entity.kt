@@ -157,10 +157,13 @@ data class GamePiece(
 	var isCloakRevealed = false
 	var heavyWeaponCharged = false
 	
-	val canUseShield: Boolean
-		get() = type.stats is SpacePieceStats && !shieldDepleted && !isCloaked && !(currentTerrainBlob?.let { blob ->
+	val terrainForcesShieldsDown: Boolean
+		get() = currentTerrainBlob?.let { blob ->
 			blob.type.stats is TerrainStats.Space && blob.type.stats.forcesShieldsDown
-		} ?: false)
+		} ?: false
+	
+	val canUseShield: Boolean
+		get() = type.stats is SpacePieceStats && !shieldDepleted && !isCloaked && !terrainForcesShieldsDown
 	
 	fun attack(damage: Double, source: DamageSource) {
 		if (canUseShield && !source.ignoresShields) {
@@ -259,7 +262,7 @@ data class GamePiece(
 		}.png"
 	
 	val pieceRadius: Double
-		get() = type.imageRadius + 15
+		get() = type.imageRadius + PIECE_RADIUS_OUTLINE
 	
 	val healthBarColor: String
 		get() = if (health > 0.5)
@@ -271,13 +274,16 @@ data class GamePiece(
 		get() {
 			val alpha = if (isCloaked) "0.4" else "1.0"
 			
-			return if (shieldDepleted)
-				"rgba(170, 85, 255, $alpha)"
-			else
-				"rgba(85, 170, 255, $alpha)"
+			return when {
+				shieldDepleted -> "rgba(170, 85, 255, $alpha)"
+				terrainForcesShieldsDown -> "rgba(0, 85, 170, $alpha)"
+				else -> "rgba(85, 170, 255, $alpha)"
+			}
 		}
 	
 	companion object {
 		const val SHIELD_RECHARGE_PER_TURN = 75.0
+		
+		const val PIECE_RADIUS_OUTLINE = 15.0
 	}
 }

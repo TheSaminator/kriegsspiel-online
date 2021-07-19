@@ -97,8 +97,7 @@ sealed class PickResponse {
 }
 
 object PickHandler {
-	var isPicking = false
-		private set
+	private var isPicking = false
 	
 	private val gamePick by lazy {
 		document.getElementById("game-picker").unsafeCast<SVGGElement>()

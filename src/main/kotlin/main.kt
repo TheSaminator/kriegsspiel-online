@@ -4,8 +4,7 @@ import kotlinx.coroutines.launch
 
 var playerName: String? = null
 
-var mainJob: Job? = null
-
+private var mainJob: Job? = null
 fun main() {
 	mainJob?.cancel()
 	mainJob = MainScope().launch {

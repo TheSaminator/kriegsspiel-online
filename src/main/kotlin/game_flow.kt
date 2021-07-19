@@ -98,6 +98,8 @@ object Game {
 		
 		GameField.eraseEverything()
 		
+		GamePhase.Deployment.reset()
+		
 		ChatBox.disable()
 		
 		WebRTC.closeConn()
