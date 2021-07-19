@@ -196,6 +196,14 @@ private fun TABLE.explainPieceType(type: PieceType) {
 			+type.displayName
 		}
 	}
+	if (type.factionSkin != null) {
+		tr {
+			th {
+				colSpan = "2"
+				+"(Belongs to ${type.factionSkin.displayName})"
+			}
+		}
+	}
 	tr {
 		th {
 			img(src = "uniticons/player/${type.name.lowercase()}.png") {
