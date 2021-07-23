@@ -207,14 +207,14 @@ private fun TABLE.explainPieceType(type: PieceType) {
 	tr {
 		th {
 			img(src = "uniticons/player/${type.name.lowercase()}.png") {
-				width = "50%"
+				style = "max-width: 75%; max-height: 7.5em"
 			}
 			br
 			+"Icon (Player)"
 		}
 		th {
 			img(src = "uniticons/opponent/${type.name.lowercase()}.png") {
-				width = "50%"
+				style = "max-width: 75%; max-height: 7.5em"
 			}
 			br
 			+"Icon (Opponent)"
