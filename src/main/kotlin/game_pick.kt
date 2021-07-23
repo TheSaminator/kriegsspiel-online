@@ -152,9 +152,11 @@ object PickHandler {
 		if (!posReq.inBoundary.isInBoundary(pos))
 			return false
 		
-		if (posReq.restrictDistFromUnits != null && GameSessionData.currentSession!!.allPieces().any { piece ->
+		if (
+			posReq.restrictDistFromUnits != null && GameSessionData.currentSession!!.allPieces().any { piece ->
 				(pos - piece.location).magnitude < piece.type.imageRadius + 15 + posReq.restrictDistFromUnits
-			})
+			}
+		)
 			return false
 		
 		if (pos.x !in 0.0..GameSessionData.currentSession!!.gameMap.size.x || pos.y !in 0.0..GameSessionData.currentSession!!.gameMap.size.y)
