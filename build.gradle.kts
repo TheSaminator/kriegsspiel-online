@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-	kotlin("js") version "1.5.10"
-	kotlin("plugin.serialization") version "1.5.10"
+	kotlin("js") version "1.5.20"
+	kotlin("plugin.serialization") version "1.5.20"
 }
 
 group = "io.github.thesaminator"
@@ -18,8 +18,8 @@ repositories {
 }
 
 dependencies {
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0")
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
 	implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.7.3")
 	
 	//implementation("com.github.nwillc:ksvg-js:3.0.0")

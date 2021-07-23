@@ -1,6 +1,7 @@
 import com.github.nwillc.ksvg.RenderMode
 import com.github.nwillc.ksvg.elements.Container
 import com.github.nwillc.ksvg.elements.Element
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
@@ -85,17 +86,28 @@ class TempEvents private constructor(val receiver: EventTarget, private val map:
 }
 
 // Concurrency
-suspend fun EventTarget.awaitEvent(eventName: String): Event = suspendCoroutine { continuation ->
-	addEventListener(eventName, object : EventListener {
+suspend fun EventTarget.awaitEvent(eventName: String): Event = suspendCancellableCoroutine { continuation ->
+	val listener = object : EventListener {
 		override fun handleEvent(event: Event) {
 			removeEventListener(eventName, this)
 			continuation.resume(event)
 		}
-	})
+	}
+	
+	continuation.invokeOnCancellation {
+		removeEventListener(eventName, listener)
+	}
+	
+	addEventListener(eventName, listener)
 }
 
-suspend fun <T> KMutableProperty0<((T) -> Unit)?>.await(): T = suspendCoroutine { continuation ->
+suspend fun <T> KMutableProperty0<((T) -> Unit)?>.await(): T = suspendCancellableCoroutine { continuation ->
 	val prevValue = this.get()
+	
+	continuation.invokeOnCancellation {
+		this.set(prevValue)
+	}
+	
 	this.set {
 		this.set(prevValue)
 		continuation.resume(it)
