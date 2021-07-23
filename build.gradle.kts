@@ -10,7 +10,7 @@ group = "io.github.thesaminator"
 repositories {
 	mavenCentral()
 	maven {
-		url = uri("https://dl.bintray.com/kotlin/kotlinx")
+		url = uri("https://maven.pkg.jetbrains.space/public/p/kotlinx-html/maven")
 	}
 	//maven {
 	//	url = uri("https://dl.bintray.com/nwillc/maven")
@@ -20,7 +20,7 @@ repositories {
 dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0")
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
-	implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.7.2")
+	implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.7.3")
 	
 	//implementation("com.github.nwillc:ksvg-js:3.0.0")
 }

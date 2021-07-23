@@ -1,4 +1,3 @@
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -45,14 +44,14 @@ object WebRTCSignalling {
 				"ice-candidate" -> {
 					val iceCandidate = packet.candidate.unsafeCast<String>()
 					
-					GlobalScope.launch {
+					GameScope.launch {
 						WebRTC.receiveIceCandidate(JSON.parse(iceCandidate))
 					}
 				}
 				"connection-error" -> {
 					val errorMessage = packet.message.unsafeCast<String>()
 					
-					GlobalScope.launch {
+					GameScope.launch {
 						Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
 						
 						main()
@@ -84,7 +83,7 @@ object WebRTCSignalling {
 			it.offer = offer
 		}
 		
-		val idDeferred = GlobalScope.async {
+		val idDeferred = GameScope.async {
 			this@WebRTCSignalling::offerIdHandler.await().id
 		}
 		
@@ -94,7 +93,7 @@ object WebRTCSignalling {
 		
 		WebRTC.dumpGatheredIceCandidates()
 		
-		val awaitAnswerJob = GlobalScope.launch {
+		val awaitAnswerJob = GameScope.launch {
 			val answer = this@WebRTCSignalling::answerDataHandler.await().answer
 			WebRTC.host2(answer)
 		}
@@ -118,7 +117,7 @@ object WebRTCSignalling {
 			it.type = "list-data"
 		}
 		
-		val listDeferred = GlobalScope.async {
+		val listDeferred = GameScope.async {
 			this@WebRTCSignalling::listDataHandler.await().list
 		}
 		

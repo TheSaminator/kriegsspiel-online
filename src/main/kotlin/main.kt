@@ -4,10 +4,13 @@ import kotlinx.coroutines.launch
 
 var playerName: String? = null
 
+val GameScope = MainScope()
+
 private var mainJob: Job? = null
+
 fun main() {
 	mainJob?.cancel()
-	mainJob = MainScope().launch {
+	mainJob = GameScope.launch {
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)
 			"You have won the battle!"

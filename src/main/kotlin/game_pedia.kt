@@ -1,5 +1,4 @@
 import kotlinx.browser.document
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.html.*
 import org.w3c.dom.HTMLAnchorElement
@@ -624,7 +623,7 @@ fun enableKriegspediaButton() {
 	aElement.onclick = { e ->
 		e.preventDefault()
 		
-		GlobalScope.launch {
+		GameScope.launch {
 			viewKriegspedia()
 		}
 		

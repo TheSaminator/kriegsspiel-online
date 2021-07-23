@@ -1,5 +1,4 @@
 import kotlinx.browser.document
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.dom.addClass
 import kotlinx.dom.clear
@@ -268,7 +267,7 @@ sealed class Popup<T> {
 				+loadingText
 			}
 			
-			GlobalScope.launch {
+			GameScope.launch {
 				loadAction()
 				callback(Unit)
 			}
@@ -288,7 +287,7 @@ sealed class Popup<T> {
 				}
 			}
 			
-			GlobalScope.launch {
+			GameScope.launch {
 				val result = loadAction()
 				val nextButton = document.getElementById(nextButtonId).unsafeCast<HTMLAnchorElement>()
 				

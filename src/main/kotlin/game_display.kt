@@ -4,7 +4,6 @@ import com.github.nwillc.ksvg.elements.G
 import com.github.nwillc.ksvg.elements.RECT
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.dom.addClass
@@ -487,7 +486,7 @@ object GameSidebar {
 							onClickFunction = { e ->
 								e.preventDefault()
 								
-								GlobalScope.launch {
+								GameScope.launch {
 									GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
 										it.forBattleType == battleType
 									}, BattleFactionSkin::displayName).display()
@@ -509,7 +508,7 @@ object GameSidebar {
 							onClickFunction = { e ->
 								e.preventDefault()
 								
-								GlobalScope.launch {
+								GameScope.launch {
 									val popup = Popup.YesNoDialogue("Yes", "No") {
 										+"Are you sure you want to finish deploying? "
 										if (currentPoints > 0)
@@ -564,7 +563,7 @@ object GameSidebar {
 		deployJob?.cancel()
 		PickHandler.cancelRequest()
 		
-		deployJob = GlobalScope.launch {
+		deployJob = GameScope.launch {
 			val pRes = PickHandler.pickLocal(pReq) as? PickResponse.PickedPosition ?: return@launch
 			
 			val pos = pRes.pos
@@ -675,7 +674,7 @@ object GameSidebar {
 											}
 										}
 										
-										GlobalScope.launch {
+										GameScope.launch {
 											Player.currentPlayer!!.useAbility(piece.id, abilityName)
 											updateSidebar()
 										}
@@ -705,7 +704,7 @@ object GameSidebar {
 							
 							btn.addClass("disabled")
 							
-							GlobalScope.launch {
+							GameScope.launch {
 								Player.currentPlayer!!.endTurn()
 								
 								updateSidebar()

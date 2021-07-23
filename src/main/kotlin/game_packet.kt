@@ -1,4 +1,3 @@
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -9,7 +8,7 @@ sealed class GamePacket {
 			WebRTC.messageHandler = { jsonText ->
 				val packet = jsonSerializer.decodeFromString(serializer(), jsonText)
 				
-				GlobalScope.launch {
+				GameScope.launch {
 					when (packet) {
 						is HostReady -> {
 							send(JoinRequest(playerName!!))
@@ -148,7 +147,7 @@ sealed class GamePacket {
 			}
 			
 			WebRTC.channelCloseHandler = {
-				GlobalScope.launch {
+				GameScope.launch {
 					if (Game.currentSide != null)
 						Game.end()
 					
