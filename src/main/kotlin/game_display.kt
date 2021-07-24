@@ -668,6 +668,7 @@ object GameSidebar {
 										
 										piece.type.stats.abilities.forEach { (abilityName, _) ->
 											val btn = document.getElementById("use-ability-${abilityName.lowercase()}") as HTMLAnchorElement
+											btn.addClass("disabled")
 											btn.onclick = { e2 ->
 												e2.preventDefault()
 											}
