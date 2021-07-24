@@ -32,7 +32,7 @@ sealed class TerrainStats {
 enum class TerrainType(val displayName: String, val color: String, val stats: TerrainStats) {
 	// Land terrain
 	DESERT(
-		"desert",
+		"Desert",
 		"#ed9",
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
@@ -45,7 +45,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 		)
 	),
 	FOREST(
-		"forest",
+		"Forest",
 		"#062",
 		TerrainStats.Land(
 			hideEnemyUnitRange = 160.0,
@@ -58,7 +58,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 		)
 	),
 	WATER(
-		"water",
+		"Water",
 		"#7ad",
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
@@ -71,7 +71,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 		)
 	),
 	HILL(
-		"hill",
+		"Hill",
 		"#2c6",
 		TerrainStats.Land(
 			hideEnemyUnitRange = null,
@@ -86,7 +86,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 	
 	// Space terrain
 	ASTEROID_THICKET(
-		"asteroid field",
+		"Asteroid Field",
 		"#876",
 		TerrainStats.Space(
 			hideEnemyUnitRange = null,
@@ -94,11 +94,11 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 			moveSpeedMult = 0.85,
 			dptIgnoresShields = false,
 			forcesShieldsDown = false,
-			attackMult = 1.0
+			attackMult = 0.8
 		)
 	),
 	GAS_CLOUD(
-		"gas cloud",
+		"Gas Cloud",
 		"#999",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 240.0,
@@ -106,11 +106,11 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 			moveSpeedMult = 0.8,
 			dptIgnoresShields = false,
 			forcesShieldsDown = false,
-			attackMult = 1.0
+			attackMult = 0.85
 		)
 	),
 	ELECTROPLASMA_CLOUD(
-		"electroplasma cloud",
+		"Electroplasma Cloud",
 		"#86a",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 200.0,
@@ -118,11 +118,11 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 			moveSpeedMult = 0.75,
 			dptIgnoresShields = false,
 			forcesShieldsDown = true,
-			attackMult = 1.0
+			attackMult = 0.9
 		)
 	),
 	RADIOPLASMA_CLOUD(
-		"radioplasma cloud",
+		"Radioplasma Cloud",
 		"#6a8",
 		TerrainStats.Space(
 			hideEnemyUnitRange = 160.0,
@@ -130,7 +130,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 			moveSpeedMult = 0.7,
 			dptIgnoresShields = true,
 			forcesShieldsDown = false,
-			attackMult = 1.0
+			attackMult = 0.95
 		)
 	),
 	;

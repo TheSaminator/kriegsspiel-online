@@ -1,28 +1,40 @@
 import kotlinx.browser.document
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.dom.addClass
 import kotlinx.dom.clear
+import kotlinx.dom.hasClass
 import kotlinx.dom.removeClass
 import kotlinx.html.*
 import kotlinx.html.dom.append
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.*
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
 
 sealed class Popup<T> {
-	protected abstract fun TagConsumer<*>.render(callback: (T) -> Unit)
-	private fun renderInto(consumer: TagConsumer<*>, callback: (T) -> Unit) {
-		consumer.render(callback)
+	protected abstract fun TagConsumer<*>.render(context: CoroutineContext, callback: (T) -> Unit)
+	private fun renderInto(consumer: TagConsumer<*>, context: CoroutineContext, callback: (T) -> Unit) {
+		consumer.render(context, callback)
 	}
 	
 	suspend fun display(): T {
+		while (!popup.hasClass("hide"))
+			delay(100L)
+		
 		popupBox.clear()
 		
-		return awaitCallback { callback ->
+		return suspendCancellableCoroutine { continuation ->
 			popupBox.append {
-				renderInto(this) {
+				renderInto(this, continuation.context) {
 					hide()
-					callback(it)
+					continuation.resume(it)
 				}
+			}
+			
+			continuation.invokeOnCancellation {
+				hide()
 			}
 			
 			show()
@@ -48,7 +60,7 @@ sealed class Popup<T> {
 	}
 	
 	object MainMenu : Popup<MainMenuAction>() {
-		override fun TagConsumer<*>.render(callback: (MainMenuAction) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (MainMenuAction) -> Unit) {
 			div(classes = "button-set col") {
 				a(href = "#") {
 					+"Host Game"
@@ -81,7 +93,7 @@ sealed class Popup<T> {
 	}
 	
 	object ChooseNameScreen : Popup<String?>() {
-		override fun TagConsumer<*>.render(callback: (String?) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (String?) -> Unit) {
 			val nameGameId = "name-game-id"
 			val nameGameErrorId = "name-game-error"
 			
@@ -126,7 +138,7 @@ sealed class Popup<T> {
 	}
 	
 	class HostScreen(val offerId: String) : Popup<Boolean>() {
-		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
 			p {
 				+"Your game ID is "
 				code {
@@ -156,7 +168,7 @@ sealed class Popup<T> {
 	}
 	
 	class JoinScreen(val sessions: List<WebRTCOpenSession>) : Popup<WebRTCOpenSession?>() {
-		override fun TagConsumer<*>.render(callback: (WebRTCOpenSession?) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (WebRTCOpenSession?) -> Unit) {
 			val joinGameId = "join-game-id"
 			val joinGameErrorId = "join-game-error"
 			
@@ -211,7 +223,7 @@ sealed class Popup<T> {
 	}
 	
 	class YesNoDialogue(val acceptText: String = "Accept", val rejectText: String = "Reject", val describeRequest: P.() -> Unit) : Popup<Boolean>() {
-		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
 			p {
 				describeRequest()
 			}
@@ -238,7 +250,7 @@ sealed class Popup<T> {
 	}
 	
 	class NameableChoice<T>(val headerText: String, val values: List<T>, val getName: (T) -> String) : Popup<T>() {
-		override fun TagConsumer<*>.render(callback: (T) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (T) -> Unit) {
 			p {
 				style = "text-align: center"
 				+headerText
@@ -260,14 +272,14 @@ sealed class Popup<T> {
 	}
 	
 	class LoadingScreen(val loadingText: String, val loadAction: suspend () -> Unit) : Popup<Unit>() {
-		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Unit) -> Unit) {
 			p {
 				style = "text-align: center"
 				
 				+loadingText
 			}
 			
-			GameScope.launch {
+			GameScope.launch(context) {
 				loadAction()
 				callback(Unit)
 			}
@@ -275,7 +287,7 @@ sealed class Popup<T> {
 	}
 	
 	class TryLoadingScreen(val loadingText: String, val successText: String, val failureText: String, val loadAction: suspend () -> Boolean) : Popup<Boolean>() {
-		override fun TagConsumer<*>.render(callback: (Boolean) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
 			val nextButtonId = "next-button"
 			div(classes = "button-set row") {
 				a(href = "#") {
@@ -287,22 +299,20 @@ sealed class Popup<T> {
 				}
 			}
 			
-			GameScope.launch {
+			GameScope.launch(context) {
 				val result = loadAction()
 				val nextButton = document.getElementById(nextButtonId).unsafeCast<HTMLAnchorElement>()
 				
 				nextButton.textContent = if (result) successText else failureText
-				nextButton.onclick = { e ->
-					e.preventDefault()
-					
-					callback(result)
-				}
+				nextButton.awaitEvent("click", true)
+				
+				callback(result)
 			}
 		}
 	}
 	
 	class Message(val message: String, val centerMessage: Boolean, val closeButton: String) : Popup<Unit>() {
-		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Unit) -> Unit) {
 			p {
 				if (centerMessage)
 					style = "text-align: center"
@@ -323,7 +333,7 @@ sealed class Popup<T> {
 	}
 	
 	class UncloseableMessage(val message: String, val centerMessage: Boolean) : Popup<Nothing>() {
-		override fun TagConsumer<*>.render(callback: (Nothing) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Nothing) -> Unit) {
 			p {
 				if (centerMessage)
 					style = "text-align: center"
@@ -334,7 +344,7 @@ sealed class Popup<T> {
 	}
 	
 	object KriegspediaStart : Popup<BattleType?>() {
-		override fun TagConsumer<*>.render(callback: (BattleType?) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (BattleType?) -> Unit) {
 			p {
 				style = "text-align: center"
 				
@@ -366,7 +376,7 @@ sealed class Popup<T> {
 	}
 	
 	class KriegspediaIndex(val type: BattleType) : Popup<KriegspediaSection?>() {
-		override fun TagConsumer<*>.render(callback: (KriegspediaSection?) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (KriegspediaSection?) -> Unit) {
 			p {
 				style = "text-align: center"
 				
@@ -414,7 +424,7 @@ sealed class Popup<T> {
 	}
 	
 	class KriegspediaPieceList(val type: BattleType) : Popup<PieceType?>() {
-		override fun TagConsumer<*>.render(callback: (PieceType?) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (PieceType?) -> Unit) {
 			p {
 				style = "text-align: center"
 				
@@ -423,6 +433,38 @@ sealed class Popup<T> {
 			
 			div(classes = "button-set col") {
 				PieceType.values().filter { it.requiredBattleType == type }.forEach { type ->
+					a(href = "#") {
+						+(type.displayName + type.factionSkin?.let { " (${it.displayName})" }.orEmpty())
+						onClickFunction = { e ->
+							e.preventDefault()
+							
+							callback(type)
+						}
+					}
+				}
+				
+				a(href = "#") {
+					+"Back"
+					onClickFunction = { e ->
+						e.preventDefault()
+						
+						callback(null)
+					}
+				}
+			}
+		}
+	}
+	
+	class KriegspediaTerrainList(val type: BattleType) : Popup<TerrainType?>() {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (TerrainType?) -> Unit) {
+			p {
+				style = "text-align: center"
+				
+				+"${type.displayName} - Terrains"
+			}
+			
+			div(classes = "button-set col") {
+				TerrainType.values().filter { it.requiredBattleType == type }.forEach { type ->
 					a(href = "#") {
 						+type.displayName
 						onClickFunction = { e ->
@@ -445,40 +487,8 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class KriegspediaTerrainList(val type: BattleType) : Popup<TerrainType?>() {
-		override fun TagConsumer<*>.render(callback: (TerrainType?) -> Unit) {
-			p {
-				style = "text-align: center"
-				
-				+"${type.displayName} - Terrains"
-			}
-			
-			div(classes = "button-set col") {
-				TerrainType.values().filter { it.requiredBattleType == type }.forEach { type ->
-					a(href = "#") {
-						+type.displayName.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-						onClickFunction = { e ->
-							e.preventDefault()
-							
-							callback(type)
-						}
-					}
-				}
-				
-				a(href = "#") {
-					+"Back"
-					onClickFunction = { e ->
-						e.preventDefault()
-						
-						callback(null)
-					}
-				}
-			}
-		}
-	}
-	
 	class KriegspediaExplanation(val buildExpo: P.() -> Unit) : Popup<Unit>() {
-		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Unit) -> Unit) {
 			p { buildExpo() }
 			
 			div(classes = "button-set row") {
@@ -495,7 +505,7 @@ sealed class Popup<T> {
 	}
 	
 	class KriegspediaDataTable(val buildTable: TABLE.() -> Unit) : Popup<Unit>() {
-		override fun TagConsumer<*>.render(callback: (Unit) -> Unit) {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Unit) -> Unit) {
 			table { buildTable() }
 			
 			div(classes = "button-set row") {

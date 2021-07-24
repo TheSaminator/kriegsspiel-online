@@ -1,16 +1,17 @@
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 var playerName: String? = null
 
-val GameScope = MainScope()
+private val AppScope = MainScope()
 
 private var mainJob: Job? = null
 
+val GameScope: CoroutineScope
+	get() = mainJob?.let { AppScope + it } ?: AppScope
+
 fun main() {
 	mainJob?.cancel()
-	mainJob = GameScope.launch {
+	mainJob = AppScope.launch {
 		val winner = gameMain()
 		val message = if (winner == Game.currentSide!!)
 			"You have won the battle!"

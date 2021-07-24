@@ -1135,7 +1135,7 @@ enum class PieceType(
 	),
 	
 	SPACE_ESCORT(
-		"Escort",
+		"Destroyer",
 		40,
 		SpacePieceStats(
 			maxHealth = 750.0,
@@ -1311,7 +1311,7 @@ enum class PieceType(
 		BattleFactionSkin.STAR_FLEET
 	),
 	SPACE_WARSHIP(
-		"Warship",
+		"Escort",
 		90,
 		SpacePieceStats(
 			maxHealth = 875.0,

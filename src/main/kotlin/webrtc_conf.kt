@@ -9,12 +9,12 @@ suspend fun getRtcConfig(): RTCConfiguration {
 	return configure {
 		iceServers = arrayOf(
 			configure { urls = "stun:franciscusrex.dev" },
-			window
+			*window
 				.fetch("https://franciscusrex.dev/turn/confmaker.php?sitename=kriegsspiel")
 				.await()
 				.json()
 				.await()
-				.unsafeCast<RTCIceServer>()
+				.unsafeCast<Array<RTCIceServer>>()
 		)
 	}
 }

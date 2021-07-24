@@ -1,7 +1,9 @@
 import externals.webrtc.*
 import kotlinx.browser.window
 import kotlinx.coroutines.await
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
@@ -20,8 +22,7 @@ object WebRTC {
 		rtcPeerConnection = RTCPeerConnection(getRtcConfig())
 		
 		dataChannel = rtcPeerConnection.createDataChannel(DATA_CHANNEL_LABEL, configure {
-			id = 1
-			negotiated = true
+			ordered = true
 		})
 		
 		iceCandidateHandler?.let { handler ->
@@ -50,9 +51,12 @@ object WebRTC {
 		closeConn()
 		rtcPeerConnection = RTCPeerConnection(getRtcConfig())
 		
-		dataChannel = rtcPeerConnection.createDataChannel(DATA_CHANNEL_LABEL, configure {
-			id = 1
-			negotiated = true
+		rtcPeerConnection.addEventListener("datachannel", {
+			val e = it.unsafeCast<RTCDataChannelEvent>()
+			dataChannel = e.channel
+			
+			if (isDevEnv)
+				console.log("Data channel connected on guest")
 		})
 		
 		iceCandidateHandler?.let { handler ->
@@ -145,17 +149,26 @@ object WebRTC {
 		})
 	}
 	
-	var messageHandler: ((String) -> Unit)? = null
+	val messageChannel = Channel<String>(Channel.BUFFERED)
+	
 	var channelCloseHandler: (() -> Unit)? = null
 	
 	private val messageEventHandler = object : EventListener {
 		override fun handleEvent(event: Event) {
 			val data = (event.unsafeCast<MessageEvent>()).data as String
-			messageHandler?.invoke(data)
+			
+			GameScope.launch {
+				messageChannel.send(data)
+			}
 		}
 	}
 	
 	fun sendData(message: String) {
+		if (!connectionOpen) {
+			console.error("Cannot send message on closed RTCDataChannel!")
+			return
+		}
+		
 		dataChannel.send(message)
 	}
 }

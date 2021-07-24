@@ -55,16 +55,8 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 	tr {
 		th {
 			colSpan = "2"
-			+type.displayName.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-		}
-	}
-	tr {
-		th {
-			colSpan = "2"
-			span {
-				style = "background-color: ${type.requiredBattleType.defaultMapColor}; color: ${type.color}; font-weight: bold;"
-				+"Looks like this on the map"
-			}
+			style = "background-color: ${type.requiredBattleType.defaultMapColor}; color: ${type.color}; font-weight: bold;"
+			+type.displayName
 		}
 	}
 	
@@ -82,92 +74,109 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 				return
 			}
 			
-			tr {
-				th {
-					+"Hides pieces from the enemy outside range"
+			if (stats.isHill) {
+				tr {
+					td {
+						colSpan = "2"
+						style = "text-align: center"
+						+"This terrain has special hill mechanics. Units have an attack buff when attacking downhill and an attack debuff when attacking uphill. Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
+					}
 				}
-				td {
-					+(stats.hideEnemyUnitRange?.let { "$it lengths" } ?: "Doesn't hide pieces")
-				}
+				
+				return
 			}
-			tr {
-				th {
-					+"Pieces ending their turns in this terrain receive damage"
-				}
-				td {
-					+(stats.damagePerTurn.toString() + " HP")
+			
+			stats.hideEnemyUnitRange?.let { range ->
+				tr {
+					th {
+						+"Hides pieces from the enemy outside range"
+					}
+					td {
+						+"$range lengths"
+					}
 				}
 			}
 			
-			if (stats.isHill) {
+			stats.damagePerTurn.takeUnless { it == 0.0 }?.let { dmg ->
 				tr {
 					th {
-						+"This terrain uses special hill mechanics"
+						+"Pieces ending their turns in this terrain receive damage"
 					}
 					td {
-						+"Yes"
+						+"$dmg HP"
 					}
 				}
-			} else {
+			}
+			
+			stats.moveSpeedMult.takeUnless { it == 1.0 }?.let { mult ->
 				tr {
 					th {
 						+"Pieces in this terrain have their move speed modified by"
 					}
 					td {
-						+((stats.moveSpeedMult * 100).roundToInt().toString() + "%")
+						+((mult * 100).roundToInt().toString() + "%")
 					}
 				}
+			}
+			
+			stats.softAttackMult.takeUnless { it == 1.0 }?.let { mult ->
 				tr {
 					th {
 						+"Pieces in this terrain have their soft attack power modified by"
 					}
 					td {
-						+((stats.softAttackMult * 100).roundToInt().toString() + "%")
+						+((mult * 100).roundToInt().toString() + "%")
 					}
 				}
+			}
+			
+			stats.hardAttackMult.takeUnless { it == 1.0 }?.let { mult ->
 				tr {
 					th {
 						+"Pieces in this terrain have their hard attack power modified by"
 					}
 					td {
-						+((stats.hardAttackMult * 100).roundToInt().toString() + "%")
+						+((mult * 100).roundToInt().toString() + "%")
 					}
 				}
 			}
 		}
 		is TerrainStats.Space -> {
-			tr {
-				th {
-					+"Hides pieces from the enemy outside range"
-				}
-				td {
-					+(stats.hideEnemyUnitRange?.let { "$it lengths" } ?: "Doesn't hide pieces")
-				}
-			}
-			tr {
-				th {
-					+"Pieces ending their turns in this terrain receive damage"
-				}
-				td {
-					+(stats.damagePerTurn.toString() + " HP")
+			stats.hideEnemyUnitRange?.let { range ->
+				tr {
+					th {
+						+"Hides pieces from the enemy outside range"
+					}
+					td {
+						+"$range lengths"
+					}
 				}
 			}
-			tr {
-				th {
-					+"Damage done by this terrain ignores shields"
-				}
-				td {
-					+(if (stats.dptIgnoresShields) "Yes" else "No")
-				}
-			}
-			tr {
-				th {
-					+"Pieces in this terrain have their move speed modified by"
-				}
-				td {
-					+((stats.moveSpeedMult * 100).roundToInt().toString() + "%")
+			
+			stats.damagePerTurn.takeUnless { it == 0.0 }?.let { dmg ->
+				tr {
+					th {
+						+"Pieces ending their turns in this terrain receive damage"
+					}
+					td {
+						+"$dmg HP"
+						if (stats.dptIgnoresShields)
+							+" (ignoring shields)"
+					}
 				}
 			}
+			
+			stats.moveSpeedMult.takeUnless { it == 1.0 }?.let { mult ->
+				tr {
+					th {
+						+"Pieces in this terrain have their move speed modified by"
+					}
+					td {
+						+((mult * 100).roundToInt().toString() + "%")
+					}
+				}
+			}
+			
 			tr {
 				th {
 					+"This terrain renders pieces' shields inoperable"
@@ -176,12 +185,15 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 					+(if (stats.forcesShieldsDown) "Yes" else "No")
 				}
 			}
-			tr {
-				th {
-					+"Pieces in this terrain have their attack power modified by"
-				}
-				td {
-					+((stats.attackMult * 100).roundToInt().toString() + "%")
+			
+			stats.attackMult.takeUnless { it == 1.0 }?.let { mult ->
+				tr {
+					th {
+						+"Pieces in this terrain have their attack power modified by"
+					}
+					td {
+						+((mult * 100).roundToInt().toString() + "%")
+					}
 				}
 			}
 		}

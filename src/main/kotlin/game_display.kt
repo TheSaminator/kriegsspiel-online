@@ -115,7 +115,7 @@ sealed class DamageSource {
 				"from $owner ${piece.type.displayName}"
 			}
 			is Terrain -> {
-				"in ${terrainType.displayName} terrain"
+				"in ${terrainType.displayName.lowercase()} terrain"
 			}
 		}
 	}
@@ -561,7 +561,6 @@ object GameSidebar {
 		)
 		
 		deployJob?.cancel()
-		PickHandler.cancelRequest()
 		
 		deployJob = GameScope.launch {
 			val pRes = PickHandler.pickLocal(pReq) as? PickResponse.PickedPosition ?: return@launch

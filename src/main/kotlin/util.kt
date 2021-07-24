@@ -1,6 +1,7 @@
 import com.github.nwillc.ksvg.RenderMode
 import com.github.nwillc.ksvg.elements.Container
 import com.github.nwillc.ksvg.elements.Element
+import kotlinx.browser.window
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import org.w3c.dom.events.Event
@@ -36,6 +37,10 @@ fun Double.toTruncatedString(maxFractionalDigits: Int): String {
 }
 
 fun ClosedFloatingPointRange<Double>.random(source: Random = Random) = source.nextDouble(start, endInclusive)
+
+// Detect development environment
+val isDevEnv: Boolean
+	get() = window.location.hostname == "localhost"
 
 // Detect shitty browser
 val isChrome = js("/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)").unsafeCast<Boolean>()
@@ -86,9 +91,12 @@ class TempEvents private constructor(val receiver: EventTarget, private val map:
 }
 
 // Concurrency
-suspend fun EventTarget.awaitEvent(eventName: String): Event = suspendCancellableCoroutine { continuation ->
+suspend fun EventTarget.awaitEvent(eventName: String, shouldPreventDefault: Boolean = false): Event = suspendCancellableCoroutine { continuation ->
 	val listener = object : EventListener {
 		override fun handleEvent(event: Event) {
+			if (shouldPreventDefault)
+				event.preventDefault()
+			
 			removeEventListener(eventName, this)
 			continuation.resume(event)
 		}
@@ -111,12 +119,6 @@ suspend fun <T> KMutableProperty0<((T) -> Unit)?>.await(): T = suspendCancellabl
 	this.set {
 		this.set(prevValue)
 		continuation.resume(it)
-	}
-}
-
-suspend fun <T> awaitCallback(block: (callback: (T) -> Unit) -> Unit): T = suspendCoroutine { continuation ->
-	block { result ->
-		continuation.resume(result)
 	}
 }
 

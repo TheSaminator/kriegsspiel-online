@@ -72,7 +72,7 @@ textarea, input[type=text], select {
 	border-radius: 1em;
 	border: 0 solid transparent;
 
-	font-family: 'JetBrains Mono', 'Courier New', 'Courier', monospace;
+	font-family: inherit;
 	font-size: 1.5vmin;
 }
 
@@ -91,25 +91,8 @@ textarea[readonly], input[type=text][readonly] {
 code {
 	background-color: #cde;
 	color: #234;
+	font-family: inherit;
 	font-weight: bold;
-}
-
-.button-set {
-	display: flex;
-
-	flex-wrap: nowrap;
-
-	align-items: stretch;
-
-	justify-content: center;
-}
-
-.button-set.row {
-	flex-direction: row;
-}
-
-.button-set.col {
-	flex-direction: column;
 }
 
 input[type=submit] {
@@ -137,6 +120,24 @@ input[type=submit]:disabled {
 	color: #678;
 }
 
+.button-set {
+	display: flex;
+
+	flex-wrap: nowrap;
+
+	align-items: stretch;
+
+	justify-content: center;
+}
+
+.button-set.row {
+	flex-direction: row;
+}
+
+.button-set.col {
+	flex-direction: column;
+}
+
 .button-set a {
 	margin: 0.25em;
 	padding: 0.75em;
@@ -148,6 +149,10 @@ input[type=submit]:disabled {
 
 	text-decoration: none;
 	color: #012;
+}
+
+.button-set.col a {
+	text-align: center;
 }
 
 .button-set a:hover {

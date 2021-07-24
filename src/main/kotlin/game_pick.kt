@@ -2,6 +2,7 @@ import com.github.nwillc.ksvg.elements.CIRCLE
 import com.github.nwillc.ksvg.elements.PATH
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.dom.clear
 import kotlinx.serialization.Serializable
 import org.w3c.dom.HTMLParagraphElement
@@ -10,6 +11,7 @@ import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.svg.SVGCircleElement
 import org.w3c.dom.svg.SVGGElement
 import org.w3c.dom.svg.SVGPathElement
+import kotlin.coroutines.resume
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
@@ -127,7 +129,7 @@ object PickHandler {
 	private fun renderPosPathD(posReq: PickRequest.PickPosition, pos: Vec2): String {
 		val line = posReq.origin?.let { origin ->
 			"M ${origin.x} ${origin.y} L ${pos.x} ${pos.y}"
-		} ?: ""
+		}.orEmpty()
 		
 		val circle = posReq.displayCircleRadius?.let { rad ->
 			val circleX0 = pos.x
@@ -136,7 +138,7 @@ object PickHandler {
 			val circleY1 = pos.y
 			
 			" M $circleX0 $circleY0 A $rad $rad 0 0 1 $circleX1 $circleY1 A $rad $rad 0 1 1 $circleX0 $circleY0 Z"
-		} ?: ""
+		}.orEmpty()
 		
 		return "$line$circle"
 	}
@@ -185,7 +187,11 @@ object PickHandler {
 		return true
 	}
 	
-	fun cancelRequest() {
+	private val topListeners = TempEvents(window)
+	
+	private fun endRequest() {
+		topListeners.deregister()
+		
 		isPicking = false
 		helpText.innerHTML = ""
 		
@@ -197,20 +203,12 @@ object PickHandler {
 		isPicking = true
 		helpText.innerHTML = "Press the Escape key to cancel"
 		
-		val topListeners = TempEvents(window)
-		
-		val wrappedResponder: (PickResponse) -> Unit = {
-			cancelRequest()
-			
-			topListeners.deregister()
-			
-			responder(it)
-		}
+		topListeners.deregister()
 		
 		topListeners.register("keyup") { event: KeyboardEvent ->
 			if (event.key == "Escape") {
 				event.preventDefault()
-				wrappedResponder(PickResponse.Cancel)
+				responder(PickResponse.Cancel)
 			}
 		}
 		
@@ -245,7 +243,7 @@ object PickHandler {
 				
 				pickerAngle.addEventListener("click", {
 					if (checkAngleValid(pickRequest, angle))
-						wrappedResponder(PickResponse.PickedAngle(angle.asAngle()))
+						responder(PickResponse.PickedAngle(angle.asAngle()))
 				})
 			}
 			is PickRequest.PickPosition -> {
@@ -278,7 +276,7 @@ object PickHandler {
 				
 				pickerPos.addEventListener("click", {
 					if (checkPosValid(pickRequest, position))
-						wrappedResponder(PickResponse.PickedPosition(position))
+						responder(PickResponse.PickedPosition(position))
 				})
 			}
 			is PickRequest.PickPiece -> {
@@ -304,7 +302,7 @@ object PickHandler {
 					val halo = document.getElementById("${pieceId}-pick-halo").unsafeCast<SVGCircleElement>()
 					
 					halo.addEventListener("click", {
-						wrappedResponder(PickResponse.PickedPiece(pieceId))
+						responder(PickResponse.PickedPiece(pieceId))
 					})
 				}
 			}
@@ -312,9 +310,14 @@ object PickHandler {
 	}
 	
 	suspend fun pickLocal(pickRequest: PickRequest): PickResponse {
-		return awaitCallback { callback ->
+		return suspendCancellableCoroutine { continuation ->
+			continuation.invokeOnCancellation {
+				endRequest()
+			}
+			
 			beginRequest(pickRequest) {
-				callback(it)
+				endRequest()
+				continuation.resume(it)
 			}
 		}
 	}
