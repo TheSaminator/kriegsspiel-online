@@ -229,7 +229,7 @@ object PickHandler {
 					d = ""
 				}
 				
-				val pickerAngle = document.getElementById(pickerAngleId) as SVGPathElement
+				val pickerAngle = document.getElementById(pickerAngleId).unsafeCast<SVGPathElement>()
 				
 				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
 					val (domX, domY) = mouseEvent.x to mouseEvent.y
@@ -263,7 +263,7 @@ object PickHandler {
 					d = ""
 				}
 				
-				val pickerPos = document.getElementById(pickerPosId) as SVGPathElement
+				val pickerPos = document.getElementById(pickerPosId).unsafeCast<SVGPathElement>()
 				
 				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
 					val (domX, domY) = mouseEvent.x to mouseEvent.y

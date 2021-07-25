@@ -659,7 +659,7 @@ object GameSidebar {
 					div(classes = "button-set col") {
 						piece.type.stats.abilities.forEach { (abilityName, ability) ->
 							a(href = "#") {
-								id = "use-ability-${abilityName.lowercase()}"
+								id = "use-ability-${abilityName.lowercase().replace(' ', '-')}"
 								+abilityName
 								
 								if (ability.canUse(piece))
@@ -667,10 +667,10 @@ object GameSidebar {
 										e.preventDefault()
 										
 										piece.type.stats.abilities.forEach { (abilityName, _) ->
-											val btn = document.getElementById("use-ability-${abilityName.lowercase()}") as HTMLAnchorElement
+											val btn = document.getElementById("use-ability-${abilityName.lowercase().replace(' ', '-')}").unsafeCast<HTMLAnchorElement>()
 											btn.addClass("disabled")
-											btn.onclick = { e2 ->
-												e2.preventDefault()
+											btn.onclick = { e1 ->
+												e1.preventDefault()
 											}
 										}
 										
@@ -679,8 +679,12 @@ object GameSidebar {
 											updateSidebar()
 										}
 									}
-								else
+								else {
 									classes = setOf("disabled")
+									onClickFunction = { e ->
+										e.preventDefault()
+									}
+								}
 							}
 						}
 					}
