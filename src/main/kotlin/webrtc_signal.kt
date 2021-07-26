@@ -1,4 +1,5 @@
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -9,10 +10,9 @@ import org.w3c.dom.WebSocket
 object WebRTCSignalling {
 	private lateinit var ws: WebSocket
 	
-	private var offerIdHandler: ((WebRTCHostId) -> Unit)? = null
-	private var answerIdHandler: ((WebRTCJoinId) -> Unit)? = null
-	private var listDataHandler: ((WebRTCHostList) -> Unit)? = null
-	private var answerDataHandler: ((WebRTCHostAnswer) -> Unit)? = null
+	private val offerIdChannel = Channel<WebRTCHostId>()
+	private val listDataChannel = Channel<WebRTCHostList>()
+	private val answerDataChannel = Channel<WebRTCHostAnswer>()
 	
 	@OptIn(ExperimentalSerializationApi::class)
 	suspend fun initConnection() {
@@ -24,37 +24,35 @@ object WebRTCSignalling {
 		ws.addEventListener("message", { e ->
 			val packet = JSON.parse<dynamic>(e.unsafeCast<MessageEvent>().data as String)
 			
-			when (packet.type) {
-				"offer-id" -> {
-					val offerId = jsonSerializer.decodeFromDynamic(WebRTCHostId.serializer(), packet)
-					offerIdHandler?.invoke(offerId)
-				}
-				"list-data" -> {
-					val listData = jsonSerializer.decodeFromDynamic(WebRTCHostList.serializer(), packet)
-					listDataHandler?.invoke(listData)
-				}
-				"join-id" -> {
-					val answerId = jsonSerializer.decodeFromDynamic(WebRTCJoinId.serializer(), packet)
-					answerIdHandler?.invoke(answerId)
-				}
-				"answer-data" -> {
-					val answerData = jsonSerializer.decodeFromDynamic(WebRTCHostAnswer.serializer(), packet)
-					answerDataHandler?.invoke(answerData)
-				}
-				"ice-candidate" -> {
-					val iceCandidate = packet.candidate.unsafeCast<String>()
-					
-					GameScope.launch {
-						WebRTC.receiveIceCandidate(JSON.parse(iceCandidate))
+			GameScope.launch {
+				when (packet.type) {
+					"offer-id" -> {
+						val offerId = jsonSerializer.decodeFromDynamic(WebRTCHostId.serializer(), packet)
+						offerIdChannel.send(offerId)
 					}
-				}
-				"connection-error" -> {
-					val errorMessage = packet.message.unsafeCast<String>()
-					
-					GameScope.launch {
-						Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
+					"list-data" -> {
+						val listData = jsonSerializer.decodeFromDynamic(WebRTCHostList.serializer(), packet)
+						listDataChannel.send(listData)
+					}
+					"answer-data" -> {
+						val answerData = jsonSerializer.decodeFromDynamic(WebRTCHostAnswer.serializer(), packet)
+						answerDataChannel.send(answerData)
+					}
+					"ice-candidate" -> {
+						val iceCandidate = packet.candidate.unsafeCast<String>()
 						
-						main()
+						GameScope.launch {
+							WebRTC.receiveIceCandidate(JSON.parse(iceCandidate))
+						}
+					}
+					"connection-error" -> {
+						val errorMessage = packet.message.unsafeCast<String>()
+						
+						GameScope.launch {
+							Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
+							
+							main()
+						}
 					}
 				}
 			}
@@ -84,7 +82,7 @@ object WebRTCSignalling {
 		}
 		
 		val idDeferred = GameScope.async {
-			this@WebRTCSignalling::offerIdHandler.await().id
+			offerIdChannel.receive().id
 		}
 		
 		ws.send(offerPacket)
@@ -94,7 +92,7 @@ object WebRTCSignalling {
 		WebRTC.dumpGatheredIceCandidates()
 		
 		val awaitAnswerJob = GameScope.launch {
-			val answer = this@WebRTCSignalling::answerDataHandler.await().answer
+			val answer = answerDataChannel.receive().answer
 			WebRTC.host2(answer)
 		}
 		
@@ -118,7 +116,7 @@ object WebRTCSignalling {
 		}
 		
 		val listDeferred = GameScope.async {
-			this@WebRTCSignalling::listDataHandler.await().list
+			listDataChannel.receive().list
 		}
 		
 		ws.send(listDataPacket)
@@ -152,9 +150,6 @@ data class WebRTCOpenSession(val id: String, val name: String, val offer: String
 
 @Serializable
 data class WebRTCHostId(val id: String)
-
-@Serializable
-data class WebRTCJoinId(val valid: Boolean)
 
 @Serializable
 data class WebRTCHostList(val list: List<WebRTCOpenSession>)

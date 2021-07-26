@@ -144,7 +144,7 @@ object GameField {
 		mapField.clear()
 		
 		mapField.append(RECT()) {
-			fill = map.gameType.defaultMapColor
+			fill = GameMap.defaultColor(map.gameType)
 			width = map.size.x.toString()
 			height = map.size.y.toString()
 		}

@@ -25,15 +25,13 @@ object WebRTC {
 			ordered = true
 		})
 		
-		iceCandidateHandler?.let { handler ->
-			rtcPeerConnection.addEventListener("icecandidate", { e ->
-				val candidate = e.unsafeCast<RTCPeerConnectionIceEvent>().candidate
-				if (isReadyToSend)
-					handler(candidate)
-				else
-					iceCandidateSendQueue.add(candidate)
-			})
-		}
+		rtcPeerConnection.addEventListener("icecandidate", { e ->
+			val candidate = e.unsafeCast<RTCPeerConnectionIceEvent>().candidate
+			if (isReadyToSend)
+				iceCandidateHandler(candidate)
+			else
+				iceCandidateSendQueue.add(candidate)
+		})
 		
 		val offer = rtcPeerConnection.createOffer().await()
 		rtcPeerConnection.setLocalDescription(offer).await()
@@ -59,15 +57,13 @@ object WebRTC {
 				console.log("Data channel connected on guest")
 		})
 		
-		iceCandidateHandler?.let { handler ->
-			rtcPeerConnection.addEventListener("icecandidate", { e ->
-				val candidate = e.unsafeCast<RTCPeerConnectionIceEvent>().candidate
-				if (isReadyToSend)
-					handler(candidate)
-				else
-					iceCandidateSendQueue.add(candidate)
-			})
-		}
+		rtcPeerConnection.addEventListener("icecandidate", { e ->
+			val candidate = e.unsafeCast<RTCPeerConnectionIceEvent>().candidate
+			if (isReadyToSend)
+				iceCandidateHandler(candidate)
+			else
+				iceCandidateSendQueue.add(candidate)
+		})
 		
 		val offer = JSON.parse<RTCSessionDescriptionInit>(offerStr)
 		rtcPeerConnection.setRemoteDescription(offer).await()
@@ -83,13 +79,13 @@ object WebRTC {
 	private var isReadyToReceive = false
 	private val iceCandidateSendQueue = mutableListOf<RTCIceCandidate?>()
 	private val iceCandidateReceiveQueue = mutableListOf<RTCIceCandidate?>()
-	var iceCandidateHandler: ((RTCIceCandidate?) -> Unit)? = null
+	lateinit var iceCandidateHandler: (RTCIceCandidate?) -> Unit
 	
 	fun dumpGatheredIceCandidates() {
 		isReadyToSend = true
 		
 		iceCandidateSendQueue.forEach {
-			iceCandidateHandler?.invoke(it)
+			iceCandidateHandler(it)
 		}
 		
 		iceCandidateSendQueue.clear()
@@ -128,12 +124,14 @@ object WebRTC {
 	var connectionOpen: Boolean = false
 		private set
 	
-	suspend fun makeDataChannel() {
+	suspend fun makeDataChannel(onClose: suspend () -> Unit) {
 		with(dataChannel) {
 			addEventListener("message", messageEventHandler)
 			addEventListener("close", {
 				removeEventListener("message", messageEventHandler)
-				channelCloseHandler?.invoke()
+				GameScope.launch {
+					onClose()
+				}
 				connectionOpen = false
 			})
 			
@@ -149,9 +147,7 @@ object WebRTC {
 		})
 	}
 	
-	val messageChannel = Channel<String>(Channel.BUFFERED)
-	
-	var channelCloseHandler: (() -> Unit)? = null
+	val messageChannel = Channel<String>()
 	
 	private val messageEventHandler = object : EventListener {
 		override fun handleEvent(event: Event) {

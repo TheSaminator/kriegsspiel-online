@@ -55,7 +55,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 	tr {
 		th {
 			colSpan = "2"
-			style = "background-color: ${type.requiredBattleType.defaultMapColor}; color: ${type.color}; font-weight: bold;"
+			style = "background-color: ${GameMap.defaultColor(type.requiredBattleType)}; color: ${type.color}; font-weight: bold;"
 			+type.displayName
 		}
 	}

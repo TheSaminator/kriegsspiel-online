@@ -743,11 +743,10 @@ data class SpacePieceStats(
 
 @Serializable
 enum class BattleType(
-	val displayName: String,
-	val defaultMapColor: String
+	val displayName: String
 ) {
-	LAND_BATTLE("Land Battle", "#194"),
-	SPACE_BATTLE("Space Battle", "#444");
+	LAND_BATTLE("Land Battle"),
+	SPACE_BATTLE("Space Battle");
 	
 	val usesSkins: Boolean
 		get() = BattleFactionSkin.values().any { it.forBattleType == this }

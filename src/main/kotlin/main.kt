@@ -3,7 +3,6 @@ import kotlinx.coroutines.*
 var playerName: String? = null
 
 private val AppScope = MainScope()
-
 private var mainJob: Job? = null
 
 val GameScope: CoroutineScope

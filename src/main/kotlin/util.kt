@@ -9,10 +9,8 @@ import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.EventTarget
 import org.w3c.dom.svg.SVGElement
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.math.abs
 import kotlin.random.Random
-import kotlin.reflect.KMutableProperty0
 
 // Math
 const val EPSILON = 0.00_000_1
@@ -62,7 +60,7 @@ inline fun jsonString(builder: (dynamic) -> Unit) = JSON.stringify(
 class TempEvents private constructor(val receiver: EventTarget, private val map: MutableMap<String, EventListener>) : Map<String, EventListener> by map {
 	constructor(receiver: EventTarget) : this(receiver, mutableMapOf())
 	
-	fun register(event: String, listener: EventListener) {
+	private fun register(event: String, listener: EventListener) {
 		map[event]?.let { oldListener ->
 			receiver.removeEventListener(event, oldListener)
 		}
@@ -107,19 +105,6 @@ suspend fun EventTarget.awaitEvent(eventName: String, shouldPreventDefault: Bool
 	}
 	
 	addEventListener(eventName, listener)
-}
-
-suspend fun <T> KMutableProperty0<((T) -> Unit)?>.await(): T = suspendCancellableCoroutine { continuation ->
-	val prevValue = this.get()
-	
-	continuation.invokeOnCancellation {
-		this.set(prevValue)
-	}
-	
-	this.set {
-		this.set(prevValue)
-		continuation.resume(it)
-	}
 }
 
 // Rendering

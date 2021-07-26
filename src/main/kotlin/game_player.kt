@@ -1,3 +1,4 @@
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 
 sealed class Player(val side: GameServerSide) {
@@ -34,18 +35,18 @@ sealed class Player(val side: GameServerSide) {
 			GamePacket.send(GamePacket.DoneDeploying)
 		}
 		
-		private var turnEnd: ((Unit) -> Unit)? = null
+		private val turnEnds = Channel<Unit>()
 		
 		override suspend fun doTurn() {
 			GamePhase.currentPhase = GamePhase.PlayTurn(side)
 			GamePacket.send(GamePacket.GamePhaseChanged(GamePhase.currentPhase))
 			GameSidebar.updateSidebar()
 			
-			this::turnEnd.await()
+			turnEnds.receive()
 		}
 		
 		override suspend fun endTurn() {
-			turnEnd?.invoke(Unit)
+			turnEnds.send(Unit)
 			
 			GamePhase.currentPhase = GamePhase.PlayTurn(side.other)
 			GamePacket.send(GamePacket.GamePhaseChanged(GamePhase.currentPhase))

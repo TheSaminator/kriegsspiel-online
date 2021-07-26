@@ -173,6 +173,11 @@ data class GameMap(
 	val terrainBlobs: Set<TerrainBlob>
 ) {
 	companion object {
+		fun defaultColor(battleType: BattleType) = when(battleType) {
+			BattleType.LAND_BATTLE -> "#194"
+			BattleType.SPACE_BATTLE -> "#444"
+		}
+		
 		val LAND_WIDTH_RANGE = 3500.0..5500.0
 		val LAND_HEIGHT_RANGE = 2500.0..4500.0
 		
