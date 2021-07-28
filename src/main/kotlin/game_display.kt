@@ -280,7 +280,7 @@ object GameField {
 		if (this::gameFieldPanZoom.isInitialized)
 			gameFieldPanZoom.destroy()
 		
-		if (window.matchMedia("(max-device-width: 8in)").matches)
+		if (window.matchMedia("(max-width: 960px)").matches)
 			createPanZoomMobile()
 		else
 			createPanZoomDesktop()

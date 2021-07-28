@@ -241,7 +241,7 @@ object PickHandler {
 	private fun beginRequest(pickRequest: PickRequest, responder: (PickResponse) -> Unit) {
 		isPicking = true
 		
-		val isDesktop = window.matchMedia("(min-device-width: 8in)").matches
+		val isDesktop = window.matchMedia("(min-width: 960px)").matches
 		
 		if (isDesktop)
 			helpText.innerHTML = "Press the Escape key to cancel"
