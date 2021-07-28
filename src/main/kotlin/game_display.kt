@@ -1,4 +1,9 @@
+import HammerJS.Hammer
+import HammerJS.HammerManager
+import HammerJS.invoke
+import SvgPanZoom.CustomEventHandler
 import SvgPanZoom.SVGPanZoomInstance
+import SvgPanZoom.SVGPanZoomOptions
 import com.github.nwillc.ksvg.elements.CIRCLE
 import com.github.nwillc.ksvg.elements.G
 import com.github.nwillc.ksvg.elements.RECT
@@ -16,6 +21,7 @@ import kotlinx.serialization.Serializable
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
+import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.svg.SVGGElement
 import org.w3c.dom.svg.SVGPathElement
 import kotlin.math.PI
@@ -122,6 +128,10 @@ sealed class DamageSource {
 }
 
 object GameField {
+	private val field by lazy {
+		document.getElementById("game-field").unsafeCast<SVGGElement>()
+	}
+	
 	private val mapField by lazy {
 		document.getElementById("game-map").unsafeCast<SVGGElement>()
 	}
@@ -139,6 +149,115 @@ object GameField {
 	}
 	
 	private lateinit var gameFieldPanZoom: SVGPanZoomInstance
+	
+	private fun SVGPanZoomOptions.configurePanBox() {
+		beforePan = { _, newPan ->
+			val sizes = js("this").unsafeCast<SVGPanZoomInstance>().getSizes()
+			
+			val leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom)
+			val rightLimit = sizes.width - (sizes.viewBox.x * sizes.realZoom)
+			val topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom)
+			val bottomLimit = sizes.height - (sizes.viewBox.y * sizes.realZoom)
+			
+			val customPan = js("{}")
+			customPan.x = newPan.x.coerceIn(leftLimit, rightLimit)
+			customPan.y = newPan.y.coerceIn(topLimit, bottomLimit)
+			
+			customPan
+		}
+	}
+	
+	private fun createPanZoomDesktop() {
+		gameFieldPanZoom = svgPanZoom(field, configure {
+			configurePanBox()
+		})
+		
+		gameFieldPanZoom.fit().center()
+	}
+	
+	private fun createPanZoomMobile() {
+		gameFieldPanZoom = svgPanZoom(field, configure {
+			configurePanBox()
+			
+			customEventsHandler = configure<CustomEventHandler> {
+				haltEventListeners = arrayOf("touchstart", "touchend", "touchmove", "touchleave", "touchcancel")
+				
+				init = { opts ->
+					val instance = opts.instance
+					
+					var initialScale = 1.0
+					var panX = 0.0
+					var panY = 0.0
+					
+					val hammer = Hammer(opts.svgElement)
+					js("this").hammer = hammer
+					
+					hammer.get("pan").set(configure { direction = Hammer.DIRECTION_ALL })
+					hammer.get("pinch").set(configure { enable = true })
+					hammer.get("tap").set(configure { enable = true })
+					hammer.get("press").set(configure { enable = true })
+					
+					hammer.on("panstart panmove") { e ->
+						e.preventDefault()
+						
+						if (e.type == "panstart") {
+							panX = 0.0
+							panY = 0.0
+						}
+						
+						val dx = e.deltaX.toDouble()
+						val dy = e.deltaY.toDouble()
+						
+						instance.panBy(configure {
+							x = dx - panX
+							y = dy - panY
+						})
+						
+						panX = dx
+						panY = dy
+					}
+					
+					hammer.on("pinchstart pinchmove") { e ->
+						e.preventDefault()
+						
+						if (e.type == "pinchstart")
+							initialScale = instance.getZoom()
+						
+						instance.zoomAtPoint(initialScale * e.scale.toDouble(), configure {
+							x = e.center.x.toDouble()
+							y = e.center.y.toDouble()
+						})
+					}
+					
+					hammer.on("tap") { e ->
+						if (PickHandler.isPicking) {
+							e.preventDefault()
+							
+							val domVec = Vec2(e.center.x.toDouble(), e.center.y.toDouble())
+							MobileTouchPicking.onTap(domVec)
+						}
+					}
+					
+					hammer.on("press") { e ->
+						if (PickHandler.isPicking) {
+							e.preventDefault()
+							
+							val domVec = Vec2(e.center.x.toDouble(), e.center.y.toDouble())
+							MobileTouchPicking.onHold(domVec)
+						}
+					}
+					
+					opts.svgElement.addEventListener("touchmove", { e -> e.preventDefault() })
+				}
+				
+				destroy = {
+					js("this").hammer.unsafeCast<HammerManager>().destroy()
+				}
+			}
+		})
+		
+		gameFieldPanZoom.fit().center()
+	}
 	
 	fun drawMap(map: GameMap) {
 		mapField.clear()
@@ -161,24 +280,10 @@ object GameField {
 		if (this::gameFieldPanZoom.isInitialized)
 			gameFieldPanZoom.destroy()
 		
-		gameFieldPanZoom = svgPanZoom("#game-field", configure {
-			beforePan = { _, newPan ->
-				val sizes = js("this").unsafeCast<SVGPanZoomInstance>().getSizes()
-				
-				val leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + (sizes.width / 2)
-				val rightLimit = (sizes.width / 2) - (sizes.viewBox.x * sizes.realZoom)
-				val topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom) + (sizes.height / 2)
-				val bottomLimit = (sizes.height / 2) - (sizes.viewBox.y * sizes.realZoom)
-				
-				val customPan = js("{}")
-				customPan.x = newPan.x.coerceIn(leftLimit, rightLimit)
-				customPan.y = newPan.y.coerceIn(topLimit, bottomLimit)
-				
-				customPan
-			}
-		})
-		
-		gameFieldPanZoom.fit().center()
+		if (window.matchMedia("(max-device-width: 8in)").matches)
+			createPanZoomMobile()
+		else
+			createPanZoomDesktop()
 	}
 	
 	private fun drawPickBoundaryArc(origin: Vec2, minAngle: Double, maxAngle: Double, minRadius: Double?, maxRadius: Double): String {

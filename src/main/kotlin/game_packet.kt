@@ -18,7 +18,9 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.HOST)
 								throw IllegalStateException("Remote game must not receive guest ready!")
 							
-							guestReadyChannel.send(Unit)
+							launch {
+								guestReadyChannel.send(Unit)
+							}
 						}
 						is HostReady -> {
 							if (Game.currentSide != GameServerSide.GUEST)
@@ -44,7 +46,9 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.GUEST)
 								throw IllegalStateException("Local game must not receive join response!")
 							
-							joinAcceptChannel.send(packet.accepted)
+							launch {
+								joinAcceptChannel.send(packet.accepted)
+							}
 						}
 						is ChatMessage -> {
 							ChatBox.addChatMessage("Opponent", packet.text)
@@ -119,7 +123,9 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.GUEST)
 								throw IllegalStateException("Local game must not receive piece ability completion!")
 							
-							abilityDoneChannel.send(packet.successful)
+							launch {
+								abilityDoneChannel.send(packet.successful)
+							}
 						}
 						is PieceAddedOrChanged -> {
 							if (Game.currentSide != GameServerSide.GUEST)
@@ -139,7 +145,9 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.HOST)
 								throw IllegalStateException("Remote game must not receive turn end!")
 							
-							turnEndChannel.send(Unit)
+							launch {
+								turnEndChannel.send(Unit)
+							}
 						}
 						is PickReq -> {
 							if (Game.currentSide != GameServerSide.GUEST)
@@ -153,13 +161,17 @@ sealed class GamePacket {
 							if (Game.currentSide != GameServerSide.HOST)
 								throw IllegalStateException("Remote game must not receive pick response!")
 							
-							pickResponseChannel.send(packet.pickResponse)
+							launch {
+								pickResponseChannel.send(packet.pickResponse)
+							}
 						}
 						is GameEnded -> {
 							if (Game.currentSide != GameServerSide.GUEST)
 								throw IllegalStateException("Local game must not receive game end!")
 							
-							gameWonChannel.send(packet.winner)
+							launch {
+								gameWonChannel.send(packet.winner)
+							}
 						}
 					}
 				}

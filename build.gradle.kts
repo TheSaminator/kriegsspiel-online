@@ -23,12 +23,15 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.7.3")
 	
 	//implementation("com.github.nwillc:ksvg-js:3.0.0")
+	
+	//implementation(npm("@types/hammerjs", "2.0.40"))
 }
 
 kotlin {
 	js {
 		browser {
 			binaries.executable()
+			@Suppress("EXPERIMENTAL_API_USAGE")
 			distribution {
 				directory = File("$projectDir/publish/")
 			}

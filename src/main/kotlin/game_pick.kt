@@ -3,8 +3,12 @@ import com.github.nwillc.ksvg.elements.PATH
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.dom.addClass
 import kotlinx.dom.clear
+import kotlinx.dom.removeClass
 import kotlinx.serialization.Serializable
+import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLParagraphElement
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
@@ -98,8 +102,42 @@ sealed class PickResponse {
 	data class PickedPiece(val pieceId: String) : PickResponse()
 }
 
+object MobileTouchPicking {
+	private val cancelPickBox by lazy {
+		document.getElementById("cancel-pick").unsafeCast<HTMLDivElement>()
+	}
+	
+	private val cancelPickButton by lazy {
+		document.getElementById("pick-cancel-button").unsafeCast<HTMLAnchorElement>()
+	}
+	
+	var onTap: (Vec2) -> Unit = { _ -> }
+	var onHold: (Vec2) -> Unit = { _ -> }
+	var onCancel: () -> Unit = {}
+	
+	init {
+		cancelPickButton.addEventListener("click", { e ->
+			e.preventDefault()
+			
+			onCancel()
+		})
+	}
+	
+	fun begin() {
+		cancelPickBox.removeClass("hide")
+	}
+	
+	fun clear() {
+		cancelPickBox.addClass("hide")
+		onTap = { _ -> }
+		onHold = { _ -> }
+		onCancel = {}
+	}
+}
+
 object PickHandler {
-	private var isPicking = false
+	var isPicking = false
+		private set
 	
 	private val gamePick by lazy {
 		document.getElementById("game-picker").unsafeCast<SVGGElement>()
@@ -194,6 +232,7 @@ object PickHandler {
 		
 		isPicking = false
 		helpText.innerHTML = ""
+		MobileTouchPicking.clear()
 		
 		gamePick.clear()
 		GameField.drawPickBoundary(null)
@@ -201,15 +240,29 @@ object PickHandler {
 	
 	private fun beginRequest(pickRequest: PickRequest, responder: (PickResponse) -> Unit) {
 		isPicking = true
-		helpText.innerHTML = "Press the Escape key to cancel"
+		
+		val isDesktop = window.matchMedia("(min-device-width: 8in)").matches
+		
+		if (isDesktop)
+			helpText.innerHTML = "Press the Escape key to cancel"
+		else if (pickRequest is PickRequest.PickPiece)
+			helpText.innerHTML = "Tap on a piece to make selection"
+		else
+			helpText.innerHTML = "Tap to select, long press to confirm selection"
 		
 		topListeners.deregister()
 		
 		topListeners.register("keyup") { event: KeyboardEvent ->
-			if (event.key == "Escape") {
+			if (event.key == "Escape" && isDesktop) {
 				event.preventDefault()
 				responder(PickResponse.Cancel)
 			}
+		}
+		
+		MobileTouchPicking.begin()
+		
+		MobileTouchPicking.onCancel = {
+			responder(PickResponse.Cancel)
 		}
 		
 		when (pickRequest) {
@@ -231,8 +284,7 @@ object PickHandler {
 				
 				val pickerAngle = document.getElementById(pickerAngleId).unsafeCast<SVGPathElement>()
 				
-				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
-					val (domX, domY) = mouseEvent.x to mouseEvent.y
+				fun testAngle(domX: Double, domY: Double) {
 					val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
 					point = svgVec
 					angle = (svgVec - pickRequest.center).angle
@@ -241,10 +293,32 @@ object PickHandler {
 					pickerAngle.setAttribute("stroke", if (checkAngleValid(pickRequest, angle)) "#0F0" else "#F00")
 				}
 				
-				pickerAngle.addEventListener("click", {
+				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
+					if (isDesktop)
+						testAngle(mouseEvent.clientX.toDouble(), mouseEvent.clientY.toDouble())
+				}
+				
+				MobileTouchPicking.onTap = { (domX, domY) ->
+					testAngle(domX, domY)
+				}
+				
+				fun chooseAngle(angle: Double) {
 					if (checkAngleValid(pickRequest, angle))
 						responder(PickResponse.PickedAngle(angle.asAngle()))
+				}
+				
+				pickerAngle.addEventListener("click", {
+					if (isDesktop)
+						chooseAngle(angle)
 				})
+				
+				MobileTouchPicking.onHold = { (domX, domY) ->
+					val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
+					point = svgVec
+					angle = (svgVec - pickRequest.center).angle
+					
+					chooseAngle(angle)
+				}
 			}
 			is PickRequest.PickPosition -> {
 				var position = Vec2(0.0, 0.0)
@@ -265,8 +339,7 @@ object PickHandler {
 				
 				val pickerPos = document.getElementById(pickerPosId).unsafeCast<SVGPathElement>()
 				
-				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
-					val (domX, domY) = mouseEvent.x to mouseEvent.y
+				fun testPos(domX: Double, domY: Double) {
 					val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
 					position = svgVec
 					
@@ -274,10 +347,29 @@ object PickHandler {
 					pickerPos.setAttribute("stroke", if (checkPosValid(pickRequest, position)) "#0F0" else "#F00")
 				}
 				
+				topListeners.register("mousemove") { mouseEvent: MouseEvent ->
+					if (isDesktop)
+						testPos(mouseEvent.clientX.toDouble(), mouseEvent.clientY.toDouble())
+				}
+				
+				MobileTouchPicking.onTap = { (domX, domY) ->
+					testPos(domX, domY)
+				}
+				
+				fun choosePos(svgPos: Vec2) {
+					if (checkPosValid(pickRequest, svgPos))
+						responder(PickResponse.PickedPosition(svgPos))
+				}
+				
 				pickerPos.addEventListener("click", {
-					if (checkPosValid(pickRequest, position))
-						responder(PickResponse.PickedPosition(position))
+					if (isDesktop)
+						choosePos(position)
 				})
+				
+				MobileTouchPicking.onHold = { (domX, domY) ->
+					val svgVec = SVGCoordinates.domToSvg(Vec2(domX, domY))
+					choosePos(svgVec)
+				}
 			}
 			is PickRequest.PickPiece -> {
 				GameField.drawPickBoundary(pickRequest.inBoundary)

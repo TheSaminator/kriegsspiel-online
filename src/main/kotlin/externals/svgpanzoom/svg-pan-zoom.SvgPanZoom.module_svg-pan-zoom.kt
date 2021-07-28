@@ -74,7 +74,7 @@ external interface SVGPanZoomOptions {
 external interface CustomEventHandler {
     var init: (options: CustomEventOptions) -> Unit
     var haltEventListeners: Array<String>
-    var destroy: Function<*>
+    var destroy: () -> Unit
 }
 
 external interface CustomEventOptions {

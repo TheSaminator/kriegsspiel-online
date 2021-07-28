@@ -12,6 +12,8 @@ html, body {
 	color: #345;
 	font-family: 'JetBrains Mono', 'Courier New', 'Courier', monospace;
 	font-size: 100%;
+
+	touch-action: none;
 }
 
 .box {
@@ -146,11 +148,8 @@ input[type=submit]:disabled {
 	box-sizing: border-box;
 
 	text-decoration: none;
-	color: #012;
-}
-
-.button-set.col a {
 	text-align: center;
+	color: #012;
 }
 
 .button-set a:hover {
@@ -196,7 +195,7 @@ input[type=submit]:disabled {
 	left: 1.5em;
 
 	width: 30%;
-	height: 20%;
+	height: 30%;
 
 	display: flex;
 	flex-wrap: nowrap;
@@ -265,12 +264,13 @@ input[type=submit]:disabled {
 	right: 1.5em;
 
 	width: 20%;
-	min-height: 70%;
+	min-height: 50%;
+	max-height: 75%;
 }
 
 #piece-selection p.all-info {
 	text-align: center;
-	vertical-align: center;
+	vertical-align: middle;
 
 	margin: auto;
 
@@ -331,7 +331,7 @@ input[type=submit]:disabled {
 
 #help-text {
 	text-align: center;
-	vertical-align: center;
+	vertical-align: middle;
 
 	color: #fff;
 	text-shadow: 0 0 0.25em #000;
@@ -347,9 +347,7 @@ input[type=submit]:disabled {
 	bottom: 1.5em;
 	right: 1.5em;
 
-	width: 20%;
-
-	text-align: center;
+	width: 15%;
 }
 
 table {
@@ -360,4 +358,62 @@ table {
 td, th {
 	border: 0.1em solid #9ab;
 	margin: 0.3em;
+}
+
+#cancel-pick {
+	position: fixed;
+	top: 1.5em;
+	left: 1.5em;
+
+	width: 10%;
+
+	display: none;
+}
+
+@media only screen and (max-device-width: 8in) {
+	html, body {
+		font-size: 75%;
+	}
+
+	#piece-selection {
+		overflow-y: auto;
+	}
+
+	#cancel-pick {
+		display: unset;
+	}
+
+	#cancel-pick.hide {
+		display: none;
+	}
+}
+
+#portrait-admonishment {
+	display: none;
+}
+
+@media only screen and (max-device-width: 8in) and (orientation: portrait) {
+	#portrait-admonishment {
+		display: unset;
+		position: fixed;
+		top: 0;
+		left: 0;
+
+		width: 100%;
+		height: 100%;
+
+		background-color: #DDD;
+	}
+
+	#portrait-admonishment p {
+		color: #222;
+		font-size: 200%;
+		text-align: center;
+
+		position: fixed;
+		top: 50%;
+		left: 50%;
+
+		transform: translate(-50%, -50%);
+	}
 }
