@@ -21,7 +21,6 @@ import kotlinx.serialization.Serializable
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
-import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.svg.SVGGElement
 import org.w3c.dom.svg.SVGPathElement
 import kotlin.math.PI
@@ -194,8 +193,8 @@ object GameField {
 					
 					hammer.get("pan").set(configure { direction = Hammer.DIRECTION_ALL })
 					hammer.get("pinch").set(configure { enable = true })
-					hammer.get("tap").set(configure { enable = true })
-					hammer.get("press").set(configure { enable = true })
+					hammer.get("tap").set(configure { enable = true; time = 150.0 })
+					hammer.get("press").set(configure { enable = true; time = 151.0 })
 					
 					hammer.on("panstart panmove") { e ->
 						e.preventDefault()
@@ -255,11 +254,6 @@ object GameField {
 				}
 			}
 		})
-		
-		document.oncontextmenu = { e ->
-			e.preventDefault()
-			false
-		}
 		
 		gameFieldPanZoom.fit().center()
 	}
