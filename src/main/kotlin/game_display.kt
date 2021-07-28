@@ -256,6 +256,11 @@ object GameField {
 			}
 		})
 		
+		document.oncontextmenu = { e ->
+			e.preventDefault()
+			false
+		}
+		
 		gameFieldPanZoom.fit().center()
 	}
 	
