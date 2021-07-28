@@ -266,6 +266,8 @@ input[type=submit]:disabled {
 	width: 20%;
 	min-height: 50%;
 	max-height: 75%;
+
+	overflow-y: auto;
 }
 
 #piece-selection p.all-info {
@@ -373,10 +375,6 @@ td, th {
 @media only screen and (max-width: 960px) {
 	html, body {
 		font-size: 75%;
-	}
-
-	#piece-selection {
-		overflow-y: auto;
 	}
 
 	#cancel-pick {
