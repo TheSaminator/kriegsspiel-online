@@ -555,9 +555,13 @@ object GameSidebar {
 						a(href = "#") {
 							+"${pieceType.displayName} (${pieceType.pointCost})"
 							
-							if (currentPoints < pieceType.pointCost)
+							if (currentPoints < pieceType.pointCost) {
 								classes = setOf("disabled")
-							else
+								
+								onClickFunction = { e ->
+									e.preventDefault()
+								}
+							} else
 								onClickFunction = { e ->
 									e.preventDefault()
 									
@@ -573,13 +577,27 @@ object GameSidebar {
 							onClickFunction = { e ->
 								e.preventDefault()
 								
-								Player.currentPlayer!!.clearDeploying()
-								currentPoints = GameSessionData.currentSession!!.battleSize
-								
-								deployMenu()
+								GameScope.launch clearDeploy@{
+									val popup = Popup.YesNoDialogue("Yes", "No") {
+										+"Are you sure you want to clear your deployment? This will erase all units you have deployed, and restore your pool of points to spend."
+									}
+									
+									if (!popup.display())
+										return@clearDeploy
+									
+									Player.currentPlayer!!.clearDeploying()
+									currentPoints = GameSessionData.currentSession!!.battleSize
+									
+									deployMenu()
+								}
 							}
-						else
+						else {
 							classes = setOf("disabled")
+							
+							onClickFunction = { e ->
+								e.preventDefault()
+							}
+						}
 					}
 					
 					val battleType = GameSessionData.currentSession!!.gameMap.gameType
@@ -590,10 +608,12 @@ object GameSidebar {
 							onClickFunction = { e ->
 								e.preventDefault()
 								
-								GameScope.launch {
-									GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
+								GameScope.launch skinChange@{
+									val newSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
 										it.forBattleType == battleType
-									}, BattleFactionSkin::displayName).display()
+									} + listOf(null)) { it?.displayName ?: "Cancel skin change" }.display() ?: return@skinChange
+									
+									GamePhase.Deployment.chosenSkin = newSkin
 									
 									Player.currentPlayer!!.clearDeploying()
 									currentPoints = GameSessionData.currentSession!!.battleSize
@@ -612,7 +632,7 @@ object GameSidebar {
 							onClickFunction = { e ->
 								e.preventDefault()
 								
-								GameScope.launch {
+								GameScope.launch finishDeploy@{
 									val popup = Popup.YesNoDialogue("Yes", "No") {
 										+"Are you sure you want to finish deploying? "
 										if (currentPoints > 0)
@@ -621,18 +641,24 @@ object GameSidebar {
 											+"You won't be able to change your deployment after you confirm it!"
 									}
 									
-									if (popup.display()) {
-										Player.currentPlayer!!.finishDeploying()
-										
-										if (GamePhase.Deployment.bothAreDone)
-											updateSidebar()
-										else
-											deployMenu()
-									}
+									if (!popup.display())
+										return@finishDeploy
+									
+									Player.currentPlayer!!.finishDeploying()
+									
+									if (GamePhase.Deployment.bothAreDone)
+										updateSidebar()
+									else
+										deployMenu()
 								}
 							}
-						else
+						else {
 							classes = setOf("disabled")
+							
+							onClickFunction = { e ->
+								e.preventDefault()
+							}
+						}
 					}
 				}
 			}
