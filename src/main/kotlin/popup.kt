@@ -61,6 +61,14 @@ sealed class Popup<T> {
 	
 	object MainMenu : Popup<MainMenuAction>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (MainMenuAction) -> Unit) {
+			p {
+				style = "text-align: center"
+				
+				strong { +"Kriegsspiel Online" }
+				br
+				em { +"the web-based wargame" }
+			}
+			
 			div(classes = "button-set col") {
 				a(href = "#") {
 					+"Host Game"

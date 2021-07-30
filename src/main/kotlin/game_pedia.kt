@@ -44,8 +44,8 @@ private fun P.explainSpace() {
 	+"The flank weight in space in 5, resulting in a flank multiplier that ranges from a minimum of 100% to a maximum of 150%."
 	br
 	br
-	+"Starships, unlike land pieces, have shields that absorb a certain amount of damage before falling and needing to recharge. "
-	+"When a ship's shield bar is blue, that means its shields are up. When the bar is purple, that means its shields are recharging."
+	+"Starships, unlike land pieces, have shields that absorb a certain amount of damage before falling and needing to recharge."
+	+" When a ship's shield bar is blue, that means its shields are up. When the bar is purple, that means its shields are recharging."
 	br
 	br
 	+"Unlike land battles, which use a single style for all pieces, space battles have different faction skins with different starship types available to them. These factions are the Imperial Navy, the Space Marine Corps, the Star Fleet, and the K.D.F."

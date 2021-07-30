@@ -32,6 +32,7 @@ gradle-app.setting
 .idea/**/dbnavigator.xml
 .idea/**/gradle.xml
 .idea/**/libraries
+.idea/**/runConfigurations.xml
 cmake-build-*/
 .idea/**/mongoSettings.xml
 *.iws
