@@ -33,9 +33,7 @@ object Game {
 		}
 		
 		if (battleType.usesSkins)
-			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
-				it.forBattleType == battleType
-			}, BattleFactionSkin::displayName).display()
+			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.valuesFor(battleType), BattleFactionSkin::displayName).display()
 		
 		GameSidebar.beginDeploy()
 		GameSidebar.deployMenu()
@@ -73,9 +71,7 @@ object Game {
 		
 		val battleType = GameSessionData.currentSession!!.gameMap.gameType
 		if (battleType.usesSkins)
-			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
-				it.forBattleType == battleType
-			}, BattleFactionSkin::displayName).display()
+			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.valuesFor(battleType), BattleFactionSkin::displayName).display()
 		
 		GameSidebar.beginDeploy()
 		GameSidebar.deployMenu()

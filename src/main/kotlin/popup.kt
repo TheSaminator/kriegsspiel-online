@@ -64,9 +64,15 @@ sealed class Popup<T> {
 			p {
 				style = "text-align: center"
 				
-				strong { +"Kriegsspiel Online" }
+				strong {
+					style = "font-size: 2em"
+					+"Kriegsspiel Online"
+				}
 				br
-				em { +"the web-based wargame" }
+				em {
+					style = "font-size: 1.5em"
+					+"the web-based wargame"
+				}
 			}
 			
 			div(classes = "button-set col") {

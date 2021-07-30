@@ -185,7 +185,7 @@ sealed class GamePacket {
 				
 				Popup.Message("Connection closed.", true, "Return to Main Menu").display()
 				
-				main()
+				gameMain()
 			}
 			
 			Popup.LoadingScreen("Processing handshake protocol...") {

@@ -626,9 +626,9 @@ private fun TABLE.explainPieceType(type: PieceType) {
 	}
 }
 
-private var kriegspediaButtonEnabled = false
-fun enableKriegspediaButton() {
-	if (kriegspediaButtonEnabled)
+private var kriegspediaButtonAttached = false
+fun attachKriegspediaButton() {
+	if (kriegspediaButtonAttached)
 		return
 	
 	val aElement = document.getElementById("kriegspedia-button").unsafeCast<HTMLAnchorElement>()
@@ -642,7 +642,7 @@ fun enableKriegspediaButton() {
 		Unit
 	}
 	
-	kriegspediaButtonEnabled = true
+	kriegspediaButtonAttached = true
 }
 
 suspend fun viewKriegspedia() {

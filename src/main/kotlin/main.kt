@@ -9,9 +9,25 @@ val GameScope: CoroutineScope
 	get() = mainJob?.let { AppScope + it } ?: AppScope
 
 fun main() {
+	AppScope.launch {
+		suspendMain()
+	}
+}
+
+suspend fun suspendMain() {
+	attachKriegspediaButton()
+	
+	Popup.LoadingScreen("Loading assets...") {
+		GamePiece.preloadAllPieceImages()
+	}.display()
+	
+	gameMain()
+}
+
+fun gameMain() {
 	mainJob?.cancel()
 	mainJob = AppScope.launch {
-		val winner = gameMain()
+		val winner = playMain()
 		val message = if (winner == Game.currentSide!!)
 			"You have won the battle!"
 		else
@@ -26,11 +42,9 @@ sealed class MainMenuAction {
 	object ViewKriegspedia : MainMenuAction()
 }
 
-suspend fun gameMain(): GameServerSide {
+suspend fun playMain(): GameServerSide {
 	if (ExitHandler.isAttached)
 		ExitHandler.detach()
-	
-	enableKriegspediaButton()
 	
 	return when (val action = Popup.MainMenu.display()) {
 		is MainMenuAction.Play -> {
@@ -41,7 +55,7 @@ suspend fun gameMain(): GameServerSide {
 		}
 		MainMenuAction.ViewKriegspedia -> {
 			viewKriegspedia()
-			gameMain()
+			playMain()
 		}
 	}
 }
@@ -49,10 +63,10 @@ suspend fun gameMain(): GameServerSide {
 suspend fun hostGame(): GameServerSide {
 	ExitHandler.attach()
 	
-	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return gameMain()
+	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return playMain()
 	
 	if (!WebRTCSignalling.host { Popup.HostScreen(it).display() }) {
-		return gameMain()
+		return playMain()
 	}
 	
 	Popup.LoadingScreen("Establishing connection...") {
@@ -66,10 +80,10 @@ suspend fun hostGame(): GameServerSide {
 suspend fun joinGame(): GameServerSide {
 	ExitHandler.attach()
 	
-	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return gameMain()
+	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return playMain()
 	
 	if (!WebRTCSignalling.join { Popup.JoinScreen(it).display() }) {
-		return gameMain()
+		return playMain()
 	}
 	
 	Popup.LoadingScreen("Establishing connection...") {

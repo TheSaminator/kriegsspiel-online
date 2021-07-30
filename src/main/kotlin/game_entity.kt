@@ -1,4 +1,8 @@
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.w3c.dom.Image
 
 @Serializable
 class GameSessionData(val gameMap: GameMap, val battleSize: Int) {
@@ -248,18 +252,10 @@ data class GamePiece(
 		}
 	
 	val imagePath: String
-		get() = "uniticons/${if (owner == Game.currentSide) "player" else "opponent"}/${
-			if (canBeIdentified) type.name.lowercase() else (when (type.requiredBattleType) {
-				BattleType.LAND_BATTLE -> "land"
-				BattleType.SPACE_BATTLE -> "space"
-			} + when (type.factionSkin) {
-				BattleFactionSkin.EMPIRE -> "_in"
-				BattleFactionSkin.SPACE_MARINES -> "_sm"
-				BattleFactionSkin.STAR_FLEET -> "_sf"
-				BattleFactionSkin.KDF -> "_ke"
-				null -> ""
-			} + "_unknown")
-		}.png"
+		get() = if (canBeIdentified)
+			getImagePath(owner != Game.currentSide!!, type)
+		else
+			getUnknownImagePath(owner != Game.currentSide!!, type.requiredBattleType, type.factionSkin)
 	
 	val pieceRadius: Double
 		get() = type.imageRadius + PIECE_RADIUS_OUTLINE
@@ -285,5 +281,60 @@ data class GamePiece(
 		const val SHIELD_RECHARGE_PER_TURN = 75.0
 		
 		const val PIECE_RADIUS_OUTLINE = 15.0
+		
+		private suspend fun preloadImage(path: String) {
+			val img = Image()
+			img.src = path
+			img.awaitEvent("load")
+		}
+		
+		suspend fun preloadAllPieceImages() {
+			coroutineScope {
+				val urls = PieceType.values().flatMap { pieceType ->
+					listOf(
+						getImagePath(true, pieceType),
+						getImagePath(false, pieceType)
+					)
+				} + BattleType.values().flatMap { battleType ->
+					if (battleType.usesSkins)
+						BattleFactionSkin.valuesFor(battleType).flatMap { factionSkin ->
+							listOf(
+								getUnknownImagePath(true, battleType, factionSkin),
+								getUnknownImagePath(false, battleType, factionSkin)
+							)
+						}
+					else
+						listOf(
+							getUnknownImagePath(true, battleType, null),
+							getUnknownImagePath(false, battleType, null)
+						)
+				}
+				
+				urls.map { url ->
+					launch {
+						preloadImage(url)
+					}
+				}.joinAll()
+			}
+		}
+		
+		fun getImagePath(isOpponent: Boolean, pieceType: PieceType): String {
+			return "uniticons/${if (isOpponent) "opponent" else "player"}/${pieceType.name.lowercase()}.png"
+		}
+		
+		fun getUnknownImagePath(isOpponent: Boolean, battleType: BattleType, factionSkin: BattleFactionSkin?): String {
+			return "uniticons/${if (isOpponent) "opponent" else "player"}/${
+				when (battleType) {
+					BattleType.LAND_BATTLE -> "land"
+					BattleType.SPACE_BATTLE -> "space"
+				} + when (factionSkin) {
+					BattleFactionSkin.EMPIRE -> "_in"
+					BattleFactionSkin.SPACE_MARINES -> "_sm"
+					BattleFactionSkin.STAR_FLEET -> "_sf"
+					BattleFactionSkin.KDF -> "_ke"
+					null -> ""
+				} + "_unknown"
+			}.png"
+		}
 	}
 }

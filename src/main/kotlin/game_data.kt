@@ -749,7 +749,7 @@ enum class BattleType(
 	SPACE_BATTLE("Space Battle");
 	
 	val usesSkins: Boolean
-		get() = BattleFactionSkin.values().any { it.forBattleType == this }
+		get() = BattleFactionSkin.valuesFor(this).isNotEmpty()
 }
 
 @Serializable
@@ -760,7 +760,11 @@ enum class BattleFactionSkin(
 	EMPIRE("Imperial Navy", BattleType.SPACE_BATTLE),
 	SPACE_MARINES("Space Marine Corps", BattleType.SPACE_BATTLE),
 	STAR_FLEET("Star Fleet", BattleType.SPACE_BATTLE),
-	KDF("K.D.F.", BattleType.SPACE_BATTLE)
+	KDF("K.D.F.", BattleType.SPACE_BATTLE);
+	
+	companion object {
+		fun valuesFor(battleType: BattleType) = values().filter { it.forBattleType == battleType }
+	}
 }
 
 @Serializable

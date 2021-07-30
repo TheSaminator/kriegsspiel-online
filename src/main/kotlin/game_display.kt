@@ -609,9 +609,7 @@ object GameSidebar {
 								e.preventDefault()
 								
 								GameScope.launch skinChange@{
-									val newSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.values().filter {
-										it.forBattleType == battleType
-									} + listOf(null)) { it?.displayName ?: "Cancel skin change" }.display() ?: return@skinChange
+									val newSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.valuesFor(battleType) + listOf(null)) { it?.displayName ?: "Cancel skin change" }.display() ?: return@skinChange
 									
 									GamePhase.Deployment.chosenSkin = newSkin
 									
