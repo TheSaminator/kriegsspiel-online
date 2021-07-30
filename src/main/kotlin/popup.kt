@@ -65,12 +65,12 @@ sealed class Popup<T> {
 				style = "text-align: center"
 				
 				strong {
-					style = "font-size: 2em"
+					style = "font-size: 1.8em"
 					+"Kriegsspiel Online"
 				}
 				br
 				em {
-					style = "font-size: 1.5em"
+					style = "font-size: 1.4em"
 					+"the web-based wargame"
 				}
 			}
@@ -360,7 +360,7 @@ sealed class Popup<T> {
 	object KriegspediaStart : Popup<BattleType?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (BattleType?) -> Unit) {
 			p {
-				style = "text-align: center"
+				style = "text-align: center; font-size: 1.6em"
 				
 				+"Kriegspedia - Start"
 			}
@@ -392,9 +392,9 @@ sealed class Popup<T> {
 	class KriegspediaIndex(val type: BattleType) : Popup<KriegspediaSection?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (KriegspediaSection?) -> Unit) {
 			p {
-				style = "text-align: center"
+				style = "text-align: center; font-size: 1.6em"
 				
-				+"${type.displayName} - Index"
+				+"${type.displayName} - Contents"
 			}
 			
 			div(classes = "button-set col") {
@@ -440,7 +440,7 @@ sealed class Popup<T> {
 	class KriegspediaPieceList(val type: BattleType) : Popup<PieceType?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (PieceType?) -> Unit) {
 			p {
-				style = "text-align: center"
+				style = "text-align: center; font-size: 1.6em"
 				
 				+"${type.displayName} - Pieces"
 			}
@@ -472,7 +472,7 @@ sealed class Popup<T> {
 	class KriegspediaTerrainList(val type: BattleType) : Popup<TerrainType?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (TerrainType?) -> Unit) {
 			p {
-				style = "text-align: center"
+				style = "text-align: center; font-size: 1.6em"
 				
 				+"${type.displayName} - Terrains"
 			}
