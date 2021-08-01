@@ -84,9 +84,8 @@ object ChatBox {
 		val isYours = target.owner == Game.currentSide!!
 		val owner = if (isYours) "Your " else "Opponent's "
 		val verb = if (target.health <= 0.0) " was killed by " else " took "
-		val ignoresShields = if (source.ignoresShields) ", ignoring shields" else ""
 		
-		val message = "$owner${target.type.displayName}$verb$amountWritten${source.toPrepositionalPhrase()}$ignoresShields"
+		val message = "$owner${target.type.displayName}$verb$amountWritten${source.toPrepositionalPhrase()}."
 		
 		history.append {
 			p(classes = "chat-message") {
@@ -98,19 +97,14 @@ object ChatBox {
 
 @Serializable
 sealed class DamageSource {
-	abstract val ignoresShields: Boolean
+	@Serializable
+	data class Piece(val piece: GamePiece) : DamageSource()
 	
 	@Serializable
-	data class Piece(val piece: GamePiece) : DamageSource() {
-		override val ignoresShields: Boolean
-			get() = false
-	}
+	data class Terrain(val terrainType: TerrainType) : DamageSource()
 	
 	@Serializable
-	data class Terrain(val terrainType: TerrainType) : DamageSource() {
-		override val ignoresShields: Boolean
-			get() = (terrainType.stats as? TerrainStats.Space)?.dptIgnoresShields == true
-	}
+	object AirPieceCrash : DamageSource()
 	
 	fun toPrepositionalPhrase(): String {
 		return when (this) {
@@ -121,6 +115,9 @@ sealed class DamageSource {
 			}
 			is Terrain -> {
 				"in ${terrainType.displayName.lowercase()} terrain"
+			}
+			AirPieceCrash -> {
+				"in an airplane crash"
 			}
 		}
 	}
@@ -262,7 +259,7 @@ object GameField {
 		mapField.clear()
 		
 		mapField.append(RECT()) {
-			fill = GameMap.defaultColor(map.gameType)
+			fill = GameMap.defaultColor
 			width = map.size.x.toString()
 			height = map.size.y.toString()
 		}
@@ -423,6 +420,9 @@ object GameField {
 		if (!piece.canBeRendered)
 			return
 		
+		if (!PieceLayer.viewAirUnits && piece.type.layer == PieceLayer.AIR)
+			return
+		
 		gamePieces.append(G()) {
 			id = piece.id
 			cssClass = "game-piece"
@@ -430,8 +430,6 @@ object GameField {
 			
 			val outerRadius = piece.type.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE
 			val centerRadius = piece.type.imageRadius + (GamePiece.PIECE_RADIUS_OUTLINE / 2)
-			val centerInnerRadius = centerRadius - 5
-			val centerOuterRadius = centerRadius + 5
 			
 			circle {
 				cssClass = "game-piece-back"
@@ -442,12 +440,7 @@ object GameField {
 			}
 			
 			if (piece.canBeIdentified) {
-				if (piece.type.requiredBattleType == BattleType.SPACE_BATTLE) {
-					drawCircleMeter(piece.health, centerInnerRadius, piece.healthBarColor)
-					drawCircleMeter(piece.shield, centerOuterRadius, piece.shieldBarColor)
-				} else {
-					drawCircleMeter(piece.health, centerRadius, piece.healthBarColor)
-				}
+				drawCircleMeter(piece.health, centerRadius, piece.healthBarColor)
 			}
 			
 			image {
@@ -549,9 +542,10 @@ object GameSidebar {
 						+"You have $currentPoints points left to spend."
 					}
 					
-					PieceType.values().filter {
-						it.requiredBattleType == GameSessionData.currentSession!!.gameMap.gameType && it.factionSkin == GamePhase.Deployment.chosenSkin
-					}.forEach { pieceType ->
+					PieceType.values().forEach linkRender@{ pieceType ->
+						if (pieceType.pointCost == null)
+							return@linkRender
+						
 						a(href = "#") {
 							+"${pieceType.displayName} (${pieceType.pointCost})"
 							
@@ -600,27 +594,6 @@ object GameSidebar {
 						}
 					}
 					
-					val battleType = GameSessionData.currentSession!!.gameMap.gameType
-					if (battleType.usesSkins)
-						a(href = "#") {
-							+"Change Skin"
-							
-							onClickFunction = { e ->
-								e.preventDefault()
-								
-								GameScope.launch skinChange@{
-									val newSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.valuesFor(battleType) + listOf(null)) { it?.displayName ?: "Cancel skin change" }.display() ?: return@skinChange
-									
-									GamePhase.Deployment.chosenSkin = newSkin
-									
-									Player.currentPlayer!!.clearDeploying()
-									currentPoints = GameSessionData.currentSession!!.battleSize
-									
-									deployMenu()
-								}
-							}
-						}
-					
 					a(href = "#") {
 						id = "finish-deploy"
 						
@@ -663,6 +636,9 @@ object GameSidebar {
 	}
 	
 	private fun deployPiece(pieceType: PieceType) {
+		if (pieceType.pointCost == null)
+			return
+		
 		if (currentPoints < pieceType.pointCost)
 			return
 		
@@ -685,6 +661,8 @@ object GameSidebar {
 			),
 			null,
 			pieceType.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE,
+			pieceType.layer,
+			TerrainRequirement.DEFAULT,
 			pieceType.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE
 		)
 		
@@ -748,23 +726,6 @@ object GameSidebar {
 						span("meter red-green") {
 							span("emptiness") {
 								style = "width: ${((1 - piece.health) * 100).roundToInt()}%"
-							}
-						}
-					}
-					
-					if (piece.type.stats is SpacePieceStats) {
-						div(classes = "measure-bar") {
-							+"Shield"
-							
-							val color = if (piece.shieldDepleted)
-								"purple-gradient"
-							else
-								"blue-gradient"
-							
-							span("meter $color") {
-								span("emptiness") {
-									style = "width: ${((1 - piece.shield) * 100).roundToInt()}%"
-								}
 							}
 						}
 					}

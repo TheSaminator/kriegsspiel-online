@@ -1,8 +1,7 @@
+import kotlinx.browser.document
 import kotlinx.serialization.Serializable
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
+import org.w3c.dom.HTMLAnchorElement
+import kotlin.math.*
 
 @Suppress("DuplicatedCode")
 @Serializable
@@ -13,7 +12,7 @@ sealed class Ability {
 	abstract fun canUse(currentPiece: GamePiece): Boolean
 	abstract suspend fun use(currentPiece: GamePiece)
 	
-	// Same for both battle types
+	// Land unit abilities
 	
 	@Serializable
 	data class Move(val distancePerAction: Double) : Ability() {
@@ -31,7 +30,7 @@ sealed class Ability {
 			// Hills change speed multiplier depending on the direction of the slope
 			// When a unit is facing parallel to (towards or away from) the peak, then the speed mult is 0.6
 			// When a unit is facing perpendicular to the peak, then the speed multiplier is 0.9
-			val hillMult = if (terrainStats is TerrainStats.Land && terrainStats.isHill) {
+			val hillMult = if (terrainStats != null && terrainStats.isHill) {
 				val hillAngle = (currentPiece.location - terrainBlob.center).angle
 				val hillCross = sin(currentPiece.facing - hillAngle)
 				val hillX2 = hillCross * hillCross
@@ -47,20 +46,22 @@ sealed class Ability {
 				PickBoundaryUnitBased(
 					currentPiece.location,
 					currentPiece.pieceRadius,
-					moveRange,
+					currentPiece.pieceRadius + moveRange,
 					currentPiece.facing,
 					null,
 					ANGLE_BUFFER
 				),
 				currentPiece.location,
 				currentPiece.pieceRadius,
+				currentPiece.type.layer,
+				TerrainRequirement.DEFAULT,
 				currentPiece.pieceRadius
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPosition ?: return
 			
 			val newLocation = pickRes.pos
 			val dLocation = newLocation - currentPiece.location
-			val newFacing = dLocation.angle.asAngle()
+			val newFacing = dLocation.angle
 			val newAction = (currentPiece.action - (dLocation.magnitude / moveMult) / distancePerAction).coerceAtLeast(0.0)
 			
 			currentPiece.location = newLocation
@@ -107,8 +108,6 @@ sealed class Ability {
 		}
 	}
 	
-	// Land Battle abilities
-	
 	@Serializable
 	data class AttackLand(
 		val maxAngle: Double,
@@ -117,6 +116,7 @@ sealed class Ability {
 		val softAttackPower: Double,
 		val hardAttackPower: Double,
 		val actionConsumed: Double,
+		val requiresLoading: Boolean,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		// Flanking multiplier is calculated as ((attacker.facingNormal dot target.facingNormal) + flankWeight) / (flankWeight - 1)
@@ -132,7 +132,7 @@ sealed class Ability {
 		}
 		
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && (currentPiece.heavyWeaponCharged || !requiresLoading)
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
@@ -145,11 +145,11 @@ sealed class Ability {
 					null,
 					maxAngle
 				),
-				currentPiece.owner.other
+				currentPiece.owner.other,
+				PieceLayer.LAND
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPiece ?: return
 			val targetPiece = GameSessionData.currentSession!!.pieceById(pickRes.pieceId)
-			targetPiece.type.stats as LandPieceStats
 			
 			val targetHardness = targetPiece.type.stats.hardness
 			val targetSoftness = 1 - targetHardness
@@ -157,7 +157,7 @@ sealed class Ability {
 			val attackFacing = (targetPiece.location - currentPiece.location).angle
 			
 			val terrainBlob = currentPiece.currentTerrainBlob
-			val terrainStats = terrainBlob?.type?.stats as? TerrainStats.Land
+			val terrainStats = terrainBlob?.type?.stats
 			val softMult = terrainStats?.softAttackMult ?: 1.0
 			val hardMult = terrainStats?.hardAttackMult ?: 1.0
 			
@@ -197,10 +197,11 @@ sealed class Ability {
 		val maxDistance: Double,
 		val healthRestored: Double,
 		val actionConsumed: Double,
+		val requiresLoading: Boolean,
 		val canMoveAfterHealing: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && (currentPiece.heavyWeaponCharged || !requiresLoading)
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
@@ -213,7 +214,8 @@ sealed class Ability {
 					null,
 					maxAngle
 				),
-				currentPiece.owner
+				currentPiece.owner,
+				PieceLayer.LAND
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPiece ?: return
 			val targetPiece = GameSessionData.currentSession!!.pieceById(pickRes.pieceId)
@@ -237,10 +239,8 @@ sealed class Ability {
 		}
 	}
 	
-	// Space Battle abilities
-	
 	@Serializable
-	data class ChargeHeavyWeapon(val actionConsumed: Double) : Ability() {
+	data class LoadHeavyWeapon(val actionConsumed: Double) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.action > actionConsumed && !currentPiece.heavyWeaponCharged
 		}
@@ -248,32 +248,26 @@ sealed class Ability {
 		override suspend fun use(currentPiece: GamePiece) {
 			currentPiece.action -= actionConsumed
 			
+			currentPiece.hasAttacked = true
 			currentPiece.heavyWeaponCharged = true
 			
 			currentPiece.lockUndo()
 		}
 	}
 	
-	@Serializable
-	data class AttackSpace(
-		val minAngle: Double?,
-		val maxAngle: Double?,
-		val invertAngle: Boolean,
+	// Anti-air unit abilities
+	
+	class LandAttackAir(
+		val maxAngle: Double,
 		val minDistance: Double,
 		val maxDistance: Double,
 		val attackPower: Double,
-		val requiresCharge: Boolean,
 		val actionConsumed: Double,
+		val requiresLoading: Boolean,
 		val canMoveAfterAttacking: Boolean
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && !currentPiece.isCloaked && (currentPiece.heavyWeaponCharged || !requiresCharge)
-		}
-		
-		private val SPACE_FLANK_WEIGHT get() = 5.0
-		
-		private fun getFlankingMultiplier(dotProduct: Double, flankWeight: Double): Double {
-			return (dotProduct + flankWeight) / (flankWeight - 1)
+			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && (currentPiece.heavyWeaponCharged || !requiresLoading)
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
@@ -282,27 +276,19 @@ sealed class Ability {
 					currentPiece.location,
 					currentPiece.pieceRadius + minDistance,
 					currentPiece.pieceRadius + maxDistance,
-					currentPiece.facing.asAngle(flipX = invertAngle, flipY = invertAngle),
-					minAngle,
+					currentPiece.facing,
+					null,
 					maxAngle
 				),
-				currentPiece.owner.other
+				currentPiece.owner.other,
+				PieceLayer.AIR
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPiece ?: return
 			val targetPiece = GameSessionData.currentSession!!.pieceById(pickRes.pieceId)
-			targetPiece.type.stats as SpacePieceStats
 			
-			val attackFacing = (targetPiece.location - currentPiece.location).angle
-			val dotProduct = cos(attackFacing - targetPiece.facing)
-			
-			val attackMult = (currentPiece.currentTerrainBlob?.type?.stats as? TerrainStats.Space)?.attackMult ?: 1.0
-			
-			val totalAttack = attackPower * attackMult * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
+			val totalAttack = attackPower * targetPiece.airTargetedMult
 			targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
-			
 			currentPiece.hasAttacked = true
-			if (requiresCharge)
-				currentPiece.heavyWeaponCharged = false
 			
 			if (canMoveAfterAttacking)
 				currentPiece.action -= actionConsumed
@@ -313,118 +299,218 @@ sealed class Ability {
 		}
 	}
 	
-	@Serializable
-	data class AttackAreaSpace(
-		val minAngle: Double?,
-		val maxAngle: Double?,
-		val invertAngle: Boolean,
+	// Air unit abilities
+	
+	class TakeOff(
 		val minDistance: Double,
 		val maxDistance: Double,
-		val aoeRadius: Double,
-		val attackPower: Double,
-		val requiresCharge: Boolean,
-		val actionConsumed: Double,
-		val canMoveAfterAttacking: Boolean
+		val maxAngle: Double,
+		val minimumAction: Double,
+		val airUnitEquiv: () -> PieceType
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action >= actionConsumed && !currentPiece.hasAttacked && (currentPiece.heavyWeaponCharged || !requiresCharge)
-		}
-		
-		private val SPACE_FLANK_WEIGHT get() = 5.0
-		
-		private fun getFlankingMultiplier(dotProduct: Double, flankWeight: Double): Double {
-			return (dotProduct + flankWeight) / (flankWeight - 1)
+			return currentPiece.currentTerrainBlob == null && currentPiece.action > minimumAction
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
+			val turnsInto = airUnitEquiv()
+			
+			currentPiece.heavyWeaponCharged = true
+			
 			val pickReq = PickRequest.PickPosition(
 				PickBoundaryUnitBased(
 					currentPiece.location,
 					currentPiece.pieceRadius + minDistance,
 					currentPiece.pieceRadius + maxDistance,
-					currentPiece.facing.asAngle(flipX = invertAngle, flipY = invertAngle),
-					minAngle,
+					currentPiece.facing,
+					null,
 					maxAngle
 				),
 				currentPiece.location,
-				null,
-				aoeRadius
+				turnsInto.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE,
+				PieceLayer.AIR,
+				TerrainRequirement.ALLOW_ANY,
+				turnsInto.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPosition ?: return
 			
-			val attackMult = (currentPiece.currentTerrainBlob?.type?.stats as? TerrainStats.Space)?.attackMult ?: 1.0
+			val newLocation = pickRes.pos
+			val dLocation = newLocation - currentPiece.location
+			val newFacing = dLocation.angle
 			
-			val piecesInAoe = GameSessionData.currentSession!!.allPieces().filter { (it.location - pickRes.pos).magnitude <= aoeRadius }
-			piecesInAoe.forEach { targetPiece ->
-				targetPiece.type.stats as SpacePieceStats
-				
-				val attackFacing = (targetPiece.location - currentPiece.location).angle
-				val dotProduct = cos(attackFacing - targetPiece.facing)
-				
-				val totalAttack = attackPower * attackMult * getFlankingMultiplier(dotProduct, SPACE_FLANK_WEIGHT)
-				targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
-			}
+			currentPiece.location = newLocation
+			currentPiece.facing = newFacing
+			currentPiece.action = 0.0
+			currentPiece.type = turnsInto
+			
+			currentPiece.lockUndo()
+		}
+	}
+	
+	class Fly(
+		val maxAngle: Double,
+		val minDistance: Double,
+		val distancePerAction: Double
+	) : Ability() {
+		private val DISTANCE_BUFFER get() = 50.0
+		
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return (currentPiece.pieceRadius + minDistance) / distancePerAction < currentPiece.action
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			val moveRange = distancePerAction * currentPiece.action + DISTANCE_BUFFER
+			
+			val pickReq = PickRequest.PickPosition(
+				PickBoundaryUnitBased(
+					currentPiece.location,
+					currentPiece.pieceRadius + minDistance,
+					currentPiece.pieceRadius + moveRange,
+					currentPiece.facing,
+					null,
+					maxAngle
+				),
+				currentPiece.location,
+				currentPiece.pieceRadius,
+				currentPiece.type.layer,
+				TerrainRequirement.ALLOW_ANY,
+				currentPiece.pieceRadius
+			)
+			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPosition ?: return
+			
+			val newLocation = pickRes.pos
+			val dLocation = newLocation - currentPiece.location
+			val newFacing = (dLocation.angle * 2) - currentPiece.facing
+			val newAction = (currentPiece.action - dLocation.magnitude / distancePerAction).coerceAtLeast(0.0)
+			
+			currentPiece.location = newLocation
+			currentPiece.facing = newFacing.asAngle()
+			currentPiece.action = newAction
+		}
+	}
+	
+	class AttackAir(
+		val maxAngle: Double,
+		val minDistance: Double,
+		val maxDistance: Double,
+		val attackPower: Double
+	) : Ability() {
+		override fun canUse(currentPiece: GamePiece): Boolean {
+			return !currentPiece.hasAttacked
+		}
+		
+		override suspend fun use(currentPiece: GamePiece) {
+			val pickReq = PickRequest.PickPiece(
+				PickBoundaryUnitBased(
+					currentPiece.location,
+					currentPiece.pieceRadius + minDistance,
+					currentPiece.pieceRadius + maxDistance,
+					currentPiece.facing,
+					null,
+					maxAngle
+				),
+				currentPiece.owner.other,
+				PieceLayer.AIR
+			)
+			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPiece ?: return
+			val targetPiece = GameSessionData.currentSession!!.pieceById(pickRes.pieceId)
+			
+			val attackDistance = (targetPiece.location - currentPiece.location).magnitude
+			val totalMultiplier = sqrt((maxDistance - attackDistance) / (maxDistance - minDistance))
+			
+			val totalAttack = attackPower * totalMultiplier * targetPiece.airTargetedMult
+			targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
 			
 			currentPiece.hasAttacked = true
-			if (requiresCharge)
-				currentPiece.heavyWeaponCharged = false
-			
-			if (canMoveAfterAttacking)
-				currentPiece.action -= actionConsumed
-			else
-				currentPiece.action = 0.0
-			
 			currentPiece.lockUndo()
 		}
 	}
 	
-	@Serializable
-	data class Cloak(val actionConsumed: Double) : Ability() {
+	class AirAttackLand(
+		val maxAngle: Double?,
+		val minDistance: Double?,
+		val maxDistance: Double,
+		val softAttackPower: Double,
+		val hardAttackPower: Double,
+	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action > actionConsumed && !currentPiece.isCloaked
+			return !currentPiece.hasAttacked
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			currentPiece.action -= actionConsumed
+			val pickReq = PickRequest.PickPiece(
+				PickBoundaryUnitBased(
+					currentPiece.location,
+					minDistance?.let { range -> currentPiece.pieceRadius + range },
+					currentPiece.pieceRadius + maxDistance,
+					currentPiece.facing,
+					null,
+					maxAngle
+				),
+				currentPiece.owner.other,
+				PieceLayer.LAND
+			)
+			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPiece ?: return
+			val targetPiece = GameSessionData.currentSession!!.pieceById(pickRes.pieceId)
 			
-			currentPiece.isCloaked = true
+			val attackDistance = (targetPiece.location - currentPiece.location).magnitude
+			val totalMultiplier = sqrt((maxDistance - attackDistance) / (maxDistance - (minDistance ?: 0.0)))
 			
+			val targetHardness = targetPiece.type.stats.hardness
+			val targetSoftness = 1 - targetHardness
+			
+			val softAttack = softAttackPower * targetSoftness
+			val hardAttack = hardAttackPower * targetHardness
+			
+			val totalAttack = (softAttack + hardAttack) * totalMultiplier
+			targetPiece.attack(totalAttack, DamageSource.Piece(currentPiece))
+			
+			currentPiece.hasAttacked = true
 			currentPiece.lockUndo()
 		}
 	}
 	
-	@Serializable
-	data class Decloak(val actionConsumed: Double) : Ability() {
+	class LandOnGround(
+		val minDistance: Double,
+		val maxDistance: Double,
+		val maxAngle: Double,
+		val minimumAction: Double,
+		val landUnitEquiv: () -> PieceType
+	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action > actionConsumed && currentPiece.isCloaked
+			return currentPiece.action > minimumAction
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			currentPiece.action -= actionConsumed
+			val turnsInto = landUnitEquiv()
 			
-			currentPiece.isCloaked = false
-			currentPiece.isCloakRevealed = false
+			currentPiece.heavyWeaponCharged = true
 			
-			currentPiece.lockUndo()
-		}
-	}
-	
-	@Serializable
-	data class RevealCloak(val revealRange: Double, val actionConsumed: Double) : Ability() {
-		override fun canUse(currentPiece: GamePiece): Boolean {
-			return currentPiece.action > actionConsumed && currentPiece.isCloaked
-		}
-		
-		override suspend fun use(currentPiece: GamePiece) {
-			currentPiece.action -= actionConsumed
+			val pickReq = PickRequest.PickPosition(
+				PickBoundaryUnitBased(
+					currentPiece.location,
+					currentPiece.pieceRadius + minDistance,
+					currentPiece.pieceRadius + maxDistance,
+					currentPiece.facing,
+					null,
+					maxAngle
+				),
+				currentPiece.location,
+				turnsInto.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE,
+				PieceLayer.LAND,
+				TerrainRequirement.REQ_NONE,
+				turnsInto.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE
+			)
+			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedPosition ?: return
 			
-			currentPiece.isCloaked = false
+			val newLocation = pickRes.pos
+			val dLocation = newLocation - currentPiece.location
+			val newFacing = dLocation.angle
 			
-			GameSessionData.currentSession!!.allPiecesWithOwner(currentPiece.owner.other).forEach { otherPiece ->
-				val inRange = (currentPiece.location - otherPiece.location).magnitude < revealRange
-				if (inRange && otherPiece.isCloaked)
-					otherPiece.isCloakRevealed = true
-			}
+			currentPiece.location = newLocation
+			currentPiece.facing = newFacing
+			currentPiece.action = 0.0
+			currentPiece.type = turnsInto
 			
 			currentPiece.lockUndo()
 		}
@@ -441,6 +527,7 @@ fun standardLandPieceAbilities(
 	softAttack: Double,
 	hardAttack: Double,
 	attackActionConsumed: Double,
+	attackRequiresLoading: Double?,
 	canMoveAfterAttacking: Boolean,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
@@ -455,20 +542,25 @@ fun standardLandPieceAbilities(
 		softAttack,
 		hardAttack,
 		attackActionConsumed,
+		attackRequiresLoading != null,
 		canMoveAfterAttacking
 	)
-) + extraAbilities
+) + (if (attackRequiresLoading != null)
+	mapOf(
+		"Prepare Firing" to Ability.LoadHeavyWeapon(attackRequiresLoading)
+	)
+else emptyMap()) + extraAbilities
 
-fun broadsideSpacePieceAbilities(
+fun standardAntiAirPieceAbilities(
 	moveSpeedPerRound: Double,
 	turnSpeedPerRound: Double,
 	
-	minAttackAngle: Double?,
 	maxAttackAngle: Double,
 	minAttackDistance: Double,
 	maxAttackDistance: Double,
-	attackStrength: Double,
+	attackPower: Double,
 	attackActionConsumed: Double,
+	attackRequiresLoading: Double?,
 	canMoveAfterAttacking: Boolean,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
@@ -476,310 +568,181 @@ fun broadsideSpacePieceAbilities(
 	"Move" to Ability.Move(moveSpeedPerRound),
 	"Rotate" to Ability.Rotate(turnSpeedPerRound),
 	"Undo Move" to Ability.UndoMove,
-	"Fire Main Batteries" to Ability.AttackSpace(
-		minAttackAngle,
+	"Anti-Air Attack" to Ability.LandAttackAir(
 		maxAttackAngle,
-		false,
 		minAttackDistance,
 		maxAttackDistance,
-		attackStrength,
-		false,
+		attackPower,
 		attackActionConsumed,
+		attackRequiresLoading != null,
 		canMoveAfterAttacking
 	)
-) + extraAbilities
-
-fun arrayedSpacePieceAbilities(
-	moveSpeedPerRound: Double,
-	turnSpeedPerRound: Double,
-	
-	maxArrayAngle: Double,
-	maxArrayDistance: Double,
-	arrayStrength: Double,
-	arrayActionConsumed: Double,
-	canMoveAfterFiringArray: Boolean,
-	
-	maxTorpedoAngle: Double,
-	maxTorpedoDistance: Double,
-	torpedoStrength: Double,
-	torpedoLoadActionConsumed: Double,
-	torpedoFireActionConsumed: Double,
-	canMoveAfterFiringTorpedo: Boolean,
-	
-	extraAbilities: Map<String, Ability> = emptyMap()
-): Map<String, Ability> = mapOf(
-	"Move" to Ability.Move(moveSpeedPerRound),
-	"Rotate" to Ability.Rotate(turnSpeedPerRound),
-	"Undo Move" to Ability.UndoMove,
-	"Fire Fore Arrays" to Ability.AttackSpace(
-		null,
-		maxArrayAngle,
-		false,
-		0.0,
-		maxArrayDistance,
-		arrayStrength,
-		false,
-		arrayActionConsumed,
-		canMoveAfterFiringArray
-	),
-	"Fire Aft Arrays" to Ability.AttackSpace(
-		null,
-		maxArrayAngle,
-		true,
-		0.0,
-		maxArrayDistance,
-		arrayStrength,
-		false,
-		arrayActionConsumed,
-		canMoveAfterFiringArray
-	),
-) + (if (maxArrayAngle > PI / 2) {
+) + (if (attackRequiresLoading != null)
 	mapOf(
-		"Fire Both Arrays" to Ability.AttackSpace(
-			PI - maxArrayAngle,
-			maxArrayAngle,
-			false,
-			0.0,
-			maxArrayDistance,
-			arrayStrength * 2,
-			false,
-			arrayActionConsumed * 1.5,
-			canMoveAfterFiringArray
-		)
+		"Prepare Firing" to Ability.LoadHeavyWeapon(attackRequiresLoading)
 	)
-} else emptyMap()) + mapOf(
-	"Load Torpedo" to Ability.ChargeHeavyWeapon(
-		torpedoLoadActionConsumed
-	),
-	"Fire Torpedo" to Ability.AttackSpace(
-		null,
-		maxTorpedoAngle,
-		false,
-		0.0,
-		maxTorpedoDistance,
-		torpedoStrength,
-		true,
-		torpedoFireActionConsumed,
-		canMoveAfterFiringTorpedo
-	)
-) + extraAbilities
+else emptyMap()) + extraAbilities
 
-fun cannonedSpacePieceAbilities(
+fun standardLandedAirPieceAbilities(
 	moveSpeedPerRound: Double,
 	turnSpeedPerRound: Double,
 	
-	maxCannonAngle: Double,
-	maxCannonDistance: Double,
-	cannonStrength: Double,
-	cannonActionConsumed: Double,
-	canMoveAfterFiringCannons: Boolean,
-	
-	maxTurretDistance: Double,
-	turretStrength: Double,
-	turretActionConsumed: Double,
-	canMoveAfterFiringTurret: Boolean,
-	
-	maxTorpedoAngle: Double,
-	maxTorpedoDistance: Double,
-	torpedoStrength: Double,
-	torpedoLoadActionConsumed: Double,
-	torpedoFireActionConsumed: Double,
-	canMoveAfterFiringTorpedo: Boolean,
+	minTakeoffRange: Double,
+	maxTakeoffRange: Double,
+	maxTakeoffAngle: Double,
+	minTakeoffAction: Double,
+	turnsInto: () -> PieceType,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
 	"Move" to Ability.Move(moveSpeedPerRound),
 	"Rotate" to Ability.Rotate(turnSpeedPerRound),
 	"Undo Move" to Ability.UndoMove,
-	"Fire Cannons" to Ability.AttackSpace(
-		null,
-		maxCannonAngle,
-		false,
-		0.0,
-		maxCannonDistance,
-		cannonStrength,
-		false,
-		cannonActionConsumed,
-		canMoveAfterFiringCannons
-	),
-	"Fire Turrets" to Ability.AttackSpace(
-		null,
-		null,
-		false,
-		0.0,
-		maxTurretDistance,
-		turretStrength,
-		false,
-		turretActionConsumed,
-		canMoveAfterFiringTurret
-	),
-	"Load Torpedo" to Ability.ChargeHeavyWeapon(
-		torpedoLoadActionConsumed
-	),
-	"Fire Torpedo" to Ability.AttackSpace(
-		null,
-		maxTorpedoAngle,
-		false,
-		0.0,
-		maxTorpedoDistance,
-		torpedoStrength,
-		true,
-		torpedoFireActionConsumed,
-		canMoveAfterFiringTorpedo
+	"Take Off" to Ability.TakeOff(
+		minTakeoffRange,
+		maxTakeoffRange,
+		maxTakeoffAngle,
+		minTakeoffAction,
+		turnsInto
 	)
 ) + extraAbilities
 
-fun arrayedAndCannonedSpacePieceAbilities(
-	moveSpeedPerRound: Double,
-	turnSpeedPerRound: Double,
+fun standardAirFighterAbilities(
+	maxFlightTurn: Double,
+	minFlightDist: Double,
+	maxFlightDist: Double,
 	
-	maxArrayAngle: Double,
-	maxArrayDistance: Double,
-	arrayStrength: Double,
-	arrayActionConsumed: Double,
-	canMoveAfterFiringArray: Boolean,
+	maxAttackAngle: Double,
+	minAttackRange: Double,
+	maxAttackRange: Double,
+	attackStrength: Double,
 	
-	maxCannonAngle: Double,
-	maxCannonDistance: Double,
-	cannonStrength: Double,
-	cannonActionConsumed: Double,
-	canMoveAfterFiringCannons: Boolean,
-	
-	maxTorpedoAngle: Double,
-	maxTorpedoDistance: Double,
-	torpedoStrength: Double,
-	torpedoLoadActionConsumed: Double,
-	torpedoFireActionConsumed: Double,
-	canMoveAfterFiringTorpedo: Boolean,
+	minLandingRange: Double,
+	maxLandingRange: Double,
+	maxLandingAngle: Double,
+	minLandingAction: Double,
+	turnsInto: () -> PieceType,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
-	"Move" to Ability.Move(moveSpeedPerRound),
-	"Rotate" to Ability.Rotate(turnSpeedPerRound),
+	"Fly" to Ability.Fly(
+		maxFlightTurn,
+		minFlightDist,
+		maxFlightDist
+	),
 	"Undo Move" to Ability.UndoMove,
-	"Fire Fore Arrays" to Ability.AttackSpace(
-		null,
-		maxArrayAngle,
-		false,
-		0.0,
-		maxArrayDistance,
-		arrayStrength,
-		false,
-		arrayActionConsumed,
-		canMoveAfterFiringArray
+	"Attack" to Ability.AttackAir(
+		maxAttackAngle,
+		minAttackRange,
+		maxAttackRange,
+		attackStrength
 	),
-	"Fire Aft Arrays" to Ability.AttackSpace(
-		null,
-		maxArrayAngle,
-		true,
-		0.0,
-		maxArrayDistance,
-		arrayStrength,
-		false,
-		arrayActionConsumed,
-		canMoveAfterFiringArray
-	),
-) + (if (maxArrayAngle > PI / 2) {
-	mapOf(
-		"Fire Both Arrays" to Ability.AttackSpace(
-			PI - maxArrayAngle,
-			maxArrayAngle,
-			false,
-			0.0,
-			maxArrayDistance,
-			arrayStrength * 2,
-			false,
-			arrayActionConsumed * 1.5,
-			canMoveAfterFiringArray
-		)
-	)
-} else emptyMap()) + mapOf(
-	"Fire Cannons" to Ability.AttackSpace(
-		null,
-		maxCannonAngle,
-		false,
-		0.0,
-		maxCannonDistance,
-		cannonStrength,
-		false,
-		cannonActionConsumed,
-		canMoveAfterFiringCannons
-	),
-	"Load Torpedo" to Ability.ChargeHeavyWeapon(
-		torpedoLoadActionConsumed
-	),
-	"Fire Torpedo" to Ability.AttackSpace(
-		null,
-		maxTorpedoAngle,
-		false,
-		0.0,
-		maxTorpedoDistance,
-		torpedoStrength,
-		true,
-		torpedoFireActionConsumed,
-		canMoveAfterFiringTorpedo
+	"Land on Ground" to Ability.LandOnGround(
+		minLandingRange,
+		maxLandingRange,
+		maxLandingAngle,
+		minLandingAction,
+		turnsInto
 	)
 ) + extraAbilities
 
-@Serializable
-sealed class PieceStats {
-	abstract val maxHealth: Double
-	abstract val abilities: Map<String, Ability>
-}
-
-@Serializable
-data class LandPieceStats(
-	override val maxHealth: Double,
-	val hardness: Double,
-	override val abilities: Map<String, Ability>
-) : PieceStats()
-
-@Serializable
-data class SpacePieceStats(
-	override val maxHealth: Double,
-	val maxShield: Double,
-	override val abilities: Map<String, Ability>
-) : PieceStats()
-
-@Serializable
-enum class BattleType(
-	val displayName: String
-) {
-	LAND_BATTLE("Land Battle"),
-	SPACE_BATTLE("Space Battle");
+fun standardAirBomberAbilities(
+	maxFlightTurn: Double,
+	minFlightDist: Double,
+	maxFlightDist: Double,
 	
-	val usesSkins: Boolean
-		get() = BattleFactionSkin.valuesFor(this).isNotEmpty()
-}
+	maxAttackAngle: Double?,
+	minAttackRange: Double?,
+	maxAttackRange: Double,
+	softAttackPower: Double,
+	hardAttackPower: Double,
+	
+	minLandingRange: Double,
+	maxLandingRange: Double,
+	maxLandingAngle: Double,
+	minLandingAction: Double,
+	turnsInto: () -> PieceType,
+	
+	extraAbilities: Map<String, Ability> = emptyMap()
+): Map<String, Ability> = mapOf(
+	"Fly" to Ability.Fly(
+		maxFlightTurn,
+		minFlightDist,
+		maxFlightDist
+	),
+	"Undo Move" to Ability.UndoMove,
+	"Bomb" to Ability.AirAttackLand(
+		maxAttackAngle,
+		minAttackRange,
+		maxAttackRange,
+		softAttackPower,
+		hardAttackPower
+	),
+	"Land on Ground" to Ability.LandOnGround(
+		minLandingRange,
+		maxLandingRange,
+		maxLandingAngle,
+		minLandingAction,
+		turnsInto
+	)
+) + extraAbilities
 
-@Serializable
-enum class BattleFactionSkin(
-	val displayName: String,
-	val forBattleType: BattleType
-) {
-	EMPIRE("Imperial Navy", BattleType.SPACE_BATTLE),
-	SPACE_MARINES("Space Marine Corps", BattleType.SPACE_BATTLE),
-	STAR_FLEET("Star Fleet", BattleType.SPACE_BATTLE),
-	KDF("K.D.F.", BattleType.SPACE_BATTLE);
+enum class PieceLayer {
+	LAND, AIR;
 	
 	companion object {
-		fun valuesFor(battleType: BattleType) = values().filter { it.forBattleType == battleType }
+		var viewAirUnits = true
+			private set
+		
+		private var toggleAirUnitsButtonAttached = false
+		fun attachToggleAirUnitsButton() {
+			if (toggleAirUnitsButtonAttached)
+				return
+			
+			val aElement = document.getElementById("toggle-air-pieces").unsafeCast<HTMLAnchorElement>()
+			aElement.onclick = { e ->
+				e.preventDefault()
+				
+				viewAirUnits = !viewAirUnits
+				
+				if (viewAirUnits)
+					aElement.innerHTML = "Hide Air Units"
+				else
+					aElement.innerHTML = "Show Air Units"
+				
+				GameSessionData.currentSession?.let {
+					GameField.redrawAllPieces(it.allPieces())
+				}
+				
+				Unit
+			}
+			
+			toggleAirUnitsButtonAttached = true
+		}
 	}
 }
 
 @Serializable
+data class PieceStats(
+	val maxHealth: Double,
+	val hardness: Double,
+	val abilities: Map<String, Ability>
+)
+
+@Serializable
 enum class PieceType(
 	val displayName: String,
-	val pointCost: Int,
-	val stats: PieceStats,
-	val factionSkin: BattleFactionSkin?
+	val pointCost: Int?,
+	val layer: PieceLayer,
+	val stats: PieceStats
 ) {
-	// Land Battle pieces
+	// Land pieces
 	
 	LAND_INFANTRY(
 		"Infantry",
 		50,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 2000.0,
 			hardness = 0.0,
 			abilities = standardLandPieceAbilities(
@@ -792,15 +755,16 @@ enum class PieceType(
 				softAttack = 300.0,
 				hardAttack = 50.0,
 				attackActionConsumed = 0.25,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = false
 			)
-		),
-		null
+		)
 	),
 	LAND_ELITE_INFANTRY(
 		"Stormtroopers",
 		100,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 3000.0,
 			hardness = 0.1,
 			abilities = standardLandPieceAbilities(
@@ -813,15 +777,16 @@ enum class PieceType(
 				softAttack = 450.0,
 				hardAttack = 75.0,
 				attackActionConsumed = 0.25,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = false
 			)
-		),
-		null
+		)
 	),
 	LAND_MEDIC(
 		"Combat Medic",
 		150,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 1500.0,
 			hardness = 0.05,
 			abilities = standardLandPieceAbilities(
@@ -834,6 +799,7 @@ enum class PieceType(
 				softAttack = 150.0,
 				hardAttack = 25.0,
 				attackActionConsumed = 0.25,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = false,
 				
 				extraAbilities = mapOf(
@@ -843,17 +809,18 @@ enum class PieceType(
 						maxDistance = 200.0,
 						healthRestored = 800.0,
 						actionConsumed = 0.5,
+						requiresLoading = false,
 						canMoveAfterHealing = false
 					)
 				)
 			)
-		),
-		null
+		)
 	),
 	LAND_CAVALRY(
 		"Cavalry",
 		75,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 1500.0,
 			hardness = 0.0,
 			abilities = standardLandPieceAbilities(
@@ -866,15 +833,16 @@ enum class PieceType(
 				softAttack = 300.0,
 				hardAttack = 30.0,
 				attackActionConsumed = 0.125,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = true
 			)
-		),
-		null
+		)
 	),
 	LAND_ELITE_CAVALRY(
 		"Winged Hussars",
 		125,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 2500.0,
 			hardness = 0.1,
 			abilities = standardLandPieceAbilities(
@@ -887,15 +855,16 @@ enum class PieceType(
 				softAttack = 450.0,
 				hardAttack = 45.0,
 				attackActionConsumed = 0.125,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = true
 			)
-		),
-		null
+		)
 	),
 	LAND_TANKS(
 		"Light Tanks",
 		160,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 2500.0,
 			hardness = 0.85,
 			abilities = standardLandPieceAbilities(
@@ -908,15 +877,16 @@ enum class PieceType(
 				softAttack = 600.0,
 				hardAttack = 400.0,
 				attackActionConsumed = 0.125,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = true
 			)
-		),
-		null
+		)
 	),
 	LAND_HEAVY_TANKS(
 		"Heavy Tanks",
 		250,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 3500.0,
 			hardness = 0.95,
 			abilities = standardLandPieceAbilities(
@@ -929,15 +899,16 @@ enum class PieceType(
 				softAttack = 700.0,
 				hardAttack = 500.0,
 				attackActionConsumed = 0.25,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = true
 			)
-		),
-		null
+		)
 	),
 	LAND_ARTILLERY(
 		"Artillery",
 		60,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 1000.0,
 			hardness = 0.05,
 			abilities = standardLandPieceAbilities(
@@ -950,20 +921,21 @@ enum class PieceType(
 				softAttack = 1200.0,
 				hardAttack = 600.0,
 				attackActionConsumed = 0.5,
+				attackRequiresLoading = 0.51,
 				canMoveAfterAttacking = false
 			)
-		),
-		null
+		)
 	),
 	LAND_ROCKET_ARTILLERY(
 		"Rocket Artillery",
 		120,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 1500.0,
 			hardness = 0.15,
 			abilities = standardLandPieceAbilities(
-				moveSpeedPerRound = 600.0,
-				turnSpeedPerRound = 2 * PI,
+				moveSpeedPerRound = 900.0,
+				turnSpeedPerRound = 2.5 * PI,
 				
 				maxAttackAngle = PI / 4,
 				minAttackDistance = 500.0,
@@ -971,15 +943,16 @@ enum class PieceType(
 				softAttack = 1400.0,
 				hardAttack = 700.0,
 				attackActionConsumed = 0.25,
+				attackRequiresLoading = 0.25,
 				canMoveAfterAttacking = false
 			)
-		),
-		null
+		)
 	),
 	LAND_ANTI_TANK(
 		"Anti-Tank Guns",
 		100,
-		LandPieceStats(
+		PieceLayer.LAND,
+		PieceStats(
 			maxHealth = 2000.0,
 			hardness = 0.10,
 			abilities = standardLandPieceAbilities(
@@ -992,569 +965,150 @@ enum class PieceType(
 				softAttack = 400.0,
 				hardAttack = 1600.0,
 				attackActionConsumed = 0.375,
+				attackRequiresLoading = null,
 				canMoveAfterAttacking = false
 			)
-		),
-		null
+		)
 	),
-	
-	// Space Battle pieces
-	
-	SPACE_FRIGATE(
-		"Frigate",
-		40,
-		SpacePieceStats(
-			maxHealth = 750.0,
-			maxShield = 400.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 400.0,
-				turnSpeedPerRound = 1.4 * PI,
-				
-				minAttackAngle = PI / 4,
-				maxAttackAngle = 3 * PI / 4,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 300.0,
-				attackStrength = 50.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Scan Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
-				)
-			)
-		),
-		BattleFactionSkin.EMPIRE
-	),
-	SPACE_LIGHT_CRUISER(
-		"Light Cruiser",
-		90,
-		SpacePieceStats(
-			maxHealth = 875.0,
-			maxShield = 500.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 350.0,
-				turnSpeedPerRound = 1.3 * PI,
-				
-				minAttackAngle = PI / 4,
-				maxAttackAngle = 3 * PI / 4,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 350.0,
-				attackStrength = 75.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Fire Torpedoes" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 6,
-						invertAngle = false,
-						minDistance = 200.0,
-						maxDistance = 800.0,
-						aoeRadius = 150.0,
-						attackPower = 50.0,
-						requiresCharge = false,
-						actionConsumed = 0.5,
-						canMoveAfterAttacking = true
-					)
-				)
-			)
-		),
-		BattleFactionSkin.EMPIRE
-	),
-	SPACE_CRUISER(
-		"Cruiser",
-		160,
-		SpacePieceStats(
-			maxHealth = 1000.0,
-			maxShield = 600.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 300.0,
-				turnSpeedPerRound = 1.2 * PI,
-				
-				minAttackAngle = PI / 3,
-				maxAttackAngle = 2 * PI / 3,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 350.0,
-				attackStrength = 100.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Charge Plasma Lance" to Ability.ChargeHeavyWeapon(
-						actionConsumed = 0.5
-					),
-					"Fire Plasma Lance" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 8,
-						invertAngle = false,
-						minDistance = 200.0,
-						maxDistance = 800.0,
-						aoeRadius = 100.0,
-						attackPower = 150.0,
-						requiresCharge = true,
-						actionConsumed = 1.0,
-						canMoveAfterAttacking = false
-					)
-				)
-			)
-		),
-		BattleFactionSkin.EMPIRE
-	),
-	SPACE_BATTLESHIP(
-		"Battleship",
-		250,
-		SpacePieceStats(
-			maxHealth = 1250.0,
-			maxShield = 800.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 250.0,
-				turnSpeedPerRound = 1.1 * PI,
-				
-				minAttackAngle = PI / 3,
-				maxAttackAngle = 2 * PI / 3,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 400.0,
-				attackStrength = 200.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Fire Torpedoes" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 6,
-						invertAngle = false,
-						minDistance = 300.0,
-						maxDistance = 900.0,
-						aoeRadius = 150.0,
-						attackPower = 150.0,
-						requiresCharge = false,
-						actionConsumed = 0.5,
-						canMoveAfterAttacking = true
-					)
-				)
-			)
-		),
-		BattleFactionSkin.EMPIRE
-	),
-	
-	SPACE_ESCORT(
-		"Destroyer",
-		40,
-		SpacePieceStats(
-			maxHealth = 750.0,
-			maxShield = 400.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 400.0,
-				turnSpeedPerRound = 1.4 * PI,
-				
-				minAttackAngle = PI / 4,
-				maxAttackAngle = 3 * PI / 4,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 300.0,
-				attackStrength = 50.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Fire Torpedoes" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 8,
-						invertAngle = false,
-						minDistance = 200.0,
-						maxDistance = 800.0,
-						aoeRadius = 150.0,
-						attackPower = 50.0,
-						requiresCharge = false,
-						actionConsumed = 0.5,
-						canMoveAfterAttacking = true
-					)
-				)
-			)
-		),
-		BattleFactionSkin.SPACE_MARINES
-	),
-	SPACE_STRIKE_CRUISER(
-		"Strike Cruiser",
-		90,
-		SpacePieceStats(
-			maxHealth = 875.0,
-			maxShield = 500.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 350.0,
-				turnSpeedPerRound = 1.3 * PI,
-				
-				minAttackAngle = PI / 4,
-				maxAttackAngle = 3 * PI / 4,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 350.0,
-				attackStrength = 75.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Fire Torpedoes" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 8,
-						invertAngle = false,
-						minDistance = 200.0,
-						maxDistance = 800.0,
-						aoeRadius = 150.0,
-						attackPower = 50.0,
-						requiresCharge = false,
-						actionConsumed = 0.5,
-						canMoveAfterAttacking = true
-					),
-					"Scan Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
-				)
-			)
-		),
-		BattleFactionSkin.SPACE_MARINES
-	),
-	SPACE_BATTLE_BARGE(
-		"Battle Barge",
-		160,
-		SpacePieceStats(
-			maxHealth = 1000.0,
-			maxShield = 600.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 300.0,
-				turnSpeedPerRound = 1.2 * PI,
-				
-				minAttackAngle = PI / 3,
-				maxAttackAngle = 2 * PI / 3,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 350.0,
-				attackStrength = 100.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Fire Torpedoes" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 8,
-						invertAngle = false,
-						minDistance = 300.0,
-						maxDistance = 900.0,
-						aoeRadius = 150.0,
-						attackPower = 150.0,
-						requiresCharge = false,
-						actionConsumed = 0.5,
-						canMoveAfterAttacking = true
-					)
-				)
-			)
-		),
-		BattleFactionSkin.SPACE_MARINES
-	),
-	SPACE_CAPITAL_SHIP(
-		"Capital Ship",
-		250,
-		SpacePieceStats(
-			maxHealth = 1250.0,
-			maxShield = 800.0,
-			abilities = broadsideSpacePieceAbilities(
-				moveSpeedPerRound = 250.0,
-				turnSpeedPerRound = 1.1 * PI,
-				
-				minAttackAngle = PI / 3,
-				maxAttackAngle = 2 * PI / 3,
-				minAttackDistance = 0.0,
-				maxAttackDistance = 400.0,
-				attackStrength = 200.0,
-				attackActionConsumed = 0.25,
-				canMoveAfterAttacking = false,
-				
-				extraAbilities = mapOf(
-					"Fire Torpedoes" to Ability.AttackAreaSpace(
-						minAngle = null,
-						maxAngle = PI / 8,
-						invertAngle = false,
-						minDistance = 300.0,
-						maxDistance = 900.0,
-						aoeRadius = 150.0,
-						attackPower = 150.0,
-						requiresCharge = false,
-						actionConsumed = 0.5,
-						canMoveAfterAttacking = true
-					)
-				)
-			)
-		),
-		BattleFactionSkin.SPACE_MARINES
-	),
-	
-	SPACE_UTILITY_CRUISER(
-		"Utility Cruiser",
-		40,
-		SpacePieceStats(
-			maxHealth = 750.0,
-			maxShield = 400.0,
-			abilities = arrayedSpacePieceAbilities(
-				moveSpeedPerRound = 400.0,
-				turnSpeedPerRound = 1.4 * PI,
-				
-				maxArrayAngle = 2 * PI / 3,
-				maxArrayDistance = 300.0,
-				arrayStrength = 35.0,
-				arrayActionConsumed = 0.25,
-				canMoveAfterFiringArray = false,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 85.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false,
-				
-				extraAbilities = mapOf(
-					"Scan Cloaked Ships" to Ability.RevealCloak(250.0, 0.4)
-				)
-			)
-		),
-		BattleFactionSkin.STAR_FLEET
-	),
-	SPACE_WARSHIP(
-		"Escort",
-		90,
-		SpacePieceStats(
-			maxHealth = 875.0,
-			maxShield = 500.0,
-			abilities = cannonedSpacePieceAbilities(
-				moveSpeedPerRound = 640.0,
-				turnSpeedPerRound = 3 * PI,
-				
-				maxCannonAngle = PI / 6,
-				maxCannonDistance = 400.0,
-				cannonStrength = 125.0,
-				cannonActionConsumed = 0.35,
-				canMoveAfterFiringCannons = true,
-				
-				maxTurretDistance = 300.0,
-				turretStrength = 65.0,
-				turretActionConsumed = 0.25,
-				canMoveAfterFiringTurret = true,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 100.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false,
-				
-				extraAbilities = mapOf(
-					"Cloak" to Ability.Cloak(0.6),
-					"Decloak" to Ability.Decloak(0.3),
-				)
-			)
-		),
-		BattleFactionSkin.STAR_FLEET
-	),
-	SPACE_ADVANCED_CRUISER(
-		"Advanced Cruiser",
-		160,
-		SpacePieceStats(
-			maxHealth = 1000.0,
-			maxShield = 600.0,
-			abilities = arrayedSpacePieceAbilities(
-				moveSpeedPerRound = 300.0,
-				turnSpeedPerRound = 1.2 * PI,
-				
-				maxArrayAngle = 2 * PI / 3,
-				maxArrayDistance = 350.0,
-				arrayStrength = 85.0,
-				arrayActionConsumed = 0.25,
-				canMoveAfterFiringArray = false,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 125.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false
-			)
-		),
-		BattleFactionSkin.STAR_FLEET
-	),
-	SPACE_EXPLORATION_CRUISER(
-		"Exploration Cruiser",
-		250,
-		SpacePieceStats(
-			maxHealth = 1250.0,
-			maxShield = 800.0,
-			abilities = arrayedSpacePieceAbilities(
-				moveSpeedPerRound = 250.0,
-				turnSpeedPerRound = 1.1 * PI,
-				
-				maxArrayAngle = 2 * PI / 3,
-				maxArrayDistance = 350.0,
-				arrayStrength = 175.0,
-				arrayActionConsumed = 0.25,
-				canMoveAfterFiringArray = false,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 125.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false
-			)
-		),
-		BattleFactionSkin.STAR_FLEET
-	),
-	
-	SPACE_BIRD_OF_PREY(
-		"Bird-of-Prey",
-		40,
-		SpacePieceStats(
-			maxHealth = 750.0,
-			maxShield = 400.0,
-			abilities = cannonedSpacePieceAbilities(
-				moveSpeedPerRound = 640.0,
-				turnSpeedPerRound = 3 * PI,
-				
-				maxCannonAngle = PI / 6,
-				maxCannonDistance = 400.0,
-				cannonStrength = 125.0,
-				cannonActionConsumed = 0.35,
-				canMoveAfterFiringCannons = true,
-				
-				maxTurretDistance = 300.0,
-				turretStrength = 65.0,
-				turretActionConsumed = 0.25,
-				canMoveAfterFiringTurret = true,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 100.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false,
-				
-				extraAbilities = mapOf(
-					"Cloak" to Ability.Cloak(0.6),
-					"Decloak" to Ability.Decloak(0.3),
-				)
-			)
-		),
-		BattleFactionSkin.KDF
-	),
-	SPACE_RAPTOR(
-		"Raptor",
-		90,
-		SpacePieceStats(
-			maxHealth = 875.0,
-			maxShield = 500.0,
-			abilities = cannonedSpacePieceAbilities(
-				moveSpeedPerRound = 480.0,
-				turnSpeedPerRound = 2.5 * PI,
-				
-				maxCannonAngle = PI / 6,
-				maxCannonDistance = 300.0,
-				cannonStrength = 175.0,
-				cannonActionConsumed = 0.35,
-				canMoveAfterFiringCannons = true,
-				
-				maxTurretDistance = 200.0,
-				turretStrength = 105.0,
-				turretActionConsumed = 0.25,
-				canMoveAfterFiringTurret = true,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 100.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false,
-				
-				extraAbilities = mapOf(
-					"Cloak" to Ability.Cloak(0.6),
-					"Decloak" to Ability.Decloak(0.3),
-				)
-			)
-		),
-		BattleFactionSkin.KDF
-	),
-	SPACE_BATTLECRUISER(
-		"Battlecruiser",
-		160,
-		SpacePieceStats(
-			maxHealth = 1000.0,
-			maxShield = 600.0,
-			abilities = arrayedAndCannonedSpacePieceAbilities(
-				moveSpeedPerRound = 360.0,
+	LAND_ANTI_AIR(
+		"Flak Cannons",
+		110,
+		PieceLayer.LAND,
+		PieceStats(
+			maxHealth = 1625.0,
+			hardness = 0.075,
+			abilities = standardAntiAirPieceAbilities(
+				moveSpeedPerRound = 600.0,
 				turnSpeedPerRound = 2 * PI,
 				
-				maxArrayAngle = 2 * PI / 3,
-				maxArrayDistance = 350.0,
-				arrayStrength = 85.0,
-				arrayActionConsumed = 0.25,
-				canMoveAfterFiringArray = false,
-				
-				maxCannonAngle = PI / 6,
-				maxCannonDistance = 300.0,
-				cannonStrength = 155.0,
-				cannonActionConsumed = 0.35,
-				canMoveAfterFiringCannons = true,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 125.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false,
-				
-				extraAbilities = mapOf(
-					"Cloak" to Ability.Cloak(0.6),
-					"Decloak" to Ability.Decloak(0.3),
-				)
+				maxAttackAngle = PI / 6,
+				minAttackDistance = 0.0,
+				maxAttackDistance = 500.0,
+				attackPower = 800.0,
+				attackActionConsumed = 0.375,
+				attackRequiresLoading = 0.25,
+				canMoveAfterAttacking = false
 			)
-		),
-		BattleFactionSkin.KDF
+		)
 	),
-	SPACE_HEAVY_BATTLECRUISER(
-		"Heavy Battlecruiser",
-		250,
-		SpacePieceStats(
-			maxHealth = 1250.0,
-			maxShield = 800.0,
-			abilities = arrayedAndCannonedSpacePieceAbilities(
-				moveSpeedPerRound = 270.0,
-				turnSpeedPerRound = 1.75 * PI,
+	LAND_SAM_LAUNCHER(
+		"Surface-to-Air Missiles",
+		140,
+		PieceLayer.LAND,
+		PieceStats(
+			maxHealth = 1875.0,
+			hardness = 0.125,
+			abilities = standardAntiAirPieceAbilities(
+				moveSpeedPerRound = 900.0,
+				turnSpeedPerRound = 2.5 * PI,
 				
-				maxArrayAngle = 2 * PI / 3,
-				maxArrayDistance = 350.0,
-				arrayStrength = 125.0,
-				arrayActionConsumed = 0.25,
-				canMoveAfterFiringArray = false,
-				
-				maxCannonAngle = PI / 6,
-				maxCannonDistance = 300.0,
-				cannonStrength = 145.0,
-				cannonActionConsumed = 0.35,
-				canMoveAfterFiringCannons = true,
-				
-				maxTorpedoAngle = PI / 4,
-				maxTorpedoDistance = 400.0,
-				torpedoStrength = 125.0,
-				torpedoLoadActionConsumed = 0.501,
-				torpedoFireActionConsumed = 0.501,
-				canMoveAfterFiringTorpedo = false,
-				
-				extraAbilities = mapOf(
-					"Cloak" to Ability.Cloak(0.6),
-					"Decloak" to Ability.Decloak(0.3),
-				)
+				maxAttackAngle = PI / 3,
+				minAttackDistance = 10.0,
+				maxAttackDistance = 600.0,
+				attackPower = 1200.0,
+				attackActionConsumed = 0.375,
+				attackRequiresLoading = null,
+				canMoveAfterAttacking = false
 			)
-		),
-		BattleFactionSkin.KDF
+		)
+	),
+	
+	// Landed air pieces
+	
+	LAND_AIR_FIGHTERS(
+		"Fighter Wing",
+		160,
+		PieceLayer.LAND,
+		PieceStats(
+			maxHealth = 500.0,
+			hardness = 0.0,
+			abilities = standardLandedAirPieceAbilities(
+				moveSpeedPerRound = 400.0,
+				turnSpeedPerRound = 2.5 * PI,
+				
+				minTakeoffRange = 600.0,
+				maxTakeoffRange = 900.0,
+				maxTakeoffAngle = PI / 4.5,
+				minTakeoffAction = 0.4,
+				turnsInto = { AIR_FIGHTERS }
+			)
+		)
+	),
+	LAND_AIR_BOMBERS(
+		"Bomber Wing",
+		190,
+		PieceLayer.LAND,
+		PieceStats(
+			maxHealth = 500.0,
+			hardness = 0.0,
+			abilities = standardLandedAirPieceAbilities(
+				moveSpeedPerRound = 300.0,
+				turnSpeedPerRound = 2.0 * PI,
+				
+				minTakeoffRange = 400.0,
+				maxTakeoffRange = 600.0,
+				maxTakeoffAngle = PI / 6,
+				minTakeoffAction = 0.6,
+				turnsInto = { AIR_BOMBERS }
+			)
+		)
+	),
+	
+	// Flying air pieces
+	AIR_FIGHTERS(
+		"Fighter Wing",
+		null,
+		PieceLayer.AIR,
+		PieceStats(
+			maxHealth = 2700.0,
+			hardness = 0.0, // hardness is not used when attacking air units
+			abilities = standardAirFighterAbilities(
+				maxFlightTurn = PI / 2,
+				minFlightDist = 400.0,
+				maxFlightDist = 560.0,
+				
+				maxAttackAngle = PI / 6,
+				minAttackRange = 360.0,
+				maxAttackRange = 600.0,
+				attackStrength = 600.0,
+				
+				minLandingRange = 600.0,
+				maxLandingRange = 900.0,
+				maxLandingAngle = PI / 4.5,
+				minLandingAction = 0.4,
+				
+				turnsInto = { LAND_AIR_FIGHTERS }
+			)
+		)
+	),
+	AIR_BOMBERS(
+		"Bomber Wing",
+		null,
+		PieceLayer.AIR,
+		PieceStats(
+			maxHealth = 2300.0,
+			hardness = 0.0, // hardness is not used when attacking air units
+			abilities = standardAirBomberAbilities(
+				maxFlightTurn = PI / 2,
+				minFlightDist = 320.0,
+				maxFlightDist = 480.0,
+				
+				maxAttackAngle = null,
+				minAttackRange = null,
+				maxAttackRange = 250.0,
+				softAttackPower = 1650.0,
+				hardAttackPower = 1350.0,
+				
+				minLandingRange = 400.0,
+				maxLandingRange = 600.0,
+				maxLandingAngle = PI / 6,
+				minLandingAction = 0.6,
+				
+				turnsInto = { LAND_AIR_BOMBERS }
+			)
+		)
 	),
 	;
-	
-	val requiredBattleType: BattleType
-		get() = when (stats) {
-			is LandPieceStats -> BattleType.LAND_BATTLE
-			is SpacePieceStats -> BattleType.SPACE_BATTLE
-		}
 	
 	val imageWidth: Double
 		get() = when (this) {
@@ -1568,26 +1122,14 @@ enum class PieceType(
 			LAND_ARTILLERY -> 400.0
 			LAND_ROCKET_ARTILLERY -> 400.0
 			LAND_ANTI_TANK -> 400.0
+			LAND_ANTI_AIR -> 400.0
+			LAND_SAM_LAUNCHER -> 400.0
 			
-			SPACE_FRIGATE -> 260.0
-			SPACE_LIGHT_CRUISER -> 260.0
-			SPACE_CRUISER -> 340.0
-			SPACE_BATTLESHIP -> 480.0
+			LAND_AIR_FIGHTERS -> 360.0
+			LAND_AIR_BOMBERS -> 360.0
 			
-			SPACE_ESCORT -> 260.0
-			SPACE_STRIKE_CRUISER -> 260.0
-			SPACE_BATTLE_BARGE -> 340.0
-			SPACE_CAPITAL_SHIP -> 480.0
-			
-			SPACE_UTILITY_CRUISER -> 400.0
-			SPACE_WARSHIP -> 500.0
-			SPACE_ADVANCED_CRUISER -> 400.0
-			SPACE_EXPLORATION_CRUISER -> 600.0
-			
-			SPACE_BIRD_OF_PREY -> 700.0
-			SPACE_RAPTOR -> 750.0
-			SPACE_BATTLECRUISER -> 750.0
-			SPACE_HEAVY_BATTLECRUISER -> 710.0
+			AIR_FIGHTERS -> 360.0
+			AIR_BOMBERS -> 360.0
 		} * imageScaling
 	
 	val imageHeight: Double
@@ -1602,34 +1144,19 @@ enum class PieceType(
 			LAND_ARTILLERY -> 300.0
 			LAND_ROCKET_ARTILLERY -> 300.0
 			LAND_ANTI_TANK -> 300.0
+			LAND_ANTI_AIR -> 300.0
+			LAND_SAM_LAUNCHER -> 300.0
 			
-			SPACE_FRIGATE -> 640.0
-			SPACE_LIGHT_CRUISER -> 750.0
-			SPACE_CRUISER -> 960.0
-			SPACE_BATTLESHIP -> 920.0
+			LAND_AIR_FIGHTERS -> 360.0
+			LAND_AIR_BOMBERS -> 360.0
 			
-			SPACE_ESCORT -> 600.0
-			SPACE_STRIKE_CRUISER -> 660.0
-			SPACE_BATTLE_BARGE -> 820.0
-			SPACE_CAPITAL_SHIP -> 950.0
-			
-			SPACE_UTILITY_CRUISER -> 620.0
-			SPACE_WARSHIP -> 570.0
-			SPACE_ADVANCED_CRUISER -> 960.0
-			SPACE_EXPLORATION_CRUISER -> 680.0
-			
-			SPACE_BIRD_OF_PREY -> 640.0
-			SPACE_RAPTOR -> 780.0
-			SPACE_BATTLECRUISER -> 750.0
-			SPACE_HEAVY_BATTLECRUISER -> 730.0
+			AIR_FIGHTERS -> 360.0
+			AIR_BOMBERS -> 360.0
 		} * imageScaling
 	
 	val imageRadius: Double
 		get() = Vec2(imageWidth, imageHeight).magnitude / 2
 	
-	val imageScaling: Double
-		get() = when (requiredBattleType) {
-			BattleType.LAND_BATTLE -> 0.1
-			BattleType.SPACE_BATTLE -> 0.05
-		}
+	private val imageScaling: Double
+		get() = 0.1
 }

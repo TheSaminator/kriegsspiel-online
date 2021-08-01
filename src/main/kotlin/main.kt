@@ -16,6 +16,7 @@ fun main() {
 
 suspend fun suspendMain() {
 	attachKriegspediaButton()
+	PieceLayer.attachToggleAirUnitsButton()
 	
 	Popup.LoadingScreen("Loading assets...") {
 		GamePiece.preloadAllPieceImages()

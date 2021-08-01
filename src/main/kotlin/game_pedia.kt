@@ -1,3 +1,5 @@
+@file:Suppress("DuplicatedCode")
+
 import kotlinx.browser.document
 import kotlinx.coroutines.launch
 import kotlinx.html.*
@@ -6,7 +8,7 @@ import kotlin.math.PI
 import kotlin.math.roundToInt
 
 private fun P.explainLand() {
-	+"There are two main mechanics that govern land battles: Hardness and Flanking."
+	+"There are several main mechanics that govern battles in Kriegsspiel Online, such as Hardness or Flanking."
 	br
 	br
 	br
@@ -39,162 +41,90 @@ private fun P.explainLand() {
 	+" Hard attack, on the other hand, has a flank weight of 9, resulting in a flank multiplier ranging from 100% minimum to 125% maximum."
 }
 
-private fun P.explainSpace() {
-	+"Space battles, unlike land battles, don't have any Hardness mechanic. However, it does keep the flanking mechanic. Attacking starships from their rear deals more damage than attacking them from their fore. "
-	+"The flank weight in space in 5, resulting in a flank multiplier that ranges from a minimum of 100% to a maximum of 150%."
-	br
-	br
-	+"Starships, unlike land pieces, have shields that absorb a certain amount of damage before falling and needing to recharge."
-	+" When a ship's shield bar is blue, that means its shields are up. When the bar is purple, that means its shields are recharging."
-	br
-	br
-	+"Unlike land battles, which use a single style for all pieces, space battles have different faction skins with different starship types available to them. These factions are the Imperial Navy, the Space Marine Corps, the Star Fleet, and the K.D.F."
-}
-
 private fun TABLE.explainTerrainType(type: TerrainType) {
 	tr {
 		th {
 			colSpan = "2"
-			style = "background-color: ${GameMap.defaultColor(type.requiredBattleType)}; color: ${type.color}; font-weight: bold;"
+			style = "background-color: ${GameMap.defaultColor}; color: ${type.color}; font-weight: bold;"
 			+type.displayName
 		}
 	}
 	
-	when (val stats = type.stats) {
-		is TerrainStats.Land -> {
-			if (stats.isImpassible) {
-				tr {
-					td {
-						colSpan = "2"
-						style = "text-align: center"
-						+"This terrain is impassible. Units may not enter it at all."
-					}
-				}
-				
-				return
-			}
-			
-			if (stats.isHill) {
-				tr {
-					td {
-						colSpan = "2"
-						style = "text-align: center"
-						+"This terrain has special hill mechanics. Units have an attack buff when attacking downhill and an attack debuff when attacking uphill. Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
-					}
-				}
-				
-				return
-			}
-			
-			stats.hideEnemyUnitRange?.let { range ->
-				tr {
-					th {
-						+"Hides pieces from the enemy outside range"
-					}
-					td {
-						+"$range lengths"
-					}
-				}
-			}
-			
-			stats.damagePerTurn.takeUnless { it == 0.0 }?.let { dmg ->
-				tr {
-					th {
-						+"Pieces ending their turns in this terrain receive damage"
-					}
-					td {
-						+"$dmg HP"
-					}
-				}
-			}
-			
-			stats.moveSpeedMult.takeUnless { it == 1.0 }?.let { mult ->
-				tr {
-					th {
-						+"Pieces in this terrain have their move speed modified by"
-					}
-					td {
-						+((mult * 100).roundToInt().toString() + "%")
-					}
-				}
-			}
-			
-			stats.softAttackMult.takeUnless { it == 1.0 }?.let { mult ->
-				tr {
-					th {
-						+"Pieces in this terrain have their soft attack power modified by"
-					}
-					td {
-						+((mult * 100).roundToInt().toString() + "%")
-					}
-				}
-			}
-			
-			stats.hardAttackMult.takeUnless { it == 1.0 }?.let { mult ->
-				tr {
-					th {
-						+"Pieces in this terrain have their hard attack power modified by"
-					}
-					td {
-						+((mult * 100).roundToInt().toString() + "%")
-					}
-				}
+	if (type.stats.isImpassible) {
+		tr {
+			td {
+				colSpan = "2"
+				style = "text-align: center"
+				+"This terrain is impassible. Units may not enter it at all."
 			}
 		}
-		is TerrainStats.Space -> {
-			stats.hideEnemyUnitRange?.let { range ->
-				tr {
-					th {
-						+"Hides pieces from the enemy outside range"
-					}
-					td {
-						+"$range lengths"
-					}
-				}
+		
+		return
+	}
+	
+	if (type.stats.isHill) {
+		tr {
+			td {
+				colSpan = "2"
+				style = "text-align: center"
+				+"This terrain has special hill mechanics. Units have an attack buff when attacking downhill and an attack debuff when attacking uphill. Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
 			}
-			
-			stats.damagePerTurn.takeUnless { it == 0.0 }?.let { dmg ->
-				tr {
-					th {
-						+"Pieces ending their turns in this terrain receive damage"
-					}
-					td {
-						+"$dmg HP"
-						if (stats.dptIgnoresShields)
-							+" (ignoring shields)"
-					}
-				}
+		}
+		
+		return
+	}
+	
+	type.stats.hideEnemyUnitRange?.let { range ->
+		tr {
+			th {
+				+"Hides pieces from the enemy outside range"
 			}
-			
-			stats.moveSpeedMult.takeUnless { it == 1.0 }?.let { mult ->
-				tr {
-					th {
-						+"Pieces in this terrain have their move speed modified by"
-					}
-					td {
-						+((mult * 100).roundToInt().toString() + "%")
-					}
-				}
+			td {
+				+"$range lengths"
 			}
-			
-			tr {
-				th {
-					+"This terrain renders pieces' shields inoperable"
-				}
-				td {
-					+(if (stats.forcesShieldsDown) "Yes" else "No")
-				}
+		}
+	}
+	
+	type.stats.damagePerTurn.takeUnless { it == 0.0 }?.let { dmg ->
+		tr {
+			th {
+				+"Pieces ending their turns in this terrain receive damage"
 			}
-			
-			stats.attackMult.takeUnless { it == 1.0 }?.let { mult ->
-				tr {
-					th {
-						+"Pieces in this terrain have their attack power modified by"
-					}
-					td {
-						+((mult * 100).roundToInt().toString() + "%")
-					}
-				}
+			td {
+				+"$dmg HP"
+			}
+		}
+	}
+	
+	type.stats.moveSpeedMult.takeUnless { it == 1.0 }?.let { mult ->
+		tr {
+			th {
+				+"Pieces in this terrain have their move speed modified by"
+			}
+			td {
+				+((mult * 100).roundToInt().toString() + "%")
+			}
+		}
+	}
+	
+	type.stats.softAttackMult.takeUnless { it == 1.0 }?.let { mult ->
+		tr {
+			th {
+				+"Pieces in this terrain have their soft attack power modified by"
+			}
+			td {
+				+((mult * 100).roundToInt().toString() + "%")
+			}
+		}
+	}
+	
+	type.stats.hardAttackMult.takeUnless { it == 1.0 }?.let { mult ->
+		tr {
+			th {
+				+"Pieces in this terrain have their hard attack power modified by"
+			}
+			td {
+				+((mult * 100).roundToInt().toString() + "%")
 			}
 		}
 	}
@@ -205,14 +135,8 @@ private fun TABLE.explainPieceType(type: PieceType) {
 		th {
 			colSpan = "2"
 			+type.displayName
-		}
-	}
-	if (type.factionSkin != null) {
-		tr {
-			th {
-				colSpan = "2"
-				+"(Belongs to ${type.factionSkin.displayName})"
-			}
+			if (type.layer == PieceLayer.AIR)
+				+" (Flying)"
 		}
 	}
 	tr {
@@ -244,7 +168,7 @@ private fun TABLE.explainPieceType(type: PieceType) {
 			+"Point Cost"
 		}
 		td {
-			+type.pointCost.toString()
+			+(type.pointCost?.toString() ?: "Not Deployable")
 		}
 	}
 	tr {
@@ -255,22 +179,12 @@ private fun TABLE.explainPieceType(type: PieceType) {
 			+(type.stats.maxHealth.roundToInt().toString() + " HP")
 		}
 	}
-	when (val stats = type.stats) {
-		is LandPieceStats -> tr {
-			th {
-				+"Hardness"
-			}
-			td {
-				+((stats.hardness * 100).roundToInt().toString() + "%")
-			}
+	tr {
+		th {
+			+"Hardness"
 		}
-		is SpacePieceStats -> tr {
-			th {
-				+"Max Shield"
-			}
-			td {
-				+(stats.maxShield.roundToInt().toString() + " HP")
-			}
+		td {
+			+((type.stats.hardness * 100).roundToInt().toString() + "%")
 		}
 	}
 	type.stats.abilities.forEach { (name, data) ->
@@ -361,6 +275,14 @@ private fun TABLE.explainPieceType(type: PieceType) {
 						+((data.actionConsumed * 100).roundToInt().toString() + "%")
 					}
 				}
+				tr {
+					th {
+						+"Requires preparation"
+					}
+					td {
+						+(if (data.requiresLoading) "Yes" else "No")
+					}
+				}
 			}
 			is Ability.HealLand -> {
 				tr {
@@ -404,7 +326,7 @@ private fun TABLE.explainPieceType(type: PieceType) {
 					}
 				}
 			}
-			is Ability.ChargeHeavyWeapon -> {
+			is Ability.LoadHeavyWeapon -> {
 				tr {
 					th {
 						+"Consumes Action"
@@ -414,46 +336,15 @@ private fun TABLE.explainPieceType(type: PieceType) {
 					}
 				}
 			}
-			is Ability.AttackSpace -> {
-				if (data.minAngle != null && data.maxAngle != null) {
-					tr {
-						th {
-							+"Minimum angle from fore"
-						}
-						td {
-							+((data.minAngle * 180 / PI).roundToInt().toString() + " degrees")
-						}
+			is Ability.LandAttackAir -> {
+				tr {
+					th {
+						+"Side-to-side range"
 					}
-					tr {
-						th {
-							+"Maximum angle from fore"
-						}
-						td {
-							+((data.maxAngle * 180 / PI).roundToInt().toString() + " degrees")
-						}
-					}
-				} else if (data.maxAngle != null) {
-					tr {
-						th {
-							+"Side-to-side range"
-							if (data.invertAngle)
-								+" (from rear)"
-						}
-						td {
-							+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
-						}
-					}
-				} else {
-					tr {
-						th {
-							+"All-directional fire"
-						}
-						td {
-							+"Yes"
-						}
+					td {
+						+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
 					}
 				}
-				
 				tr {
 					th {
 						+"Minimum distance"
@@ -472,18 +363,10 @@ private fun TABLE.explainPieceType(type: PieceType) {
 				}
 				tr {
 					th {
-						+"Attack strength"
+						+"Attack power"
 					}
 					td {
 						+(data.attackPower.roundToInt().toString() + " HP")
-					}
-				}
-				tr {
-					th {
-						+"Requires preparation"
-					}
-					td {
-						+(if (data.requiresCharge) "Yes" else "No")
 					}
 				}
 				tr {
@@ -494,47 +377,24 @@ private fun TABLE.explainPieceType(type: PieceType) {
 						+((data.actionConsumed * 100).roundToInt().toString() + "%")
 					}
 				}
-			}
-			is Ability.AttackAreaSpace -> {
-				if (data.minAngle != null && data.maxAngle != null) {
-					tr {
-						th {
-							+"Minimum angle from fore"
-						}
-						td {
-							+((data.minAngle * 180 / PI).roundToInt().toString() + " degrees")
-						}
+				tr {
+					th {
+						+"Requires preparation"
 					}
-					tr {
-						th {
-							+"Maximum angle from fore"
-						}
-						td {
-							+((data.maxAngle * 180 / PI).roundToInt().toString() + " degrees")
-						}
-					}
-				} else if (data.maxAngle != null) {
-					tr {
-						th {
-							+"Side-to-side range"
-							if (data.invertAngle)
-								+" (from rear)"
-						}
-						td {
-							+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
-						}
-					}
-				} else {
-					tr {
-						th {
-							+"All-directional fire"
-						}
-						td {
-							+"Yes"
-						}
+					td {
+						+(if (data.requiresLoading) "Yes" else "No")
 					}
 				}
-				
+			}
+			is Ability.TakeOff -> {
+				tr {
+					th {
+						+"Side-to-side range"
+					}
+					td {
+						+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
+					}
+				}
 				tr {
 					th {
 						+"Minimum distance"
@@ -553,72 +413,150 @@ private fun TABLE.explainPieceType(type: PieceType) {
 				}
 				tr {
 					th {
-						+"Attack area radius"
+						+"Consumes Action"
 					}
 					td {
-						+(data.aoeRadius.roundToInt().toString() + " lengths")
+						+((data.minimumAction * 100).roundToInt().toString() + "%")
+					}
+				}
+			}
+			is Ability.Fly -> {
+				tr {
+					th {
+						+"Side-to-side range"
+					}
+					td {
+						+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
 					}
 				}
 				tr {
 					th {
-						+"Attack strength"
+						+"Minimum distance"
+					}
+					td {
+						+(data.minDistance.roundToInt().toString() + " lengths")
+					}
+				}
+				tr {
+					th {
+						+"Uses 100% of Action to move"
+					}
+					td {
+						+(data.distancePerAction.roundToInt().toString() + " lengths")
+					}
+				}
+			}
+			is Ability.AttackAir -> {
+				tr {
+					th {
+						+"Side-to-side range"
+					}
+					td {
+						+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
+					}
+				}
+				tr {
+					th {
+						+"Minimum distance"
+					}
+					td {
+						+(data.minDistance.roundToInt().toString() + " lengths")
+					}
+				}
+				tr {
+					th {
+						+"Maximum distance"
+					}
+					td {
+						+(data.maxDistance.roundToInt().toString() + " lengths")
+					}
+				}
+				tr {
+					th {
+						+"Attack power"
 					}
 					td {
 						+(data.attackPower.roundToInt().toString() + " HP")
 					}
 				}
+			}
+			is Ability.AirAttackLand -> {
 				tr {
 					th {
-						+"Requires preparation"
+						+"Side-to-side range"
 					}
 					td {
-						+(if (data.requiresCharge) "Yes" else "No")
+						+(data.maxAngle?.let { angle ->
+							(angle * 360 / PI).roundToInt().toString() + " degrees"
+						} ?: "360 degrees")
+					}
+				}
+				data.minDistance?.let { minRange ->
+					tr {
+						th {
+							+"Minimum distance"
+						}
+						td {
+							+(minRange.roundToInt().toString() + " lengths")
+						}
 					}
 				}
 				tr {
 					th {
-						+(if (data.canMoveAfterAttacking) "Consumes Action" else "Requires minimum Action")
+						+"Maximum distance"
 					}
 					td {
-						+((data.actionConsumed * 100).roundToInt().toString() + "%")
+						+(data.maxDistance.roundToInt().toString() + " lengths")
+					}
+				}
+				tr {
+					th {
+						+"Soft attack power"
+					}
+					td {
+						+(data.softAttackPower.roundToInt().toString() + " HP")
+					}
+				}
+				tr {
+					th {
+						+"Hard attack power"
+					}
+					td {
+						+(data.hardAttackPower.roundToInt().toString() + " HP")
 					}
 				}
 			}
-			is Ability.Cloak -> {
+			is Ability.LandOnGround -> {
+				tr {
+					th {
+						+"Side-to-side range"
+					}
+					td {
+						+((data.maxAngle * 360 / PI).roundToInt().toString() + " degrees")
+					}
+				}
+				tr {
+					th {
+						+"Minimum distance"
+					}
+					td {
+						+(data.minDistance.roundToInt().toString() + " lengths")
+					}
+				}
+				tr {
+					th {
+						+"Maximum distance"
+					}
+					td {
+						+(data.maxDistance.roundToInt().toString() + " lengths")
+					}
+				}
 				tr {
 					th {
 						+"Consumes Action"
 					}
 					td {
-						+((data.actionConsumed * 100).roundToInt().toString() + "%")
-					}
-				}
-			}
-			is Ability.Decloak -> {
-				tr {
-					th {
-						+"Consumes Action"
-					}
-					td {
-						+((data.actionConsumed * 100).roundToInt().toString() + "%")
-					}
-				}
-			}
-			is Ability.RevealCloak -> {
-				tr {
-					th {
-						+"Reveals cloaked ships in range"
-					}
-					td {
-						+(data.revealRange.roundToInt().toString() + " lengths")
-					}
-				}
-				tr {
-					th {
-						+"Consumes Action"
-					}
-					td {
-						+((data.actionConsumed * 100).roundToInt().toString() + "%")
+						+((data.minimumAction * 100).roundToInt().toString() + "%")
 					}
 				}
 			}
@@ -646,47 +584,36 @@ fun attachKriegspediaButton() {
 }
 
 suspend fun viewKriegspedia() {
-	Popup.KriegspediaStart.display()?.let {
-		index(it)
+	when (Popup.KriegspediaStart.display()) {
+		KriegspediaSection.MECHANICS -> mechanics()
+		KriegspediaSection.PIECES -> pieces()
+		KriegspediaSection.TERRAINS -> terrains()
+		null -> return
 	}
 }
 
-private suspend fun index(type: BattleType) {
-	when (Popup.KriegspediaIndex(type).display()) {
-		KriegspediaSection.MECHANICS -> mechanics(type)
-		KriegspediaSection.PIECES -> pieces(type)
-		KriegspediaSection.TERRAINS -> terrains(type)
-		null -> viewKriegspedia()
-	}
+private suspend fun mechanics() {
+	Popup.KriegspediaExplanation(P::explainLand).display()
+	viewKriegspedia()
 }
 
-private suspend fun mechanics(type: BattleType) {
-	Popup.KriegspediaExplanation(
-		when (type) {
-			BattleType.LAND_BATTLE -> P::explainLand
-			BattleType.SPACE_BATTLE -> P::explainSpace
-		}
-	).display()
-	index(type)
-}
-
-private suspend fun pieces(type: BattleType) {
-	val piece = Popup.KriegspediaPieceList(type).display()
+private suspend fun pieces() {
+	val piece = Popup.KriegspediaPieceList.display()
 	if (piece == null)
-		index(type)
+		viewKriegspedia()
 	else {
 		Popup.KriegspediaDataTable { explainPieceType(piece) }.display()
-		pieces(type)
+		pieces()
 	}
 }
 
-private suspend fun terrains(type: BattleType) {
-	val terrain = Popup.KriegspediaTerrainList(type).display()
+private suspend fun terrains() {
+	val terrain = Popup.KriegspediaTerrainList.display()
 	if (terrain == null)
-		index(type)
+		viewKriegspedia()
 	else {
 		Popup.KriegspediaDataTable { explainTerrainType(terrain) }.display()
-		terrains(type)
+		terrains()
 	}
 }
 

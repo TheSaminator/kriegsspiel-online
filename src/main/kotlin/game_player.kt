@@ -1,5 +1,4 @@
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 
 sealed class Player(val side: GameServerSide) {
 	abstract fun deployPiece(pieceType: PieceType, pos: Vec2, facing: Double)
@@ -39,8 +38,6 @@ sealed class Player(val side: GameServerSide) {
 		
 		override suspend fun doTurn() {
 			GamePhase.currentPhase = GamePhase.PlayTurn(side)
-			GamePacket.send(GamePacket.GamePhaseChanged(GamePhase.currentPhase))
-			GameSidebar.updateSidebar()
 			
 			turnEnds.receive()
 		}
@@ -49,7 +46,6 @@ sealed class Player(val side: GameServerSide) {
 			turnEnds.send(Unit)
 			
 			GamePhase.currentPhase = GamePhase.PlayTurn(side.other)
-			GamePacket.send(GamePacket.GamePhaseChanged(GamePhase.currentPhase))
 		}
 		
 		override suspend fun pick(pickRequest: PickRequest) = PickHandler.pickLocal(pickRequest)
@@ -83,7 +79,6 @@ sealed class Player(val side: GameServerSide) {
 		
 		override suspend fun doTurn() {
 			GamePhase.currentPhase = GamePhase.PlayTurn(side)
-			GamePacket.send(GamePacket.GamePhaseChanged(GamePhase.currentPhase))
 			
 			GamePacket.awaitOpponentTurnEnd()
 		}
@@ -91,8 +86,7 @@ sealed class Player(val side: GameServerSide) {
 		override suspend fun endTurn() {
 			GamePacket.send(GamePacket.TurnEnded)
 			
-			while (GamePhase.currentPhase == GamePhase.PlayTurn(side))
-				delay(100)
+			GamePhase.awaitPhase { it != GamePhase.PlayTurn(side) }
 		}
 		
 		override suspend fun pick(pickRequest: PickRequest) = PickHandler.pickRemote(pickRequest)

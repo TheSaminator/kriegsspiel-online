@@ -357,44 +357,12 @@ sealed class Popup<T> {
 		}
 	}
 	
-	object KriegspediaStart : Popup<BattleType?>() {
-		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (BattleType?) -> Unit) {
-			p {
-				style = "text-align: center; font-size: 1.6em"
-				
-				+"Kriegspedia - Start"
-			}
-			
-			div(classes = "button-set col") {
-				BattleType.values().forEach { type ->
-					a(href = "#") {
-						+type.displayName
-						onClickFunction = { e ->
-							e.preventDefault()
-							
-							callback(type)
-						}
-					}
-				}
-				
-				a(href = "#") {
-					+"Exit Kriegspedia"
-					onClickFunction = { e ->
-						e.preventDefault()
-						
-						callback(null)
-					}
-				}
-			}
-		}
-	}
-	
-	class KriegspediaIndex(val type: BattleType) : Popup<KriegspediaSection?>() {
+	object KriegspediaStart : Popup<KriegspediaSection?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (KriegspediaSection?) -> Unit) {
 			p {
 				style = "text-align: center; font-size: 1.6em"
 				
-				+"${type.displayName} - Contents"
+				+"Kriegspedia - Start"
 			}
 			
 			div(classes = "button-set col") {
@@ -437,18 +405,21 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class KriegspediaPieceList(val type: BattleType) : Popup<PieceType?>() {
+	object KriegspediaPieceList : Popup<PieceType?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (PieceType?) -> Unit) {
 			p {
 				style = "text-align: center; font-size: 1.6em"
 				
-				+"${type.displayName} - Pieces"
+				+"Index - Pieces"
 			}
 			
 			div(classes = "button-set col") {
-				PieceType.values().filter { it.requiredBattleType == type }.forEach { type ->
+				PieceType.values().forEach { type ->
 					a(href = "#") {
-						+(type.displayName + type.factionSkin?.let { " (${it.displayName})" }.orEmpty())
+						+type.displayName
+						if (type.layer == PieceLayer.AIR)
+							+" (Flying)"
+						
 						onClickFunction = { e ->
 							e.preventDefault()
 							
@@ -469,16 +440,16 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class KriegspediaTerrainList(val type: BattleType) : Popup<TerrainType?>() {
+	object KriegspediaTerrainList : Popup<TerrainType?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (TerrainType?) -> Unit) {
 			p {
 				style = "text-align: center; font-size: 1.6em"
 				
-				+"${type.displayName} - Terrains"
+				+"Index - Terrains"
 			}
 			
 			div(classes = "button-set col") {
-				TerrainType.values().filter { it.requiredBattleType == type }.forEach { type ->
+				TerrainType.values().forEach { type ->
 					a(href = "#") {
 						+type.displayName
 						onClickFunction = { e ->

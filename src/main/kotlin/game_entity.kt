@@ -102,7 +102,7 @@ fun newGamePieceId() = "game-piece-${++idCount}"
 @Serializable
 data class GamePiece(
 	val id: String,
-	val type: PieceType,
+	var type: PieceType,
 	val owner: GameServerSide,
 	private val initialLocation: Vec2,
 	private val initialFacing: Double
@@ -123,6 +123,7 @@ data class GamePiece(
 		private set
 	
 	var facing: Double = initialFacing
+		get() = field.asAngle()
 		set(value) {
 			prevFacing = field
 			field = value
@@ -136,6 +137,12 @@ data class GamePiece(
 			prevAction = field
 			field = value
 		}
+	
+	var airEvasion = 0.0
+		private set
+	
+	val airTargetedMult: Double
+		get() = 1.5 - airEvasion
 	
 	fun undoMove() {
 		val (newLocation, newFacing, newAction) = Triple(prevLocation, prevFacing, prevAction)
@@ -152,74 +159,37 @@ data class GamePiece(
 	
 	var health = 1.0
 	
-	var shield = 1.0
-	var shieldDepleted = false
-	
 	var hasAttacked = false
 	
 	var isCloaked = false
 	var isCloakRevealed = false
 	var heavyWeaponCharged = false
 	
-	val terrainForcesShieldsDown: Boolean
-		get() = currentTerrainBlob?.let { blob ->
-			blob.type.stats is TerrainStats.Space && blob.type.stats.forcesShieldsDown
-		} ?: false
-	
-	val canUseShield: Boolean
-		get() = type.stats is SpacePieceStats && !shieldDepleted && !isCloaked && !terrainForcesShieldsDown
-	
 	fun attack(damage: Double, source: DamageSource) {
-		if (canUseShield && !source.ignoresShields) {
-			val stats = type.stats as SpacePieceStats
-			
-			val dShield = damage / stats.maxShield
-			if (dShield >= shield) {
-				val dHealth = (damage - shield * stats.maxShield) / stats.maxHealth
-				health -= dHealth
-				
-				shield = 0.0
-				shieldDepleted = true
-				
-				if (health <= 0.0)
-					GameSessionData.currentSession!!.removeById(id)
-				else
-					GameSessionData.currentSession!!.markDirty(id)
-			} else {
-				shield -= dShield
-				
-				GameSessionData.currentSession!!.markDirty(id)
-			}
-		} else {
-			health -= damage / type.stats.maxHealth
-			
-			if (health <= 0.0)
-				GameSessionData.currentSession!!.removeById(id)
-			else
-				GameSessionData.currentSession!!.markDirty(id)
-		}
+		health -= damage / type.stats.maxHealth
+		
+		if (health <= 0.0)
+			GameSessionData.currentSession!!.removeById(id)
+		else
+			GameSessionData.currentSession!!.markDirty(id)
 		
 		ChatBox.notifyAttack(source, this, damage)
 	}
 	
 	fun doNextTurn() {
+		if (type.layer == PieceLayer.AIR) {
+			if (action > AIR_PIECES_MAX_ACTION_REMAINING)
+				attack(1_000_000.0, DamageSource.AirPieceCrash)
+			else
+				airEvasion = (AIR_PIECES_MAX_ACTION_REMAINING - action) / AIR_PIECES_MAX_ACTION_REMAINING
+		}
+		
 		action = 1.0
 		hasAttacked = false
 		
 		currentTerrainBlob?.let { blob ->
 			val takenDamage = blob.type.stats.damagePerTurn
 			attack(takenDamage, DamageSource.Terrain(blob.type))
-		}
-		
-		if (type.stats is SpacePieceStats) {
-			if (shieldDepleted && !isCloaked) {
-				shield += SHIELD_RECHARGE_PER_TURN / type.stats.maxShield
-				
-				if (shield >= 1.0) {
-					shield = 1.0
-					shieldDepleted = false
-				}
-			}
 		}
 	}
 	
@@ -230,18 +200,25 @@ data class GamePiece(
 		get() = (!isCloaked || isCloakRevealed) && !isHiddenByTerrain
 	
 	val currentTerrainBlob: TerrainBlob?
-		get() = GameSessionData.currentSession!!.gameMap.terrainBlobs.singleOrNull { (it.center - location).magnitude < it.radius }
+		get() = if (type.layer == PieceLayer.AIR)
+			null
+		else
+			GameSessionData.currentSession!!.gameMap.terrainBlobs.singleOrNull { (it.center - location).magnitude < it.radius }
 	
 	val isHiddenByTerrain: Boolean
 		get() = currentTerrainBlob?.let { blob ->
 			val hideRange = blob.type.stats.hideEnemyUnitRange
 			hideRange != null && GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).none { enemyPiece ->
-				(enemyPiece.location - location).magnitude < hideRange
+				val rangeMult = if (enemyPiece.type.layer == PieceLayer.AIR) 2.0 else 1.0
+				(enemyPiece.location - location).magnitude < hideRange * rangeMult
 			}
 		} ?: false
 	
 	val visionRange: Double
-		get() = if (type.requiredBattleType == BattleType.SPACE_BATTLE) 1000.0 else 500.0
+		get() = when (type.layer) {
+			PieceLayer.LAND -> 500.0
+			PieceLayer.AIR -> 1000.0
+		}
 	
 	val canBeIdentified: Boolean
 		get() = Game.currentSide == owner || canBeIdentifiedByEnemy
@@ -255,7 +232,7 @@ data class GamePiece(
 		get() = if (canBeIdentified)
 			getImagePath(owner != Game.currentSide!!, type)
 		else
-			getUnknownImagePath(owner != Game.currentSide!!, type.requiredBattleType, type.factionSkin)
+			getUnknownImagePath(owner != Game.currentSide!!, type.layer)
 	
 	val pieceRadius: Double
 		get() = type.imageRadius + PIECE_RADIUS_OUTLINE
@@ -266,19 +243,8 @@ data class GamePiece(
 		else
 			"rgb(255, ${(health * 510).toInt()}, 0)"
 	
-	val shieldBarColor: String
-		get() {
-			val alpha = if (isCloaked) "0.4" else "1.0"
-			
-			return when {
-				shieldDepleted -> "rgba(170, 85, 255, $alpha)"
-				terrainForcesShieldsDown -> "rgba(0, 85, 170, $alpha)"
-				else -> "rgba(85, 170, 255, $alpha)"
-			}
-		}
-	
 	companion object {
-		const val SHIELD_RECHARGE_PER_TURN = 75.0
+		const val AIR_PIECES_MAX_ACTION_REMAINING = 0.6
 		
 		const val PIECE_RADIUS_OUTLINE = 15.0
 		
@@ -295,19 +261,11 @@ data class GamePiece(
 						getImagePath(true, pieceType),
 						getImagePath(false, pieceType)
 					)
-				} + BattleType.values().flatMap { battleType ->
-					if (battleType.usesSkins)
-						BattleFactionSkin.valuesFor(battleType).flatMap { factionSkin ->
-							listOf(
-								getUnknownImagePath(true, battleType, factionSkin),
-								getUnknownImagePath(false, battleType, factionSkin)
-							)
-						}
-					else
-						listOf(
-							getUnknownImagePath(true, battleType, null),
-							getUnknownImagePath(false, battleType, null)
-						)
+				} + PieceLayer.values().flatMap { pieceLayer ->
+					listOf(
+						getUnknownImagePath(true, pieceLayer),
+						getUnknownImagePath(false, pieceLayer)
+					)
 				}
 				
 				urls.map { url ->
@@ -322,19 +280,8 @@ data class GamePiece(
 			return "uniticons/${if (isOpponent) "opponent" else "player"}/${pieceType.name.lowercase()}.png"
 		}
 		
-		fun getUnknownImagePath(isOpponent: Boolean, battleType: BattleType, factionSkin: BattleFactionSkin?): String {
-			return "uniticons/${if (isOpponent) "opponent" else "player"}/${
-				when (battleType) {
-					BattleType.LAND_BATTLE -> "land"
-					BattleType.SPACE_BATTLE -> "space"
-				} + when (factionSkin) {
-					BattleFactionSkin.EMPIRE -> "_in"
-					BattleFactionSkin.SPACE_MARINES -> "_sm"
-					BattleFactionSkin.STAR_FLEET -> "_sf"
-					BattleFactionSkin.KDF -> "_ke"
-					null -> ""
-				} + "_unknown"
-			}.png"
+		fun getUnknownImagePath(isOpponent: Boolean, layer: PieceLayer): String {
+			return "uniticons/${if (isOpponent) "opponent" else "player"}/${layer.name.lowercase()}_unknown.png"
 		}
 	}
 }

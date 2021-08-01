@@ -21,19 +21,14 @@ object Game {
 			awaitCancellation()
 		}
 		
-		val battleType = Popup.NameableChoice("Select battle type", BattleType.values().toList(), BattleType::displayName).display()
-		
 		val battleSize = Popup.NameableChoice("Select battle size", DeployConstants.pointLevels.keys.toList()) {
 			DeployConstants.pointLevels.getValue(it) + " ($it)"
 		}.display()
 		
-		GameSessionData.currentSession = GameSessionData(GameMap.generateMap(battleType), battleSize).also { gsd ->
+		GameSessionData.currentSession = GameSessionData(GameMap.generateMap(), battleSize).also { gsd ->
 			GamePacket.send(GamePacket.MapLoaded(gsd.gameMap, battleSize))
 			GameField.drawEverything(gsd)
 		}
-		
-		if (battleType.usesSkins)
-			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.valuesFor(battleType), BattleFactionSkin::displayName).display()
 		
 		GameSidebar.beginDeploy()
 		GameSidebar.deployMenu()
@@ -68,10 +63,6 @@ object Game {
 			while (GameSessionData.currentSession == null)
 				delay(100)
 		}.display()
-		
-		val battleType = GameSessionData.currentSession!!.gameMap.gameType
-		if (battleType.usesSkins)
-			GamePhase.Deployment.chosenSkin = Popup.NameableChoice("Select your faction skin", BattleFactionSkin.valuesFor(battleType), BattleFactionSkin::displayName).display()
 		
 		GameSidebar.beginDeploy()
 		GameSidebar.deployMenu()

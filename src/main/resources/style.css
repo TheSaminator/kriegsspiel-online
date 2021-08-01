@@ -344,7 +344,7 @@ input[type=submit]:disabled {
 	transform: translate(-50%, -50%);
 }
 
-#open-kriegspedia {
+#utility-buttons {
 	position: fixed;
 	bottom: 1.5em;
 	right: 1.5em;

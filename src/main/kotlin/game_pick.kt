@@ -75,16 +75,37 @@ data class PickBoundaryUnitBased(
 	}
 }
 
+enum class TerrainRequirement {
+	DEFAULT {
+		override fun isTerrainOkay(terrainType: TerrainType): Boolean {
+			return !terrainType.stats.isImpassible
+		}
+	},
+	REQ_NONE {
+		override fun isTerrainOkay(terrainType: TerrainType): Boolean {
+			return false
+		}
+	},
+	ALLOW_ANY {
+		override fun isTerrainOkay(terrainType: TerrainType): Boolean {
+			return true
+		}
+	},
+	;
+	
+	abstract fun isTerrainOkay(terrainType: TerrainType): Boolean
+}
+
 @Serializable
 sealed class PickRequest {
 	@Serializable
 	data class PickAngle(val center: Vec2, val fromAngle: Double, val maxAngleDiff: Double?, val displayArcRadius: Double) : PickRequest()
 	
 	@Serializable
-	data class PickPosition(val inBoundary: PickBoundary, val origin: Vec2?, val restrictDistFromUnits: Double?, val displayCircleRadius: Double?) : PickRequest()
+	data class PickPosition(val inBoundary: PickBoundary, val origin: Vec2?, val restrictDistFromUnits: Double?, val restrictUnitsInLayer: PieceLayer?, val requireTerrain: TerrainRequirement, val displayCircleRadius: Double?) : PickRequest()
 	
 	@Serializable
-	data class PickPiece(val inBoundary: PickBoundary, val onSameSideAs: GameServerSide?) : PickRequest()
+	data class PickPiece(val inBoundary: PickBoundary, val onSameSideAs: GameServerSide?, val inSameLayerAs: PieceLayer?) : PickRequest()
 }
 
 @Serializable
@@ -151,7 +172,7 @@ object PickHandler {
 		val fromNormal = angleReq.fromAngle.asAngle()
 		val begin = Vec2.polar(angleReq.displayArcRadius, fromNormal) + angleReq.center
 		
-		val toNormal = toAngle.asAngle()
+		val toNormal = toAngle
 		val end = Vec2.polar(angleReq.displayArcRadius, toNormal) + angleReq.center
 		
 		val pointer = toPos + Vec2.polar(5.0, toAngle)
@@ -193,8 +214,11 @@ object PickHandler {
 			return false
 		
 		if (
-			posReq.restrictDistFromUnits != null && GameSessionData.currentSession!!.allPieces().any { piece ->
-				(pos - piece.location).magnitude < piece.type.imageRadius + 15 + posReq.restrictDistFromUnits
+			posReq.restrictDistFromUnits != null && GameSessionData.currentSession!!.allPieces().any restrictPiece@{ piece ->
+				if (piece.type.layer != posReq.restrictUnitsInLayer)
+					return@restrictPiece false
+				
+				(pos - piece.location).magnitude < piece.type.imageRadius + GamePiece.PIECE_RADIUS_OUTLINE + posReq.restrictDistFromUnits
 			}
 		)
 			return false
@@ -204,7 +228,7 @@ object PickHandler {
 		
 		if (
 			GameSessionData.currentSession!!.gameMap.terrainBlobs.any {
-				it.type.stats is TerrainStats.Land && it.type.stats.isImpassible && (it.center - pos).magnitude < it.radius
+				!posReq.requireTerrain.isTerrainOkay(it.type) && (it.center - pos).magnitude < it.radius
 			}
 		)
 			return false
@@ -212,11 +236,14 @@ object PickHandler {
 		return true
 	}
 	
-	private fun checkPieceValid(posReq: PickRequest.PickPiece, piece: GamePiece): Boolean {
-		if (!posReq.inBoundary.isInBoundary(piece.location))
+	private fun checkPieceValid(pieceReq: PickRequest.PickPiece, piece: GamePiece): Boolean {
+		if (!pieceReq.inBoundary.isInBoundary(piece.location))
 			return false
 		
-		if (posReq.onSameSideAs == piece.owner.other)
+		if (pieceReq.onSameSideAs == piece.owner.other)
+			return false
+		
+		if (pieceReq.inSameLayerAs != null && pieceReq.inSameLayerAs != piece.type.layer)
 			return false
 		
 		if (!piece.canBeRendered)

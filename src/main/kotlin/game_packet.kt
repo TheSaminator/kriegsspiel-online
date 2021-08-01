@@ -98,8 +98,6 @@ sealed class GamePacket {
 								throw IllegalStateException("Local game must not receive phase change!")
 							
 							GamePhase.currentPhase = packet.newPhase
-							
-							GameSidebar.updateSidebar()
 						}
 						is PieceAbilityUsed -> {
 							if (Game.currentSide != GameServerSide.HOST)
