@@ -258,16 +258,21 @@ input[type=submit]:disabled {
 	stroke: rgb(102, 255, 102);
 }
 
-#piece-selection {
+#aside {
 	position: fixed;
 	top: 1.5em;
 	right: 1.5em;
 
-	width: 20%;
-	min-height: 50%;
-	max-height: 75%;
+	min-width: 20%;
+	max-width: 35%;
+	min-height: 55%;
+	max-height: 80%;
 
 	overflow-y: auto;
+}
+
+#piece-selection:empty + hr {
+	display: none;
 }
 
 #piece-selection p.all-info {
@@ -344,14 +349,6 @@ input[type=submit]:disabled {
 	transform: translate(-50%, -50%);
 }
 
-#utility-buttons {
-	position: fixed;
-	bottom: 1.5em;
-	right: 1.5em;
-
-	width: 15%;
-}
-
 table {
 	table-layout: fixed;
 	width: 30em;
@@ -372,9 +369,9 @@ td, th {
 	display: none;
 }
 
-@media only screen and (max-width: 960px) {
+@media only screen and (pointer: coarse) {
 	html, body {
-		font-size: 75%;
+		font-size: 62.5%;
 	}
 
 	#cancel-pick {
@@ -390,7 +387,7 @@ td, th {
 	display: none;
 }
 
-@media only screen and (max-width: 960px) and (orientation: portrait) {
+@media only screen and (pointer: coarse) and (orientation: portrait) {
 	#portrait-admonishment {
 		display: unset;
 		position: fixed;

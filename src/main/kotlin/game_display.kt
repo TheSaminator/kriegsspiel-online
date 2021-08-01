@@ -276,10 +276,10 @@ object GameField {
 		if (this::gameFieldPanZoom.isInitialized)
 			gameFieldPanZoom.destroy()
 		
-		if (window.matchMedia("(max-width: 960px)").matches)
-			createPanZoomMobile()
-		else
+		if (window.matchMedia("(pointer: fine)").matches)
 			createPanZoomDesktop()
+		else
+			createPanZoomMobile()
 	}
 	
 	private fun drawPickBoundaryArc(origin: Vec2, minAngle: Double, maxAngle: Double, minRadius: Double?, maxRadius: Double): String {
