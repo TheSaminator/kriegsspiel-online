@@ -14,3 +14,5 @@
     * [x] "Are You Sure" popup for "Done Deploying" button
     * [x] Log of attacks with damage displayed
 * [x] Mobile touchscreen support
+* [ ] Air warfare
+    * Space warfare will be removed, to be made its own separate game
