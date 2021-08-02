@@ -306,14 +306,14 @@ sealed class Ability {
 		val maxDistance: Double,
 		val maxAngle: Double,
 		val minimumAction: Double,
-		val airUnitEquiv: () -> PieceType
+		val airUnitEquiv: String
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.currentTerrainBlob == null && currentPiece.action > minimumAction
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			val turnsInto = airUnitEquiv()
+			val turnsInto = PieceType.valueOf(airUnitEquiv)
 			
 			currentPiece.heavyWeaponCharged = true
 			
@@ -479,14 +479,14 @@ sealed class Ability {
 		val maxDistance: Double,
 		val maxAngle: Double,
 		val minimumAction: Double,
-		val landUnitEquiv: () -> PieceType
+		val landUnitEquiv: String
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.action > minimumAction
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			val turnsInto = landUnitEquiv()
+			val turnsInto = PieceType.valueOf(landUnitEquiv)
 			
 			currentPiece.heavyWeaponCharged = true
 			
@@ -595,7 +595,7 @@ fun standardLandedAirPieceAbilities(
 	maxTakeoffRange: Double,
 	maxTakeoffAngle: Double,
 	minTakeoffAction: Double,
-	turnsInto: () -> PieceType,
+	turnsInto: String,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
@@ -634,7 +634,7 @@ fun standardAirFighterAbilities(
 	maxLandingRange: Double,
 	maxLandingAngle: Double,
 	minLandingAction: Double,
-	turnsInto: () -> PieceType,
+	turnsInto: String,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
@@ -690,7 +690,7 @@ fun standardAirBomberAbilities(
 	maxLandingRange: Double,
 	maxLandingAngle: Double,
 	minLandingAction: Double,
-	turnsInto: () -> PieceType,
+	turnsInto: String,
 	
 	extraAbilities: Map<String, Ability> = emptyMap()
 ): Map<String, Ability> = mapOf(
@@ -1066,7 +1066,7 @@ enum class PieceType(
 				maxTakeoffRange = 900.0,
 				maxTakeoffAngle = PI / 4.5,
 				minTakeoffAction = 0.4,
-				turnsInto = { AIR_FIGHTERS }
+				turnsInto = "AIR_FIGHTERS"
 			)
 		)
 	),
@@ -1085,7 +1085,7 @@ enum class PieceType(
 				maxTakeoffRange = 600.0,
 				maxTakeoffAngle = PI / 6,
 				minTakeoffAction = 0.6,
-				turnsInto = { AIR_BOMBERS }
+				turnsInto = "AIR_BOMBERS"
 			)
 		)
 	),
@@ -1123,7 +1123,7 @@ enum class PieceType(
 				maxLandingAngle = PI / 4.5,
 				minLandingAction = 0.4,
 				
-				turnsInto = { LAND_AIR_FIGHTERS }
+				turnsInto = "LAND_AIR_FIGHTERS"
 			)
 		)
 	),
@@ -1158,7 +1158,7 @@ enum class PieceType(
 				maxLandingAngle = PI / 6,
 				minLandingAction = 0.6,
 				
-				turnsInto = { LAND_AIR_BOMBERS }
+				turnsInto = "LAND_AIR_BOMBERS"
 			)
 		)
 	),

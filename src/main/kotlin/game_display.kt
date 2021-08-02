@@ -1,12 +1,12 @@
-import HammerJS.Hammer
-import HammerJS.HammerManager
-import HammerJS.invoke
-import SvgPanZoom.CustomEventHandler
-import SvgPanZoom.SVGPanZoomInstance
-import SvgPanZoom.SVGPanZoomOptions
 import com.github.nwillc.ksvg.elements.CIRCLE
 import com.github.nwillc.ksvg.elements.G
 import com.github.nwillc.ksvg.elements.RECT
+import externals.hammer.Hammer
+import externals.hammer.HammerManager
+import externals.hammer.invoke
+import externals.svgpanzoom.CustomEventHandler
+import externals.svgpanzoom.SVGPanZoomInstance
+import externals.svgpanzoom.SVGPanZoomOptions
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.Job
@@ -148,12 +148,12 @@ object GameField {
 	
 	private fun SVGPanZoomOptions.configurePanBox() {
 		beforePan = { _, newPan ->
-			val sizes = js("this").unsafeCast<SVGPanZoomInstance>().getSizes()
+			val sizes = gameFieldPanZoom.getSizes()
 			
-			val leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom)
-			val rightLimit = sizes.width - (sizes.viewBox.x * sizes.realZoom)
-			val topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom)
-			val bottomLimit = sizes.height - (sizes.viewBox.y * sizes.realZoom)
+			val leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + (sizes.width / 2)
+			val rightLimit = (sizes.width / 2) - (sizes.viewBox.x * sizes.realZoom)
+			val topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom) + (sizes.height / 2)
+			val bottomLimit = (sizes.height / 2) - (sizes.viewBox.y * sizes.realZoom)
 			
 			val customPan = js("{}")
 			customPan.x = newPan.x.coerceIn(leftLimit, rightLimit)
@@ -166,12 +166,15 @@ object GameField {
 	private fun createPanZoomDesktop() {
 		gameFieldPanZoom = svgPanZoom(field, configure {
 			configurePanBox()
+			zoomScaleSensitivity = 0.3
 		})
 		
 		gameFieldPanZoom.fit().center()
 	}
 	
 	private fun createPanZoomMobile() {
+		lateinit var hammer: HammerManager
+		
 		gameFieldPanZoom = svgPanZoom(field, configure {
 			configurePanBox()
 			
@@ -185,8 +188,7 @@ object GameField {
 					var panX = 0.0
 					var panY = 0.0
 					
-					val hammer = Hammer(opts.svgElement)
-					js("this").hammer = hammer
+					hammer = Hammer(opts.svgElement)
 					
 					hammer.get("pan").set(configure { direction = Hammer.DIRECTION_ALL })
 					hammer.get("pinch").set(configure { enable = true })
@@ -247,7 +249,7 @@ object GameField {
 				}
 				
 				destroy = {
-					js("this").hammer.unsafeCast<HammerManager>().destroy()
+					hammer.destroy()
 				}
 			}
 		})
@@ -530,7 +532,7 @@ object GameSidebar {
 				sidebar.clear()
 				
 				sidebar.append {
-					p(classes = "all-info") {
+					p(classes = "info") {
 						+"Wait for the game to begin"
 					}
 				}
@@ -687,7 +689,7 @@ object GameSidebar {
 	private var selectedPieceId: String? = null
 	
 	fun select(pieceId: String?) {
-		if (GamePhase.currentPhase != GamePhase.PlayTurn(Game.currentSide!!))
+		if (GamePhase.currentPhase !is GamePhase.PlayTurn)
 			return
 		
 		selectedPieceId?.let { id ->
@@ -710,7 +712,7 @@ object GameSidebar {
 		
 		if (piece == null) {
 			sidebar.append {
-				p(classes = "all-info") {
+				p(classes = "info") {
 					+"Click a game piece to select it"
 				}
 			}

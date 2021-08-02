@@ -275,16 +275,8 @@ input[type=submit]:disabled {
 	display: none;
 }
 
-#piece-selection p.all-info {
-	text-align: center;
-	vertical-align: middle;
-
-	margin: auto;
-
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
+hr:first-child {
+	display: none;
 }
 
 #piece-selection p.info {

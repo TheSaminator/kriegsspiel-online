@@ -14,770 +14,715 @@ import org.w3c.dom.mediacapture.MediaStreamTrack
 import org.w3c.files.Blob
 import kotlin.js.Promise
 
-interface RTCAnswerOptions
-interface RTCBundlePolicy
-interface RTCCertificate
-interface RTCConfiguration
-interface RTCDataChannel : EventTarget
-interface RTCDataChannelEvent : Event
-interface RTCDataChannelInit
-interface RTCDataChannelState
-interface RTCDegradationPreference
-interface RTCDtlsTransport
-interface RTCDtxStatus
-interface RTCErrorEvent
-interface RTCIceCandidate
-interface RTCIceCandidateInit
-interface RTCIceCandidatePair
-interface RTCIceCredentialType
-interface RTCIceGatheringState
-interface RTCIceParameters
-interface RTCIceServer
-interface RTCIceTransport
-interface RTCIceTransportPolicy
-interface RTCOfferAnswerOptions
-interface RTCOfferOptions
-interface RTCPeerConnectionIceErrorEvent : Event
-interface RTCPeerConnectionIceEvent : Event
-interface RTCPeerConnectionState
-interface RTCRtcpMuxPolicy
-interface RTCRtpCodecCapability
-interface RTCRtpCodecParameters
-interface RTCPeerConnection : EventTarget
-interface RTCRtpContributingSource
-interface RTCRtpEncodingParameters
-interface RTCRtpHeaderExtensionCapability
-interface RTCRtpHeaderExtensionParameters
-interface RTCRtpParameters
-interface RTCRtpReceiver
-interface RTCRtpSender
-interface RTCRtpTransceiver
-interface RTCRtpTransceiverDirection
-interface RTCRtpTransceiverInit
-interface RTCSctpTransport
-interface RTCSessionDescription
-interface RTCSessionDescriptionInit
-interface RTCSignalingState
-interface RTCStatsReport
-interface RTCTrackEvent : Event
+import kotlin.js.*
+import org.khronos.webgl.*
+import org.w3c.dom.*
+import org.w3c.dom.events.*
+import org.w3c.dom.parsing.*
+import org.w3c.dom.svg.*
+import org.w3c.dom.url.*
+import org.w3c.fetch.*
+import org.w3c.files.*
+import org.w3c.notifications.*
+import org.w3c.performance.*
+import org.w3c.workers.*
+import org.w3c.xhr.*
 
-inline var RTCOfferAnswerOptions.voiceActivityDetection: Boolean?
-	get() = this.asDynamic().voiceActivityDetection
-	set(value) {
-		this.asDynamic().voiceActivityDetection = value
-	}
+external interface DoubleRange {
+	var max: Double?
+		get() = definedExternally
+		set(value) = definedExternally
+	var min: Double?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCOfferOptions.iceRestart: Boolean?
-	get() = this.asDynamic().iceRestart
-	set(value) {
-		this.asDynamic().iceRestart = value
-	}
+external interface RTCAnswerOptions : RTCOfferAnswerOptions
 
-inline var RTCIceServer.credential: String?
-	get() = this.asDynamic().credential
-	set(value) {
-		this.asDynamic().credential = value
-	}
+external interface RTCConfiguration {
+	var iceServers: Array<RTCIceServer>?
+		get() = definedExternally
+		set(value) = definedExternally
+	var iceTransportPolicy: String? /* "all" | "relay" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var bundlePolicy: String? /* "balanced" | "max-bundle" | "max-compat" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var rtcpMuxPolicy: String? /* "negotiate" | "require" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var peerIdentity: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var certificates: Array<RTCCertificate>?
+		get() = definedExternally
+		set(value) = definedExternally
+	var iceCandidatePoolSize: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCIceServer.credentialType: RTCIceCredentialType?
-	get() = this.asDynamic().credentialType
-	set(value) {
-		this.asDynamic().credentialType = value
-	}
+external interface RTCDTMFToneChangeEventInit : EventInit {
+	var tone: String
+}
 
-inline var RTCIceServer.urls: dynamic
-	get() = this.asDynamic().urls
-	set(value) {
-		this.asDynamic().urls = value
-	}
+external interface RTCDataChannelEventInit : EventInit {
+	var channel: RTCDataChannel
+}
 
-inline var RTCIceServer.username: String?
-	get() = this.asDynamic().username
-	set(value) {
-		this.asDynamic().username = value
-	}
+external interface RTCDataChannelInit {
+	var ordered: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var maxPacketLifeTime: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var maxRetransmits: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var protocol: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var negotiated: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var id: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var priority: String? /* "high" | "low" | "medium" | "very-low" */
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-typealias IceTransportEventHandler = ((self: RTCIceTransport, ev: Event) -> Any)?
+external interface RTCDtlsFingerprint {
+	var algorithm: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var value: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCIceTransport.gatheringState: RTCIceGatheringState
-	get() = this.asDynamic().gatheringState
-	set(value) {
-		this.asDynamic().gatheringState = value
-	}
+external interface RTCErrorEventInit : EventInit {
+	var error: RTCError
+}
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCIceTransport.getLocalCandidates(): Array<RTCIceCandidate> = this.asDynamic().getLocalCandidates()
+external interface RTCErrorInit {
+	var errorDetail: String /* "data-channel-failure" | "dtls-failure" | "fingerprint-failure" | "hardware-encoder-error" | "hardware-encoder-not-available" | "idp-bad-script-failure" | "idp-execution-failure" | "idp-load-failure" | "idp-need-login" | "idp-timeout" | "idp-tls-failure" | "idp-token-expired" | "idp-token-invalid" | "sctp-failure" | "sdp-syntax-error" */
+	var httpRequestStatusCode: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var receivedAlert: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sctpCauseCode: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sdpLineNumber: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sentAlert: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCIceTransport.getRemoteCandidates(): Array<RTCIceCandidate> = this.asDynamic().getRemoteCandidates()
+external interface RTCIceCandidateComplete
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCIceTransport.getSelectedCandidatePair(): RTCIceCandidatePair? = this.asDynamic().getSelectedCandidatePair()
+external interface RTCIceCandidateDictionary {
+	var foundation: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var ip: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var msMTurnSessionId: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var port: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var priority: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var protocol: String? /* "tcp" | "udp" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var relatedAddress: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var relatedPort: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var tcpType: String? /* "active" | "passive" | "so" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var type: String? /* "host" | "prflx" | "relay" | "srflx" */
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCIceTransport.getLocalParameters(): RTCIceParameters? = this.asDynamic().getLocalParameters()
+external interface RTCIceCandidateInit {
+	var candidate: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sdpMLineIndex: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sdpMid: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var usernameFragment: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCIceTransport.getRemoteParameters(): RTCIceParameters? = this.asDynamic().getRemoteParameters()
+external interface RTCIceCandidatePair {
+	var local: RTCIceCandidate?
+		get() = definedExternally
+		set(value) = definedExternally
+	var remote: RTCIceCandidate?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCIceTransport.onstatechange: IceTransportEventHandler
-	get() = this.asDynamic().onstatechange
-	set(value) {
-		this.asDynamic().onstatechange = value
-	}
+external interface RTCIceParameters {
+	var password: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var usernameFragment: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCIceTransport.ongatheringstatechange: IceTransportEventHandler
-	get() = this.asDynamic().ongatheringstatechange
-	set(value) {
-		this.asDynamic().ongatheringstatechange = value
-	}
+external interface RTCIceServer {
+	var credentialType: String? /* "oauth" | "password" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var credential: dynamic /* String? | RTCOAuthCredential? */
+		get() = definedExternally
+		set(value) = definedExternally
+	var urls: dynamic /* String | Array<String> */
+		get() = definedExternally
+		set(value) = definedExternally
+	var username: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCIceTransport.onselectedcandidatepairchange: IceTransportEventHandler
-	get() = this.asDynamic().onselectedcandidatepairchange
-	set(value) {
-		this.asDynamic().onselectedcandidatepairchange = value
-	}
+external interface RTCIdentityProviderOptions {
+	var peerIdentity: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var protocol: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var usernameHint: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-typealias DtlsTransportEventHandler = ((self: RTCDtlsTransport, ev: Event) -> Any)?
+external interface RTCOAuthCredential {
+	var accessToken: String
+	var macKey: String
+}
 
-inline var RTCDtlsTransport.transport: RTCIceTransport
-	get() = this.asDynamic().transport
-	set(value) {
-		this.asDynamic().transport = value
-	}
+external interface RTCOfferAnswerOptions {
+	var voiceActivityDetection: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCDtlsTransport.getRemoteCertificates(): Array<ArrayBuffer> = this.asDynamic().getRemoteCertificates()
+external interface RTCOfferOptions : RTCOfferAnswerOptions {
+	var iceRestart: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var offerToReceiveAudio: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var offerToReceiveVideo: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCDtlsTransport.onstatechange: DtlsTransportEventHandler
-	get() = this.asDynamic().onstatechange
-	set(value) {
-		this.asDynamic().onstatechange = value
-	}
+external interface RTCPeerConnectionIceErrorEventInit : EventInit {
+	var errorCode: Number
+	var hostCandidate: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var statusText: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var url: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCRtpCodecCapability.mimeType: String
-	get() = this.asDynamic().mimeType
-	set(value) {
-		this.asDynamic().mimeType = value
-	}
+external interface RTCPeerConnectionIceEventInit : EventInit {
+	var candidate: RTCIceCandidate?
+		get() = definedExternally
+		set(value) = definedExternally
+	var url: String?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCRtpHeaderExtensionCapability.uri: String?
-	get() = this.asDynamic().uri
-	set(value) {
-		this.asDynamic().uri = value
-	}
+external interface RTCRtcpParameters {
+	var cname: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var reducedSize: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCRtpEncodingParameters.dtx: RTCDtxStatus?
-	get() = this.asDynamic().dtx
-	set(value) {
-		this.asDynamic().dtx = value
-	}
-
-inline var RTCRtpEncodingParameters.rid: String
-	get() = this.asDynamic().rid
-	set(value) {
-		this.asDynamic().rid = value
-	}
-
-inline var RTCRtpEncodingParameters.scaleResolutionDownBy: Number?
-	get() = this.asDynamic().scaleResolutionDownBy
-	set(value) {
-		this.asDynamic().scaleResolutionDownBy = value
-	}
-
-inline var RTCRtpHeaderExtensionParameters.encrypted: Boolean?
-	get() = this.asDynamic().encrypted
-	set(value) {
-		this.asDynamic().encrypted = value
-	}
-
-inline var RTCRtpCodecParameters.mimeType: String
-	get() = this.asDynamic().mimeType
-	set(value) {
-		this.asDynamic().mimeType = value
-	}
-
-inline var RTCRtpCodecParameters.channels: Number?
-	get() = this.asDynamic().channels
-	set(value) {
-		this.asDynamic().channels = value
-	}
-
-inline var RTCRtpCodecParameters.sdpFmtpLine: String?
-	get() = this.asDynamic().sdpFmtpLine
-	set(value) {
-		this.asDynamic().sdpFmtpLine = value
-	}
-
-inline var RTCRtpParameters.transactionId: String
-	get() = this.asDynamic().transactionId
-	set(value) {
-		this.asDynamic().transactionId = value
-	}
-
-inline var RTCRtpParameters.degradationPreference: RTCDegradationPreference?
-	get() = this.asDynamic().degradationPreference
-	set(value) {
-		this.asDynamic().degradationPreference = value
-	}
-
-inline var RTCRtpContributingSource.source: Number
-	get() = this.asDynamic().source
-	set(value) {
-		this.asDynamic().source = value
-	}
-
-inline var RTCRtpContributingSource.voiceActivityFlag: Boolean?
-	get() = this.asDynamic().voiceActivityFlag
-	set(value) {
-		this.asDynamic().voiceActivityFlag = value
-	}
-
-external interface RTCRtcCapabilities {
+external interface RTCRtpCapabilities {
 	var codecs: Array<RTCRtpCodecCapability>
 	var headerExtensions: Array<RTCRtpHeaderExtensionCapability>
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpSender.setParameters(): Promise<Unit> = this.asDynamic().setParameters()
-
-inline fun RTCRtpSender.setParameters(parameters: RTCRtpParameters): Promise<Unit> = this.asDynamic().setParameters(parameters)
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpSender.getParameters(): RTCRtpParameters = this.asDynamic().getParameters()
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpSender.replaceTrack(withTrack: MediaStreamTrack): Promise<Unit> = this.asDynamic().replaceTrack(withTrack)
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpReceiver.getParameters(): RTCRtpParameters = this.asDynamic().getParameters()
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpReceiver.getContributingSources(): Array<RTCRtpContributingSource> = this.asDynamic().getContributingSources()
-
-inline var RTCRtpTransceiver.mid: String?
-	get() = this.asDynamic().mid
-	set(value) {
-		this.asDynamic().mid = value
-	}
-
-inline var RTCRtpTransceiver.sender: RTCRtpSender
-	get() = this.asDynamic().sender
-	set(value) {
-		this.asDynamic().sender = value
-	}
-
-inline var RTCRtpTransceiver.receiver: RTCRtpReceiver
-	get() = this.asDynamic().receiver
-	set(value) {
-		this.asDynamic().receiver = value
-	}
-
-inline var RTCRtpTransceiver.stopped: Boolean
-	get() = this.asDynamic().stopped
-	set(value) {
-		this.asDynamic().stopped = value
-	}
-
-inline var RTCRtpTransceiver.direction: RTCRtpTransceiverDirection
-	get() = this.asDynamic().direction
-	set(value) {
-		this.asDynamic().direction = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpTransceiver.setDirection(direction: RTCRtpTransceiverDirection) {
-	this.asDynamic().setDirection(direction)
+external interface RTCRtpCodecCapability {
+	var mimeType: String
+	var channels: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var clockRate: Number
+	var sdpFmtpLine: String?
+		get() = definedExternally
+		set(value) = definedExternally
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpTransceiver.stop() {
-	this.asDynamic().stop()
+external interface RTCRtpCodecParameters {
+	var mimeType: String
+	var channels: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sdpFmtpLine: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var clockRate: Number
+	var payloadType: Number
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCRtpTransceiver.setCodecPreferences(codecs: Array<RTCRtpCodecCapability>) {
-	this.asDynamic().setCodecPreferences(codecs)
+external interface RTCRtpCodingParameters {
+	var rid: String?
+		get() = definedExternally
+		set(value) = definedExternally
 }
 
-inline var RTCRtpTransceiverInit.direction: RTCRtpTransceiverDirection?
-	get() = this.asDynamic().direction
-	set(value) {
-		this.asDynamic().direction = value
-	}
-
-inline var RTCRtpTransceiverInit.streams: Array<MediaStream>?
-	get() = this.asDynamic().streams
-	set(value) {
-		this.asDynamic().streams = value
-	}
-
-inline var RTCRtpTransceiverInit.sendEncodings: Array<RTCRtpEncodingParameters>?
-	get() = this.asDynamic().sendEncodings
-	set(value) {
-		this.asDynamic().sendEncodings = value
-	}
-
-inline var RTCCertificate.expires: Number
-	get() = this.asDynamic().expires
-	set(value) {
-		this.asDynamic().expires = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCCertificate.getAlgorithm(): String = this.asDynamic().getAlgorithm()
-
-inline var RTCConfiguration.iceServers: Array<RTCIceServer>?
-	get() = this.asDynamic().iceServers
-	set(value) {
-		this.asDynamic().iceServers = value
-	}
-
-inline var RTCConfiguration.iceTransportPolicy: RTCIceTransportPolicy?
-	get() = this.asDynamic().iceTransportPolicy
-	set(value) {
-		this.asDynamic().iceTransportPolicy = value
-	}
-
-inline var RTCConfiguration.bundlePolicy: RTCBundlePolicy?
-	get() = this.asDynamic().bundlePolicy
-	set(value) {
-		this.asDynamic().bundlePolicy = value
-	}
-
-inline var RTCConfiguration.rtcpMuxPolicy: RTCRtcpMuxPolicy?
-	get() = this.asDynamic().rtcpMuxPolicy
-	set(value) {
-		this.asDynamic().rtcpMuxPolicy = value
-	}
-
-inline var RTCConfiguration.peerIdentity: String?
-	get() = this.asDynamic().peerIdentity
-	set(value) {
-		this.asDynamic().peerIdentity = value
-	}
-
-inline var RTCConfiguration.certificates: Array<RTCCertificate>?
-	get() = this.asDynamic().certificates
-	set(value) {
-		this.asDynamic().certificates = value
-	}
-
-inline var RTCConfiguration.iceCandidatePoolSize: Number?
-	get() = this.asDynamic().iceCandidatePoolSize
-	set(value) {
-		this.asDynamic().iceCandidatePoolSize = value
-	}
-
-typealias RTCPeerConnectionConfig = RTCConfiguration
-
-inline var RTCSctpTransport.transport: RTCDtlsTransport
-	get() = this.asDynamic().transport
-	set(value) {
-		this.asDynamic().transport = value
-	}
-
-inline var RTCSctpTransport.maxMessageSize: Number
-	get() = this.asDynamic().maxMessageSize
-	set(value) {
-		this.asDynamic().maxMessageSize = value
-	}
-
-inline var RTCDataChannelInit.ordered: Boolean?
-	get() = this.asDynamic().ordered
-	set(value) {
-		this.asDynamic().ordered = value
-	}
-
-inline var RTCDataChannelInit.maxPacketLifeTime: Number?
-	get() = this.asDynamic().maxPacketLifeTime
-	set(value) {
-		this.asDynamic().maxPacketLifeTime = value
-	}
-
-inline var RTCDataChannelInit.maxRetransmits: Number?
-	get() = this.asDynamic().maxRetransmits
-	set(value) {
-		this.asDynamic().maxRetransmits = value
-	}
-
-inline var RTCDataChannelInit.protocol: String?
-	get() = this.asDynamic().protocol
-	set(value) {
-		this.asDynamic().protocol = value
-	}
-
-inline var RTCDataChannelInit.negotiated: Boolean?
-	get() = this.asDynamic().negotiated
-	set(value) {
-		this.asDynamic().negotiated = value
-	}
-
-inline var RTCDataChannelInit.id: Number?
-	get() = this.asDynamic().id
-	set(value) {
-		this.asDynamic().id = value
-	}
-
-typealias DataChannelEventHandler<E> = ((self: RTCDataChannel, ev: E) -> Any)?
-
-inline var RTCDataChannel.label: String
-	get() = this.asDynamic().label
-	set(value) {
-		this.asDynamic().label = value
-	}
-
-inline var RTCDataChannel.ordered: Boolean
-	get() = this.asDynamic().ordered
-	set(value) {
-		this.asDynamic().ordered = value
-	}
-
-inline var RTCDataChannel.maxPacketLifeTime: Number?
-	get() = this.asDynamic().maxPacketLifeTime
-	set(value) {
-		this.asDynamic().maxPacketLifeTime = value
-	}
-
-inline var RTCDataChannel.maxRetransmits: Number?
-	get() = this.asDynamic().maxRetransmits
-	set(value) {
-		this.asDynamic().maxRetransmits = value
-	}
-
-inline var RTCDataChannel.protocol: String
-	get() = this.asDynamic().protocol
-	set(value) {
-		this.asDynamic().protocol = value
-	}
-
-inline var RTCDataChannel.negotiated: Boolean
-	get() = this.asDynamic().negotiated
-	set(value) {
-		this.asDynamic().negotiated = value
-	}
-
-inline var RTCDataChannel.id: Number?
-	get() = this.asDynamic().id
-	set(value) {
-		this.asDynamic().id = value
-	}
-
-inline var RTCDataChannel.readyState: String
-	get() = this.asDynamic().readyState
-	set(value) {
-		this.asDynamic().readyState = value
-	}
-
-inline var RTCDataChannel.bufferedAmount: Number
-	get() = this.asDynamic().bufferedAmount
-	set(value) {
-		this.asDynamic().bufferedAmount = value
-	}
-
-inline var RTCDataChannel.bufferedAmountLowThreshold: Number
-	get() = this.asDynamic().bufferedAmountLowThreshold
-	set(value) {
-		this.asDynamic().bufferedAmountLowThreshold = value
-	}
-
-inline var RTCDataChannel.binaryType: String
-	get() = this.asDynamic().binaryType
-	set(value) {
-		this.asDynamic().binaryType = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCDataChannel.close() {
-	this.asDynamic().close()
+external interface RTCRtpContributingSource {
+	var source: Number
+	var voiceActivityFlag: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var audioLevel: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var rtpTimestamp: Number
+	var timestamp: Number
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCDataChannel.send(data: String) {
-	this.asDynamic().send(data)
+external interface RTCRtpDecodingParameters : RTCRtpCodingParameters
+
+external interface RTCRtpEncodingParameters : RTCRtpCodingParameters {
+	var scaleResolutionDownBy: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var active: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var codecPayloadType: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var dtx: String? /* "disabled" | "enabled" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var maxBitrate: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var maxFramerate: Number?
+		get() = definedExternally
+		set(value) = definedExternally
+	var ptime: Number?
+		get() = definedExternally
+		set(value) = definedExternally
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCDataChannel.send(data: Blob) {
-	this.asDynamic().send(data)
+external interface RTCRtpFecParameters {
+	var mechanism: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var ssrc: Number?
+		get() = definedExternally
+		set(value) = definedExternally
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCDataChannel.send(data: ArrayBuffer) {
-	this.asDynamic().send(data)
+external interface RTCRtpHeaderExtensionCapability {
+	var uri: String?
+		get() = definedExternally
+		set(value) = definedExternally
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCDataChannel.send(data: ArrayBufferView) {
-	this.asDynamic().send(data)
+external interface RTCRtpHeaderExtensionParameters {
+	var encrypted: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+	var id: Number
+	var uri: String
 }
 
-inline var RTCDataChannel.onopen: DataChannelEventHandler<Event>
-	get() = this.asDynamic().onopen
-	set(value) {
-		this.asDynamic().onopen = value
-	}
-
-inline var RTCDataChannel.onmessage: DataChannelEventHandler<MessageEvent>
-	get() = this.asDynamic().onmessage
-	set(value) {
-		this.asDynamic().onmessage = value
-	}
-
-inline var RTCDataChannel.onbufferedamountlow: DataChannelEventHandler<Event>
-	get() = this.asDynamic().onbufferedamountlow
-	set(value) {
-		this.asDynamic().onbufferedamountlow = value
-	}
-
-inline var RTCDataChannel.onerror: DataChannelEventHandler<RTCErrorEvent>
-	get() = this.asDynamic().onerror
-	set(value) {
-		this.asDynamic().onerror = value
-	}
-
-inline var RTCDataChannel.onclose: DataChannelEventHandler<Event>
-	get() = this.asDynamic().onclose
-	set(value) {
-		this.asDynamic().onclose = value
-	}
-
-inline var RTCTrackEvent.receiver: RTCRtpReceiver
-	get() = this.asDynamic().receiver
-	set(value) {
-		this.asDynamic().receiver = value
-	}
-
-inline var RTCTrackEvent.track: MediaStreamTrack
-	get() = this.asDynamic().track
-	set(value) {
-		this.asDynamic().track = value
-	}
-
-inline var RTCTrackEvent.streams: Array<MediaStream>
-	get() = this.asDynamic().streams
-	set(value) {
-		this.asDynamic().streams = value
-	}
-
-inline var RTCTrackEvent.transceiver: RTCRtpTransceiver
-	get() = this.asDynamic().transceiver
-	set(value) {
-		this.asDynamic().transceiver = value
-	}
-
-inline var RTCPeerConnectionIceEvent.candidate: RTCIceCandidate?
-	get() = this.asDynamic().candidate
-	set(value) {
-		this.asDynamic().candidate = value
-	}
-
-inline var RTCPeerConnectionIceEvent.url: String?
-	get() = this.asDynamic().url
-	set(value) {
-		this.asDynamic().url = value
-	}
-
-inline var RTCPeerConnectionIceErrorEvent.hostCandidate: String
-	get() = this.asDynamic().hostCandidate
-	set(value) {
-		this.asDynamic().hostCandidate = value
-	}
-
-inline var RTCPeerConnectionIceErrorEvent.url: String
-	get() = this.asDynamic().url
-	set(value) {
-		this.asDynamic().url = value
-	}
-
-inline var RTCPeerConnectionIceErrorEvent.errorCode: Number
-	get() = this.asDynamic().errorCode
-	set(value) {
-		this.asDynamic().errorCode = value
-	}
-
-inline var RTCPeerConnectionIceErrorEvent.errorText: String
-	get() = this.asDynamic().errorText
-	set(value) {
-		this.asDynamic().errorText = value
-	}
-
-inline var RTCDataChannelEvent.channel: RTCDataChannel
-	get() = this.asDynamic().channel
-	set(value) {
-		this.asDynamic().channel = value
-	}
-
-typealias PeerConnectionEventHandler<E> = ((self: RTCPeerConnection, ev: E) -> Any)?
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.createOffer(): Promise<RTCSessionDescriptionInit> = this.asDynamic().createOffer()
-
-inline fun RTCPeerConnection.createOffer(options: RTCOfferOptions): Promise<RTCSessionDescriptionInit> = this.asDynamic().createOffer(options)
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.createAnswer(): Promise<RTCSessionDescriptionInit> = this.asDynamic().createAnswer()
-
-inline fun RTCPeerConnection.createAnswer(options: RTCAnswerOptions): Promise<RTCSessionDescriptionInit> = this.asDynamic().createAnswer(options)
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.setLocalDescription(description: RTCSessionDescriptionInit): Promise<Unit> = this.asDynamic().setLocalDescription(description)
-
-inline var RTCPeerConnection.localDescription: RTCSessionDescription?
-	get() = this.asDynamic().localDescription
-	set(value) {
-		this.asDynamic().localDescription = value
-	}
-
-inline var RTCPeerConnection.currentLocalDescription: RTCSessionDescription?
-	get() = this.asDynamic().currentLocalDescription
-	set(value) {
-		this.asDynamic().currentLocalDescription = value
-	}
-
-inline var RTCPeerConnection.pendingLocalDescription: RTCSessionDescription?
-	get() = this.asDynamic().pendingLocalDescription
-	set(value) {
-		this.asDynamic().pendingLocalDescription = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.setRemoteDescription(description: RTCSessionDescriptionInit): Promise<Unit> = this.asDynamic().setRemoteDescription(description)
-
-inline var RTCPeerConnection.remoteDescription: RTCSessionDescription?
-	get() = this.asDynamic().remoteDescription
-	set(value) {
-		this.asDynamic().remoteDescription = value
-	}
-
-inline var RTCPeerConnection.currentRemoteDescription: RTCSessionDescription?
-	get() = this.asDynamic().currentRemoteDescription
-	set(value) {
-		this.asDynamic().currentRemoteDescription = value
-	}
-
-inline var RTCPeerConnection.pendingRemoteDescription: RTCSessionDescription?
-	get() = this.asDynamic().pendingRemoteDescription
-	set(value) {
-		this.asDynamic().pendingRemoteDescription = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-
-inline fun RTCPeerConnection.addIceCandidate(): Promise<Unit> = this.asDynamic().addIceCandidate()
-
-inline fun RTCPeerConnection.addIceCandidate(candidate: RTCIceCandidateInit): Promise<Unit> = this.asDynamic().addIceCandidate(candidate)
-
-inline fun RTCPeerConnection.addIceCandidate(candidate: RTCIceCandidate): Promise<Unit> = this.asDynamic().addIceCandidate(candidate)
-
-inline var RTCPeerConnection.signalingState: RTCSignalingState
-	get() = this.asDynamic().signalingState
-	set(value) {
-		this.asDynamic().signalingState = value
-	}
-
-inline var RTCPeerConnection.connectionState: String
-	get() = this.asDynamic().connectionState
-	set(value) {
-		this.asDynamic().connectionState = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.getConfiguration(): RTCConfiguration = this.asDynamic().getConfiguration()
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.setConfiguration(configuration: RTCConfiguration) {
-	this.asDynamic().setConfiguration(configuration)
+external interface RTCRtpParameters {
+	var transactionId: String
+	var codecs: Array<RTCRtpCodecParameters>
+	var headerExtensions: Array<RTCRtpHeaderExtensionParameters>
+	var rtcp: RTCRtcpParameters
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.close() {
-	this.asDynamic().close()
+external interface RTCRtpReceiveParameters : RTCRtpParameters {
+	var encodings: Array<RTCRtpDecodingParameters>
 }
 
-inline var RTCPeerConnection.onicecandidateerror: PeerConnectionEventHandler<RTCPeerConnectionIceErrorEvent>
-	get() = this.asDynamic().onicecandidateerror
-	set(value) {
-		this.asDynamic().onicecandidateerror = value
-	}
-
-inline var RTCPeerConnection.onconnectionstatechange: PeerConnectionEventHandler<Event>
-	get() = this.asDynamic().onconnectionstatechange
-	set(value) {
-		this.asDynamic().onconnectionstatechange = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.getSenders(): Array<RTCRtpSender> = this.asDynamic().getSenders()
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.getReceivers(): Array<RTCRtpReceiver> = this.asDynamic().getReceivers()
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.getTransceivers(): Array<RTCRtpTransceiver> = this.asDynamic().getTransceivers()
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.addTrack(track: MediaStreamTrack, vararg streams: MediaStream): RTCRtpSender = this.asDynamic().addTrack(track, streams)
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.removeTrack(sender: RTCRtpSender) {
-	this.asDynamic().removeTrack(sender)
+external interface RTCRtpRtxParameters {
+	var ssrc: Number?
+		get() = definedExternally
+		set(value) = definedExternally
 }
 
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.addTransceiver(trackOrKind: MediaStreamTrack): RTCRtpTransceiver = this.asDynamic().addTransceiver(trackOrKind)
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.addTransceiver(trackOrKind: String): RTCRtpTransceiver = this.asDynamic().addTransceiver(trackOrKind)
-
-inline fun RTCPeerConnection.addTransceiver(trackOrKind: MediaStreamTrack, init: RTCRtpTransceiverInit): RTCRtpTransceiver = this.asDynamic().addTransceiver(trackOrKind, init)
-
-inline fun RTCPeerConnection.addTransceiver(trackOrKind: String, init: RTCRtpTransceiverInit): RTCRtpTransceiver = this.asDynamic().addTransceiver(trackOrKind, init)
-
-inline var RTCPeerConnection.ontrack: PeerConnectionEventHandler<RTCTrackEvent>
-	get() = this.asDynamic().ontrack
-	set(value) {
-		this.asDynamic().ontrack = value
-	}
-
-inline var RTCPeerConnection.sctp: RTCSctpTransport?
-	get() = this.asDynamic().sctp
-	set(value) {
-		this.asDynamic().sctp = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.createDataChannel(label: String?): RTCDataChannel = this.asDynamic().createDataChannel(label)
-
-inline fun RTCPeerConnection.createDataChannel(label: String?, dataChannelDict: RTCDataChannelInit): RTCDataChannel = this.asDynamic().createDataChannel(label, dataChannelDict)
-
-inline var RTCPeerConnection.ondatachannel: PeerConnectionEventHandler<RTCDataChannelEvent>
-	get() = this.asDynamic().ondatachannel
-	set(value) {
-		this.asDynamic().ondatachannel = value
-	}
-
-/* extending interface from lib.dom.d.ts */
-inline fun RTCPeerConnection.getStats(): Promise<RTCStatsReport> = this.asDynamic().getStats()
-
-inline fun RTCPeerConnection.getStats(selector: MediaStreamTrack?): Promise<RTCStatsReport> = this.asDynamic().getStats(selector)
-
-external interface RTCPeerConnectionStatic {
-	var defaultIceServers: Array<RTCIceServer>
-	fun generateCertificate(keygenAlgorithm: String): Promise<RTCCertificate>
+external interface RTCRtpSendParameters : RTCRtpParameters {
+	var degradationPreference: String? /* "balanced" | "maintain-framerate" | "maintain-resolution" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var encodings: Array<RTCRtpEncodingParameters>
+	var priority: String? /* "high" | "low" | "medium" | "very-low" */
+		get() = definedExternally
+		set(value) = definedExternally
+	override var transactionId: String
 }
 
-inline fun RTCPeerConnection(config: RTCConfiguration): RTCPeerConnection =
-	js("new RTCPeerConnection(config)")
+external interface RTCRtpSynchronizationSource : RTCRtpContributingSource {
+	override var voiceActivityFlag: Boolean?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var Window.RTCPeerConnection: RTCPeerConnectionStatic
-	get() = this.asDynamic().RTCPeerConnection
-	set(value) {
-		this.asDynamic().RTCPeerConnection = value
-	}
+external interface RTCRtpTransceiverInit {
+	var direction: String? /* "inactive" | "recvonly" | "sendonly" | "sendrecv" | "stopped" */
+		get() = definedExternally
+		set(value) = definedExternally
+	var streams: Array<MediaStream>?
+		get() = definedExternally
+		set(value) = definedExternally
+	var sendEncodings: Array<RTCRtpEncodingParameters>?
+		get() = definedExternally
+		set(value) = definedExternally
+}
 
-inline var RTCPeerConnection.iceGatheringState: String
-	get() = this.asDynamic().iceGatheringState
-	set(value) {
-		this.asDynamic().iceGatheringState = value
-	}
+external interface RTCSessionDescriptionInit {
+	var sdp: String?
+		get() = definedExternally
+		set(value) = definedExternally
+	var type: String? /* "answer" | "offer" | "pranswer" | "rollback" */
+		get() = definedExternally
+		set(value) = definedExternally
+}
+
+external interface RTCTrackEventInit : EventInit {
+	var receiver: RTCRtpReceiver
+	var streams: Array<MediaStream>?
+		get() = definedExternally
+		set(value) = definedExternally
+	var track: MediaStreamTrack
+	var transceiver: RTCRtpTransceiver
+}
+
+external interface RTCCertificate {
+	var expires: Number
+	fun getAlgorithm(): String
+	fun getFingerprints(): Array<RTCDtlsFingerprint>
+}
+
+external interface RTCDTMFSenderEventMap {
+	var tonechange: RTCDTMFToneChangeEvent
+}
+
+external interface RTCDTMFSender : EventTarget {
+	var canInsertDTMF: Boolean
+	var ontonechange: ((self: RTCDTMFSender, ev: RTCDTMFToneChangeEvent) -> Any)?
+	var toneBuffer: String
+	fun insertDTMF(tones: String, duration: Number = definedExternally, interToneGap: Number = definedExternally)
+	fun addEventListener(type: String, listener: EventListener, options: AddEventListenerOptions = definedExternally)
+	fun removeEventListener(type: String, listener: EventListener, options: EventListenerOptions = definedExternally)
+}
+
+external interface RTCDTMFToneChangeEvent : Event {
+	var tone: String
+}
+
+external interface RTCDataChannelEventMap {
+	var bufferedamountlow: Event
+	var close: Event
+	var error: RTCErrorEvent
+	var message: MessageEvent
+	var open: Event
+}
+
+external interface RTCDataChannel : EventTarget {
+	var label: String
+	var ordered: Boolean
+	var maxPacketLifeTime: Number?
+	var maxRetransmits: Number?
+	var protocol: String
+	var negotiated: Boolean
+	var id: Number?
+	var readyState: String /* "closed" | "closing" | "connecting" | "open" */
+	var bufferedAmount: Number
+	var bufferedAmountLowThreshold: Number
+	fun close()
+	fun send(data: String)
+	fun send(data: Blob)
+	fun send(data: ArrayBuffer)
+	fun send(data: ArrayBufferView)
+	var onopen: ((self: RTCDataChannel, ev: Event) -> Any)?
+	var onmessage: ((self: RTCDataChannel, ev: MessageEvent) -> Any)?
+	var onbufferedamountlow: ((self: RTCDataChannel, ev: Event) -> Any)?
+	var onclose: ((self: RTCDataChannel, ev: Event) -> Any)?
+	var binaryType: String
+	var onerror: ((self: RTCDataChannel, ev: RTCErrorEvent) -> Any)?
+	var priority: String /* "high" | "low" | "medium" | "very-low" */
+	fun addEventListener(type: String, listener: EventListener, options: AddEventListenerOptions = definedExternally)
+	fun removeEventListener(type: String, listener: EventListener, options: EventListenerOptions = definedExternally)
+}
+
+external interface RTCDataChannelEvent : Event {
+	var channel: RTCDataChannel
+}
+
+external interface RTCDtlsTransportEventMap {
+	var error: RTCErrorEvent
+	var statechange: Event
+}
+
+external interface RTCDtlsTransport : EventTarget {
+	var transport: RTCIceTransport
+	fun getRemoteCertificates(): Array<ArrayBuffer>
+	var onstatechange: ((self: RTCDtlsTransport, ev: Event) -> Any)?
+	var iceTransport: RTCIceTransport
+	var onerror: ((self: RTCDtlsTransport, ev: RTCErrorEvent) -> Any)?
+	var state: String /* "closed" | "connected" | "connecting" | "failed" | "new" */
+	fun addEventListener(type: String, listener: EventListener, options: AddEventListenerOptions = definedExternally)
+	fun removeEventListener(type: String, listener: EventListener, options: EventListenerOptions = definedExternally)
+}
+
+external interface RTCDtlsTransportStateChangedEvent : Event {
+	var state: String /* "closed" | "connected" | "connecting" | "failed" | "new" */
+}
+
+external interface RTCError : Throwable {
+	var errorDetail: String /* "data-channel-failure" | "dtls-failure" | "fingerprint-failure" | "hardware-encoder-error" | "hardware-encoder-not-available" | "idp-bad-script-failure" | "idp-execution-failure" | "idp-load-failure" | "idp-need-login" | "idp-timeout" | "idp-tls-failure" | "idp-token-expired" | "idp-token-invalid" | "sctp-failure" | "sdp-syntax-error" */
+	var httpRequestStatusCode: Number?
+	var receivedAlert: Number?
+	var sctpCauseCode: Number?
+	var sdpLineNumber: Number?
+	var sentAlert: Number?
+}
+
+external interface RTCErrorEvent : Event {
+	var error: RTCError
+}
+
+external interface RTCIceCandidate {
+	var candidate: String
+	var component: String /* "rtcp" | "rtp" */
+	var foundation: String?
+	var port: Number?
+	var priority: Number?
+	var protocol: String /* "tcp" | "udp" */
+	var relatedAddress: String?
+	var relatedPort: Number?
+	var sdpMLineIndex: Number?
+	var sdpMid: String?
+	var tcpType: String /* "active" | "passive" | "so" */
+	var type: String /* "host" | "prflx" | "relay" | "srflx" */
+	var usernameFragment: String?
+	fun toJSON(): RTCIceCandidateInit
+}
+
+external interface RTCIceCandidatePairChangedEvent : Event {
+	var pair: RTCIceCandidatePair
+}
+
+external interface RTCIceGathererEvent : Event {
+	var candidate: dynamic /* RTCIceCandidateDictionary | RTCIceCandidateComplete */
+		get() = definedExternally
+		set(value) = definedExternally
+}
+
+external interface RTCIceTransportEventMap {
+	var gatheringstatechange: Event
+	var selectedcandidatepairchange: Event
+	var statechange: Event
+}
+
+external interface RTCIceTransport : EventTarget {
+	var gatheringState: String /* "complete" | "gathering" | "new" */
+	fun getLocalCandidates(): Array<RTCIceCandidate>
+	fun getRemoteCandidates(): Array<RTCIceCandidate>
+	fun getLocalParameters(): RTCIceParameters?
+	fun getRemoteParameters(): RTCIceParameters?
+	var onstatechange: ((self: RTCIceTransport, ev: Event) -> Any)?
+	var ongatheringstatechange: ((self: RTCIceTransport, ev: Event) -> Any)?
+	var onselectedcandidatepairchange: ((self: RTCIceTransport, ev: Event) -> Any)?
+	var component: String /* "rtcp" | "rtp" */
+	var role: String /* "controlled" | "controlling" | "unknown" */
+	var state: String /* "checking" | "closed" | "completed" | "connected" | "disconnected" | "failed" | "new" */
+	fun getSelectedCandidatePair(): RTCIceCandidatePair?
+	fun addEventListener(type: String, listener: EventListener, options: AddEventListenerOptions = definedExternally)
+	fun removeEventListener(type: String, listener: EventListener, options: EventListenerOptions = definedExternally)
+}
+
+external interface RTCIceTransportStateChangedEvent : Event {
+	var state: String /* "checking" | "closed" | "completed" | "connected" | "disconnected" | "failed" | "new" */
+}
+
+external interface RTCIdentityAssertion {
+	var idp: String
+	var name: String
+}
+
+inline fun RTCPeerConnection(config: RTCConfiguration) = js("new RTCPeerConnection(config)").unsafeCast<RTCPeerConnection>()
+
+external interface RTCPeerConnection : EventTarget {
+	fun createOffer(options: RTCOfferOptions = definedExternally): Promise<RTCSessionDescriptionInit>
+	fun createOffer(): Promise<RTCSessionDescriptionInit>
+	fun createAnswer(options: RTCAnswerOptions = definedExternally): Promise<RTCSessionDescriptionInit>
+	fun createAnswer(): Promise<RTCSessionDescriptionInit>
+	fun setLocalDescription(description: RTCSessionDescriptionInit): Promise<Unit>
+	var localDescription: RTCSessionDescription?
+	var currentLocalDescription: RTCSessionDescription?
+	var pendingLocalDescription: RTCSessionDescription?
+	fun setRemoteDescription(description: RTCSessionDescriptionInit): Promise<Unit>
+	var remoteDescription: RTCSessionDescription?
+	var currentRemoteDescription: RTCSessionDescription?
+	var pendingRemoteDescription: RTCSessionDescription?
+	fun addIceCandidate(candidate: RTCIceCandidateInit = definedExternally): Promise<Unit>
+	fun addIceCandidate(): Promise<Unit>
+	fun addIceCandidate(candidate: RTCIceCandidate = definedExternally): Promise<Unit>
+	var signalingState: String /* "closed" | "have-local-offer" | "have-local-pranswer" | "have-remote-offer" | "have-remote-pranswer" | "stable" */
+	var connectionState: String /* "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new" */
+	fun getConfiguration(): RTCConfiguration
+	fun setConfiguration(configuration: RTCConfiguration)
+	fun close()
+	var onicecandidateerror: ((self: RTCPeerConnection, ev: RTCPeerConnectionIceErrorEvent) -> Any)?
+	var onconnectionstatechange: ((self: RTCPeerConnection, ev: Event) -> Any)?
+	fun getSenders(): Array<RTCRtpSender>
+	fun getReceivers(): Array<RTCRtpReceiver>
+	fun getTransceivers(): Array<RTCRtpTransceiver>
+	fun addTrack(track: MediaStreamTrack, vararg streams: MediaStream): RTCRtpSender
+	fun removeTrack(sender: RTCRtpSender)
+	fun addTransceiver(trackOrKind: MediaStreamTrack, init: RTCRtpTransceiverInit = definedExternally): RTCRtpTransceiver
+	fun addTransceiver(trackOrKind: MediaStreamTrack): RTCRtpTransceiver
+	fun addTransceiver(trackOrKind: String, init: RTCRtpTransceiverInit = definedExternally): RTCRtpTransceiver
+	fun addTransceiver(trackOrKind: String): RTCRtpTransceiver
+	var ontrack: ((self: RTCPeerConnection, ev: RTCTrackEvent) -> Any)?
+	var sctp: RTCSctpTransport?
+	fun createDataChannel(label: String?, dataChannelDict: RTCDataChannelInit = definedExternally): RTCDataChannel
+	fun createDataChannel(label: String?): RTCDataChannel
+	var ondatachannel: ((self: RTCPeerConnection, ev: RTCDataChannelEvent) -> Any)?
+	var canTrickleIceCandidates: Boolean?
+	var iceConnectionState: String /* "checking" | "closed" | "completed" | "connected" | "disconnected" | "failed" | "new" */
+	var iceGatheringState: String /* "complete" | "gathering" | "new" */
+	var idpErrorInfo: String?
+	var idpLoginUrl: String?
+	var onicecandidate: ((self: RTCPeerConnection, ev: RTCPeerConnectionIceEvent) -> Any)?
+	var oniceconnectionstatechange: ((self: RTCPeerConnection, ev: Event) -> Any)?
+	var onicegatheringstatechange: ((self: RTCPeerConnection, ev: Event) -> Any)?
+	var onnegotiationneeded: ((self: RTCPeerConnection, ev: Event) -> Any)?
+	var onsignalingstatechange: ((self: RTCPeerConnection, ev: Event) -> Any)?
+	var peerIdentity: Promise<RTCIdentityAssertion>
+	fun createAnswer(options: RTCOfferOptions = definedExternally): Promise<RTCSessionDescriptionInit>
+	fun createDataChannel(label: String, dataChannelDict: RTCDataChannelInit = definedExternally): RTCDataChannel
+	fun createDataChannel(label: String): RTCDataChannel
+	fun getIdentityAssertion(): Promise<String>
+	fun setIdentityProvider(provider: String, options: RTCIdentityProviderOptions = definedExternally)
+	fun addEventListener(type: String, listener: EventListener, options: AddEventListenerOptions = definedExternally)
+	fun removeEventListener(type: String, listener: EventListener, options: EventListenerOptions = definedExternally)
+}
+
+external interface RTCPeerConnectionIceErrorEvent : Event {
+	var hostCandidate: String
+	var url: String
+	var errorCode: Number
+	var errorText: String
+}
+
+external interface RTCPeerConnectionIceEvent : Event {
+	var url: String?
+	var candidate: RTCIceCandidate?
+}
+
+external interface RTCRtpReceiver {
+	fun getParameters(): dynamic /* RTCRtpParameters | RTCRtpReceiveParameters */
+	fun getContributingSources(): Array<RTCRtpContributingSource>
+	var rtcpTransport: RTCDtlsTransport?
+	var track: MediaStreamTrack
+	var transport: RTCDtlsTransport?
+	fun getSynchronizationSources(): Array<RTCRtpSynchronizationSource>
+}
+
+external interface RTCRtpSender {
+	fun setParameters(parameters: RTCRtpParameters = definedExternally): Promise<Unit>
+	fun setParameters(): Promise<Unit>
+	fun getParameters(): dynamic /* RTCRtpParameters | RTCRtpSendParameters */
+	fun replaceTrack(withTrack: MediaStreamTrack): Promise<Unit>
+	var dtmf: RTCDTMFSender?
+	var rtcpTransport: RTCDtlsTransport?
+	var track: MediaStreamTrack?
+	var transport: RTCDtlsTransport?
+	fun replaceTrack(withTrack: MediaStreamTrack?): Promise<Unit>
+	fun setParameters(parameters: RTCRtpSendParameters): Promise<Unit>
+	fun setStreams(vararg streams: MediaStream)
+}
+
+external interface RTCRtpTransceiver {
+	var mid: String?
+	var sender: RTCRtpSender
+	var receiver: RTCRtpReceiver
+	var stopped: Boolean
+	var direction: String /* "inactive" | "recvonly" | "sendonly" | "sendrecv" | "stopped" */
+	fun setDirection(direction: String /* "inactive" | "recvonly" | "sendonly" | "sendrecv" | "stopped" */)
+	fun stop()
+	fun setCodecPreferences(codecs: Array<RTCRtpCodecCapability>)
+	fun setCodecPreferences(codecs: Iterable<RTCRtpCodecCapability>)
+	var currentDirection: String /* "inactive" | "recvonly" | "sendonly" | "sendrecv" | "stopped" */
+}
+
+external interface RTCSctpTransportEventMap {
+	var statechange: Event
+}
+
+external interface RTCSctpTransport : EventTarget {
+	var transport: RTCDtlsTransport
+	var maxMessageSize: Number
+	var maxChannels: Number?
+	var onstatechange: ((self: RTCSctpTransport, ev: Event) -> Any)?
+	var state: String /* "closed" | "connected" | "connecting" */
+	fun addEventListener(type: String, listener: EventListener, options: AddEventListenerOptions = definedExternally)
+	fun removeEventListener(type: String, listener: EventListener, options: EventListenerOptions = definedExternally)
+}
+
+external interface RTCSessionDescription {
+	var sdp: String
+	var type: String /* "answer" | "offer" | "pranswer" | "rollback" */
+	fun toJSON(): Any
+}
+
+external interface RTCSsrcConflictEvent : Event {
+	var ssrc: Number
+}
+
+external interface RTCTrackEvent : Event {
+	var receiver: RTCRtpReceiver
+	var track: MediaStreamTrack
+	var streams: Array<MediaStream>
+	var transceiver: RTCRtpTransceiver
+}

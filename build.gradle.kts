@@ -28,7 +28,7 @@ dependencies {
 }
 
 kotlin {
-	js {
+	js(IR) {
 		browser {
 			binaries.executable()
 			@Suppress("EXPERIMENTAL_API_USAGE")
@@ -52,9 +52,6 @@ tasks.create(
 	"group" to "application",
 	"dependsOn" to listOf(
 		tasks.getByName("clean"),
-		tasks.getByName("browserDistributeResources").apply {
-			mustRunAfter("clean")
-		},
 		tasks.getByName("browserDistribution").apply {
 			mustRunAfter("clean")
 		}
