@@ -7,8 +7,21 @@ import org.w3c.dom.HTMLAnchorElement
 import kotlin.math.PI
 import kotlin.math.roundToInt
 
-private fun P.explainLand() {
-	+"There are several main mechanics that govern battles in Kriegsspiel Online, such as Hardness or Flanking."
+private fun P.explainMechanics() {
+	+"There are several main mechanics that govern battles in Kriegsspiel Online, such as Action, Hardness or Flanking."
+	br
+	br
+	br
+	+"Action is a measure of how much each piece can do in a single turn. Abilities such as Move, Rotate, etc. use up different amounts of Action depending on how far the piece moved or rotated."
+	+" Abilities such as Attack will usually take up all of the piece's remaining Action, with the exception of Cavalry, Winged Hussar, Light Tank, and Heavy Tank pieces:"
+	+" while they cannot attack multiple times in a turn, they "
+	em { +"can" }
+	+" move after attacking."
+	br
+	br
+	+"The two types of air pieces are Fighter Wings and Bomber Wings; when in flight, they must use at least 40% of their Action in a turn, or else they will crash and "
+	strong { +"die instantly" }
+	+"."
 	br
 	br
 	br
@@ -26,7 +39,7 @@ private fun P.explainLand() {
 	br
 	br
 	br
-	+"Flanking is the other mechanic that governs land battles. Piece facing matters a lot in Kriegsspiel Online, and attacking a piece from the rear deals a lot more damage than attacking it from the front."
+	+"Flanking is another mechanic that governs land battles. Piece facing matters a lot in Kriegsspiel Online, and attacking a piece from the rear deals a lot more damage than attacking it from the front."
 	br
 	br
 	+"The flanking bonus is given by the formula "
@@ -55,7 +68,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 			td {
 				colSpan = "2"
 				style = "text-align: center"
-				+"This terrain is impassible. Units may not enter it at all."
+				+"This terrain is impassible. Pieces may not enter it at all."
 			}
 		}
 		
@@ -67,7 +80,7 @@ private fun TABLE.explainTerrainType(type: TerrainType) {
 			td {
 				colSpan = "2"
 				style = "text-align: center"
-				+"This terrain has special hill mechanics. Units have an attack buff when attacking downhill and an attack debuff when attacking uphill. Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
+				+"This terrain has special hill mechanics. Pieces have an attack buff when attacking downhill and an attack debuff when attacking uphill. Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
 			}
 		}
 		
@@ -457,6 +470,14 @@ private fun TABLE.explainPieceType(type: PieceType) {
 				}
 				tr {
 					th {
+						+"Fired from"
+					}
+					td {
+						+(if (data.invertAngle) "Rear" else "Fore")
+					}
+				}
+				tr {
+					th {
 						+"Minimum distance"
 					}
 					td {
@@ -593,7 +614,7 @@ suspend fun viewKriegspedia() {
 }
 
 private suspend fun mechanics() {
-	Popup.KriegspediaExplanation(P::explainLand).display()
+	Popup.KriegspediaExplanation(P::explainMechanics).display()
 	viewKriegspedia()
 }
 

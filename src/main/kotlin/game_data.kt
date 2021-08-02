@@ -391,6 +391,7 @@ sealed class Ability {
 	
 	class AttackAir(
 		val maxAngle: Double,
+		val invertAngle: Boolean,
 		val minDistance: Double,
 		val maxDistance: Double,
 		val attackPower: Double
@@ -405,7 +406,10 @@ sealed class Ability {
 					currentPiece.location,
 					currentPiece.pieceRadius + minDistance,
 					currentPiece.pieceRadius + maxDistance,
-					currentPiece.facing,
+					currentPiece.facing.asAngle(
+						flipX = invertAngle,
+						flipY = invertAngle
+					),
 					null,
 					maxAngle
 				),
@@ -612,10 +616,19 @@ fun standardAirFighterAbilities(
 	minFlightDist: Double,
 	maxFlightDist: Double,
 	
-	maxAttackAngle: Double,
-	minAttackRange: Double,
-	maxAttackRange: Double,
-	attackStrength: Double,
+	airAttackLabel: String,
+	airMaxAttackAngle: Double,
+	airAttackFromRear: Boolean,
+	airMinAttackRange: Double,
+	airMaxAttackRange: Double,
+	airAttackStrength: Double,
+	
+	landAttackLabel: String,
+	landMaxAttackAngle: Double?,
+	landMinAttackRange: Double?,
+	landMaxAttackRange: Double,
+	landSoftAttackPower: Double,
+	landHardAttackPower: Double,
 	
 	minLandingRange: Double,
 	maxLandingRange: Double,
@@ -631,11 +644,19 @@ fun standardAirFighterAbilities(
 		maxFlightDist
 	),
 	"Undo Move" to Ability.UndoMove,
-	"Attack" to Ability.AttackAir(
-		maxAttackAngle,
-		minAttackRange,
-		maxAttackRange,
-		attackStrength
+	airAttackLabel to Ability.AttackAir(
+		airMaxAttackAngle,
+		airAttackFromRear,
+		airMinAttackRange,
+		airMaxAttackRange,
+		airAttackStrength
+	),
+	landAttackLabel to Ability.AirAttackLand(
+		landMaxAttackAngle,
+		landMinAttackRange,
+		landMaxAttackRange,
+		landSoftAttackPower,
+		landHardAttackPower
 	),
 	"Land on Ground" to Ability.LandOnGround(
 		minLandingRange,
@@ -651,11 +672,19 @@ fun standardAirBomberAbilities(
 	minFlightDist: Double,
 	maxFlightDist: Double,
 	
-	maxAttackAngle: Double?,
-	minAttackRange: Double?,
-	maxAttackRange: Double,
-	softAttackPower: Double,
-	hardAttackPower: Double,
+	airAttackLabel: String,
+	airMaxAttackAngle: Double,
+	airAttackFromRear: Boolean,
+	airMinAttackRange: Double,
+	airMaxAttackRange: Double,
+	airAttackStrength: Double,
+	
+	landAttackLabel: String,
+	landMaxAttackAngle: Double?,
+	landMinAttackRange: Double?,
+	landMaxAttackRange: Double,
+	landSoftAttackPower: Double,
+	landHardAttackPower: Double,
 	
 	minLandingRange: Double,
 	maxLandingRange: Double,
@@ -671,12 +700,19 @@ fun standardAirBomberAbilities(
 		maxFlightDist
 	),
 	"Undo Move" to Ability.UndoMove,
-	"Bomb" to Ability.AirAttackLand(
-		maxAttackAngle,
-		minAttackRange,
-		maxAttackRange,
-		softAttackPower,
-		hardAttackPower
+	landAttackLabel to Ability.AirAttackLand(
+		landMaxAttackAngle,
+		landMinAttackRange,
+		landMaxAttackRange,
+		landSoftAttackPower,
+		landHardAttackPower
+	),
+	airAttackLabel to Ability.AttackAir(
+		airMaxAttackAngle,
+		airAttackFromRear,
+		airMinAttackRange,
+		airMaxAttackRange,
+		airAttackStrength
 	),
 	"Land on Ground" to Ability.LandOnGround(
 		minLandingRange,
@@ -1061,17 +1097,26 @@ enum class PieceType(
 		null,
 		PieceLayer.AIR,
 		PieceStats(
-			maxHealth = 2700.0,
+			maxHealth = 2750.0,
 			hardness = 0.0, // hardness is not used when attacking air units
 			abilities = standardAirFighterAbilities(
 				maxFlightTurn = PI / 2,
-				minFlightDist = 400.0,
-				maxFlightDist = 560.0,
+				minFlightDist = 240.0,
+				maxFlightDist = 640.0,
 				
-				maxAttackAngle = PI / 6,
-				minAttackRange = 360.0,
-				maxAttackRange = 600.0,
-				attackStrength = 600.0,
+				airAttackLabel = "Intercept",
+				airMaxAttackAngle = PI / 5,
+				airAttackFromRear = false,
+				airMinAttackRange = 320.0,
+				airMaxAttackRange = 640.0,
+				airAttackStrength = 480.0,
+				
+				landAttackLabel = "Missile Strike",
+				landMaxAttackAngle = PI / 7,
+				landMinAttackRange = 360.0,
+				landMaxAttackRange = 600.0,
+				landSoftAttackPower = 750.0,
+				landHardAttackPower = 250.0,
 				
 				minLandingRange = 600.0,
 				maxLandingRange = 900.0,
@@ -1087,18 +1132,26 @@ enum class PieceType(
 		null,
 		PieceLayer.AIR,
 		PieceStats(
-			maxHealth = 2300.0,
+			maxHealth = 2250.0,
 			hardness = 0.0, // hardness is not used when attacking air units
 			abilities = standardAirBomberAbilities(
 				maxFlightTurn = PI / 2,
-				minFlightDist = 320.0,
+				minFlightDist = 180.0,
 				maxFlightDist = 480.0,
 				
-				maxAttackAngle = null,
-				minAttackRange = null,
-				maxAttackRange = 250.0,
-				softAttackPower = 1650.0,
-				hardAttackPower = 1350.0,
+				landAttackLabel = "Bomb",
+				landMaxAttackAngle = null,
+				landMinAttackRange = null,
+				landMaxAttackRange = 250.0,
+				landSoftAttackPower = 1650.0,
+				landHardAttackPower = 1350.0,
+				
+				airAttackLabel = "Fire Tail Gun",
+				airMaxAttackAngle = PI / 6,
+				airAttackFromRear = true,
+				airMinAttackRange = 120.0,
+				airMaxAttackRange = 320.0,
+				airAttackStrength = 240.0,
 				
 				minLandingRange = 400.0,
 				maxLandingRange = 600.0,
