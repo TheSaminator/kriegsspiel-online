@@ -1,6 +1,24 @@
+import kotlinx.browser.window
 import kotlinx.coroutines.*
 
+private const val playerNameStorageKey = "playerName"
 var playerName: String? = null
+	private set
+
+private suspend fun choosePlayerName(): String? {
+	// have to use try-catch in case localStorage is disabled
+	return try {
+		window.localStorage.getItem(playerNameStorageKey)!!
+	} catch (ex: dynamic) {
+		Popup.ChooseNameScreen.display()?.also {
+			try {
+				window.localStorage.setItem(playerNameStorageKey, it)
+			} catch (ex: dynamic) {
+				// cannot put stuff into local storage, whatever
+			}
+		}
+	}
+}
 
 private val AppScope = MainScope()
 private var mainJob: Job? = null
@@ -64,7 +82,7 @@ suspend fun playMain(): GameServerSide {
 suspend fun hostGame(): GameServerSide {
 	ExitHandler.attach()
 	
-	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return playMain()
+	playerName = playerName ?: choosePlayerName() ?: return playMain()
 	
 	if (!WebRTCSignalling.host { Popup.HostScreen(it).display() }) {
 		return playMain()
@@ -81,7 +99,7 @@ suspend fun hostGame(): GameServerSide {
 suspend fun joinGame(): GameServerSide {
 	ExitHandler.attach()
 	
-	playerName = playerName ?: Popup.ChooseNameScreen.display() ?: return playMain()
+	playerName = playerName ?: choosePlayerName() ?: return playMain()
 	
 	if (!WebRTCSignalling.join { Popup.JoinScreen(it).display() }) {
 		return playMain()

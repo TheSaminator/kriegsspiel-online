@@ -1055,6 +1055,7 @@ enum class PieceType(
 	),
 	
 	// Flying air pieces
+	
 	AIR_FIGHTERS(
 		"Fighter Wing",
 		null,

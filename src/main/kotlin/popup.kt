@@ -107,6 +107,9 @@ sealed class Popup<T> {
 	}
 	
 	object ChooseNameScreen : Popup<String?>() {
+		private const val MAX_NAME_LENGTH = 20
+		private const val ALLOW_NAME_CHAR = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ -"
+		
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (String?) -> Unit) {
 			val nameGameId = "name-game-id"
 			val nameGameErrorId = "name-game-error"
@@ -142,6 +145,18 @@ sealed class Popup<T> {
 						if (gameName.isBlank()) {
 							val hostGameError = document.getElementById(nameGameErrorId).unsafeCast<HTMLSpanElement>()
 							hostGameError.innerHTML = "You must enter a player name."
+						} else if (gameName.length > MAX_NAME_LENGTH || gameName.any { it !in ALLOW_NAME_CHAR }) {
+							val nameTooLong = gameName.length > MAX_NAME_LENGTH
+							val forbidChars = gameName.any { it !in ALLOW_NAME_CHAR }
+							
+							val errorMsg = ((if (nameTooLong)
+								listOf("Too long, names can be at most 20 characters long.")
+							else emptyList()) + (if (forbidChars)
+								listOf("Names may only contain letters, numbers, spaces, and hyphens.")
+							else emptyList())).joinToString(separator = "<br/>")
+							
+							val hostGameError = document.getElementById(nameGameErrorId).unsafeCast<HTMLSpanElement>()
+							hostGameError.innerHTML = errorMsg
 						} else {
 							callback(gameName)
 						}
