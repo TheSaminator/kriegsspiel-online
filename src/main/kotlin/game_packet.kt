@@ -158,16 +158,18 @@ sealed class GamePacket {
 				}
 			}
 			
-			WebRTC.makeDataChannel {
-				receiveJob.join()
-				
-				if (Game.currentSide != null)
-					Game.end()
-				
-				Popup.Message("Connection closed.", true, "Return to Main Menu").display()
-				
-				gameMain()
-			}
+			Popup.LoadingScreen("Opening data channel...") {
+				WebRTC.makeDataChannel {
+					receiveJob.join()
+					
+					if (Game.currentSide != null)
+						Game.end()
+					
+					Popup.Message("Connection closed.", true, "Return to Main Menu").display()
+					
+					gameMain()
+				}
+			}.display()
 			
 			Popup.LoadingScreen("Processing handshake protocol...") {
 				when (Game.currentSide!!) {

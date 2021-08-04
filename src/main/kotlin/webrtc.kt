@@ -140,10 +140,11 @@ object WebRTC {
 			addEventListener("close", {
 				removeEventListener("message", messageEventHandler)
 				messageChannel.close()
+				connectionOpen = false
+				
 				GameScope.launch {
 					onClose()
 				}
-				connectionOpen = false
 			})
 			
 			if (dataChannel.readyState != "open")
