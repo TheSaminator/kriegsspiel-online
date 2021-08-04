@@ -4,29 +4,17 @@ package externals.webrtc
 
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.ArrayBufferView
-import org.w3c.dom.EventSource
+import org.w3c.dom.AddEventListenerOptions
+import org.w3c.dom.EventInit
+import org.w3c.dom.EventListenerOptions
 import org.w3c.dom.MessageEvent
-import org.w3c.dom.Window
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.EventTarget
 import org.w3c.dom.mediacapture.MediaStream
 import org.w3c.dom.mediacapture.MediaStreamTrack
 import org.w3c.files.Blob
 import kotlin.js.Promise
-
-import kotlin.js.*
-import org.khronos.webgl.*
-import org.w3c.dom.*
-import org.w3c.dom.events.*
-import org.w3c.dom.parsing.*
-import org.w3c.dom.svg.*
-import org.w3c.dom.url.*
-import org.w3c.fetch.*
-import org.w3c.files.*
-import org.w3c.notifications.*
-import org.w3c.performance.*
-import org.w3c.workers.*
-import org.w3c.xhr.*
 
 external interface DoubleRange {
 	var max: Double?

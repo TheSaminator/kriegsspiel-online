@@ -1,4 +1,4 @@
-@file:Suppress("INTERFACE_WITH_SUPERCLASS", "OVERRIDING_FINAL_MEMBER", "RETURN_TYPE_MISMATCH_ON_OVERRIDE", "CONFLICTING_OVERLOADS", "EXTERNAL_DELEGATION", "unused", "UNUSED_PARAMETER", "NOTHING_TO_INLINE")
+@file:Suppress("INTERFACE_WITH_SUPERCLASS", "OVERRIDING_FINAL_MEMBER", "RETURN_TYPE_MISMATCH_ON_OVERRIDE", "CONFLICTING_OVERLOADS", "EXTERNAL_DELEGATION", "unused", "UNUSED_PARAMETER", "NOTHING_TO_INLINE", "PropertyName")
 
 package externals.hammer
 
@@ -120,7 +120,7 @@ external interface HammerManager {
 	fun stop(force: Boolean)
 }
 
-external open class HammerInput(manager: HammerManager, callback: Function<*>) {
+open external class HammerInput(manager: HammerManager, callback: Function<*>) {
 	open fun destroy()
 	open fun handler()
 	open fun init()
@@ -154,15 +154,15 @@ external open class HammerInput(manager: HammerManager, callback: Function<*>) {
 	open var timeStamp: Number
 }
 
-external open class MouseInput(manager: HammerManager, callback: Function<*>) : HammerInput
+open external class MouseInput(manager: HammerManager, callback: Function<*>) : HammerInput
 
-external open class PointerEventInput(manager: HammerManager, callback: Function<*>) : HammerInput
+open external class PointerEventInput(manager: HammerManager, callback: Function<*>) : HammerInput
 
-external open class SingleTouchInput(manager: HammerManager, callback: Function<*>) : HammerInput
+open external class SingleTouchInput(manager: HammerManager, callback: Function<*>) : HammerInput
 
-external open class TouchInput(manager: HammerManager, callback: Function<*>) : HammerInput
+open external class TouchInput(manager: HammerManager, callback: Function<*>) : HammerInput
 
-external open class TouchMouseInput(manager: HammerManager, callback: Function<*>) : HammerInput
+open external class TouchMouseInput(manager: HammerManager, callback: Function<*>) : HammerInput
 
 external interface RecognizerOptions {
 	var direction: dynamic
@@ -256,7 +256,7 @@ external interface TapRecognizerStatic
 
 external interface TapRecognizer : AttrRecognizer
 
-external open class TouchAction(manager: HammerManager, value: String) {
+open external class TouchAction(manager: HammerManager, value: String) {
 	open fun compute(): String
 	open fun preventDefaults(input: HammerInput)
 	open fun preventSrc(srcEvent: Any)
