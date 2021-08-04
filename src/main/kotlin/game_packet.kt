@@ -12,26 +12,24 @@ sealed class GamePacket {
 					if (isDevEnv)
 						console.log("Received packet $jsonText")
 					
-					when (val packet = jsonSerializer.decodeFromString(serializer(), jsonText)) {
-						is GuestReady -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive guest ready!")
-							
-							launch {
+					launch {
+						when (val packet = jsonSerializer.decodeFromString(serializer(), jsonText)) {
+							is GuestReady -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive guest ready!")
+								
 								guestReadyChannel.send(Unit)
 							}
-						}
-						is HostReady -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive host ready!")
-							
-							send(JoinRequest(playerName!!))
-						}
-						is JoinRequest -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive join request!")
-							
-							launch {
+							is HostReady -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive host ready!")
+								
+								send(JoinRequest(playerName!!))
+							}
+							is JoinRequest -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive join request!")
+								
 								val accepted = Popup.YesNoDialogue {
 									+"The player ${packet.name} has requested to join your game."
 								}.display()
@@ -40,133 +38,119 @@ sealed class GamePacket {
 								
 								joinAcceptChannel.send(accepted)
 							}
-						}
-						is JoinResponse -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive join response!")
-							
-							launch {
+							is JoinResponse -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive join response!")
+								
 								joinAcceptChannel.send(packet.accepted)
 							}
-						}
-						is ChatMessage -> {
-							ChatBox.addChatMessage("Opponent", packet.text)
-						}
-						is AttackMessage -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive attack notification!")
-							
-							ChatBox.notifyAttack(packet.source, packet.target, packet.amount)
-						}
-						is MapLoaded -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive map data!")
-							
-							GameSessionData.currentSession = GameSessionData(packet.map, packet.battleSize).also { gsd ->
-								GameField.drawEverything(gsd)
+							is ChatMessage -> {
+								ChatBox.addChatMessage("Opponent", packet.text)
 							}
-						}
-						is PieceDeployed -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive piece deployment!")
-							
-							GameSessionData.currentSession!!.addOrReplace(
-								GamePiece(
-									id = newGamePieceId(),
-									type = packet.pieceType,
-									owner = GameServerSide.GUEST,
-									initialLocation = packet.location,
-									initialFacing = packet.facing
+							is AttackMessage -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive attack notification!")
+								
+								ChatBox.notifyAttack(packet.source, packet.target, packet.amount)
+							}
+							is MapLoaded -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive map data!")
+								
+								GameSessionData.currentSession = GameSessionData(packet.map, packet.battleSize).also { gsd ->
+									GameField.drawEverything(gsd)
+								}
+							}
+							is PieceDeployed -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive piece deployment!")
+								
+								GameSessionData.currentSession!!.addOrReplace(
+									GamePiece(
+										id = newGamePieceId(),
+										type = packet.pieceType,
+										owner = GameServerSide.GUEST,
+										initialLocation = packet.location,
+										initialFacing = packet.facing
+									)
 								)
-							)
-						}
-						is DeployCleared -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive deployment erasure!")
-							
-							GameSessionData.currentSession!!.removeAllByOwner(GameServerSide.GUEST)
-						}
-						is DoneDeploying -> {
-							when (Game.currentSide!!) {
-								GameServerSide.HOST -> GamePhase.Deployment.guestIsDone = true
-								GameServerSide.GUEST -> GamePhase.Deployment.hostIsDone = true
 							}
-						}
-						is GamePhaseChanged -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive phase change!")
-							
-							GamePhase.currentPhase = packet.newPhase
-						}
-						is PieceAbilityUsed -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive piece ability usage!")
-							
-							val piece = GameSessionData.currentSession!!.pieceById(packet.pieceId)
-							val ability = piece.type.stats.abilities.getValue(packet.abilityName)
-							
-							if (ability.canUse(piece))
-								launch {
+							is DeployCleared -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive deployment erasure!")
+								
+								GameSessionData.currentSession!!.removeAllByOwner(GameServerSide.GUEST)
+							}
+							is DoneDeploying -> {
+								when (Game.currentSide!!) {
+									GameServerSide.HOST -> GamePhase.Deployment.guestIsDone = true
+									GameServerSide.GUEST -> GamePhase.Deployment.hostIsDone = true
+								}
+							}
+							is GamePhaseChanged -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive phase change!")
+								
+								GamePhase.currentPhase = packet.newPhase
+							}
+							is PieceAbilityUsed -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive piece ability usage!")
+								
+								val piece = GameSessionData.currentSession!!.pieceById(packet.pieceId)
+								val ability = piece.type.stats.abilities.getValue(packet.abilityName)
+								
+								if (ability.canUse(piece)) {
 									ability.use(piece)
 									
 									send(PieceAbilityDone(true))
 									
 									GameSessionData.currentSession!!.markDirty(piece.id)
-								}
-							else
-								send(PieceAbilityDone(false))
-						}
-						is PieceAbilityDone -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive piece ability completion!")
-							
-							launch {
+								} else
+									send(PieceAbilityDone(false))
+							}
+							is PieceAbilityDone -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive piece ability completion!")
+								
 								abilityDoneChannel.send(packet.successful)
 							}
-						}
-						is PieceAddedOrChanged -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive piece notification!")
-							
-							GameSessionData.currentSession!!.addOrReplace(packet.piece)
-							GameField.drawPiece(packet.piece, true)
-						}
-						is PieceDeleted -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive piece notification!")
-							
-							GameSessionData.currentSession!!.removeById(packet.pieceId)
-							GameField.undrawPiece(packet.pieceId)
-						}
-						is TurnEnded -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive turn end!")
-							
-							launch {
+							is PieceAddedOrChanged -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive piece notification!")
+								
+								GameSessionData.currentSession!!.addOrReplace(packet.piece)
+								GameField.drawPiece(packet.piece, true)
+							}
+							is PieceDeleted -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive piece notification!")
+								
+								GameSessionData.currentSession!!.removeById(packet.pieceId)
+								GameField.undrawPiece(packet.pieceId)
+							}
+							is TurnEnded -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive turn end!")
+								
 								turnEndChannel.send(Unit)
 							}
-						}
-						is PickReq -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive pick request!")
-							
-							launch {
+							is PickReq -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive pick request!")
+								
 								send(PickRes(PickHandler.pickLocal(packet.pickRequest)))
 							}
-						}
-						is PickRes -> {
-							if (Game.currentSide != GameServerSide.HOST)
-								throw IllegalStateException("Remote game must not receive pick response!")
-							
-							launch {
+							is PickRes -> {
+								if (Game.currentSide != GameServerSide.HOST)
+									throw IllegalStateException("Remote game must not receive pick response!")
+								
 								pickResponseChannel.send(packet.pickResponse)
 							}
-						}
-						is GameEnded -> {
-							if (Game.currentSide != GameServerSide.GUEST)
-								throw IllegalStateException("Local game must not receive game end!")
-							
-							launch {
+							is GameEnded -> {
+								if (Game.currentSide != GameServerSide.GUEST)
+									throw IllegalStateException("Local game must not receive game end!")
+								
 								gameWonChannel.send(packet.winner)
 							}
 						}
