@@ -16,8 +16,8 @@ sealed class Ability {
 	
 	@Serializable
 	data class Move(val distancePerAction: Double) : Ability() {
-		private val ANGLE_BUFFER get() = PI / 8
-		private val DISTANCE_BUFFER get() = 50.0
+		private val angleBuffer get() = PI / 8
+		private val distanceBuffer get() = 50.0
 		
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.pieceRadius / distancePerAction < currentPiece.action
@@ -40,7 +40,7 @@ sealed class Ability {
 			val terrainMult = currentPiece.currentTerrainBlob?.type?.stats?.moveSpeedMult ?: 1.0
 			
 			val moveMult = hillMult * terrainMult
-			val moveRange = (distancePerAction * currentPiece.action + DISTANCE_BUFFER) * moveMult
+			val moveRange = (distancePerAction * currentPiece.action + distanceBuffer) * moveMult
 			
 			val pickReq = PickRequest.PickPosition(
 				PickBoundaryUnitBased(
@@ -49,7 +49,7 @@ sealed class Ability {
 					currentPiece.pieceRadius + moveRange,
 					currentPiece.facing,
 					null,
-					ANGLE_BUFFER
+					angleBuffer
 				),
 				currentPiece.location,
 				currentPiece.pieceRadius,
@@ -72,7 +72,7 @@ sealed class Ability {
 	
 	@Serializable
 	data class Rotate(val anglePerAction: Double) : Ability() {
-		private val ANGLE_BUFFER get() = PI / 12
+		private val angleBuffer get() = PI / 12
 		
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.action > 0.0
@@ -82,7 +82,7 @@ sealed class Ability {
 			val pickReq = PickRequest.PickAngle(
 				currentPiece.location,
 				currentPiece.facing,
-				currentPiece.action * anglePerAction + ANGLE_BUFFER,
+				currentPiece.action * anglePerAction + angleBuffer,
 				currentPiece.pieceRadius + 10
 			)
 			val pickRes = currentPiece.player.pick(pickReq) as? PickResponse.PickedAngle ?: return
@@ -124,8 +124,8 @@ sealed class Ability {
 		// For the hard flank weight of 9, the flanking multiplier ranges from 1 at minimum to 1.25 at maximum.
 		// Higher flank weight reduces the effect of flanking. Numbers less than or equal to 1 should NEVER be used.
 		
-		private val SOFT_FLANK_WEIGHT get() = 3.0
-		private val HARD_FLANK_WEIGHT get() = 9.0
+		private val softFlankWeight get() = 3.0
+		private val hardFlankWeight get() = 9.0
 		
 		private fun getFlankingMultiplier(dotProduct: Double, flankWeight: Double): Double {
 			return (dotProduct + flankWeight) / (flankWeight - 1)
@@ -162,8 +162,8 @@ sealed class Ability {
 			val hardMult = terrainStats?.hardAttackMult ?: 1.0
 			
 			val dotProduct = cos(attackFacing - targetPiece.facing)
-			val softAttack = softAttackPower * softMult * targetSoftness * getFlankingMultiplier(dotProduct, SOFT_FLANK_WEIGHT)
-			val hardAttack = hardAttackPower * hardMult * targetHardness * getFlankingMultiplier(dotProduct, HARD_FLANK_WEIGHT)
+			val softAttack = softAttackPower * softMult * targetSoftness * getFlankingMultiplier(dotProduct, softFlankWeight)
+			val hardAttack = hardAttackPower * hardMult * targetHardness * getFlankingMultiplier(dotProduct, hardFlankWeight)
 			
 			// Hills change attack power depending on uphill or downhill
 			// Attacking uphill has a damage multiplier of 0.5
@@ -306,7 +306,7 @@ sealed class Ability {
 		val maxDistance: Double,
 		val maxAngle: Double,
 		val minimumAction: Double,
-		val airUnitEquiv: String
+		private val airUnitEquiv: String
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.currentTerrainBlob == null && currentPiece.action > minimumAction
@@ -352,14 +352,14 @@ sealed class Ability {
 		val minDistance: Double,
 		val distancePerAction: Double
 	) : Ability() {
-		private val DISTANCE_BUFFER get() = 50.0
+		private val distanceBuffer get() = 50.0
 		
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return (currentPiece.pieceRadius + minDistance) / distancePerAction < currentPiece.action
 		}
 		
 		override suspend fun use(currentPiece: GamePiece) {
-			val moveRange = distancePerAction * currentPiece.action + DISTANCE_BUFFER
+			val moveRange = distancePerAction * currentPiece.action + distanceBuffer
 			
 			val pickReq = PickRequest.PickPosition(
 				PickBoundaryUnitBased(
@@ -479,7 +479,7 @@ sealed class Ability {
 		val maxDistance: Double,
 		val maxAngle: Double,
 		val minimumAction: Double,
-		val landUnitEquiv: String
+		private val landUnitEquiv: String
 	) : Ability() {
 		override fun canUse(currentPiece: GamePiece): Boolean {
 			return currentPiece.action > minimumAction

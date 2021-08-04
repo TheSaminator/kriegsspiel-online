@@ -16,12 +16,6 @@ import kotlin.random.Random
 const val EPSILON = 0.00_000_1
 
 infix fun Double.isEqualTo(other: Double) = abs(this - other) < EPSILON
-infix fun Double.isNotEqualTo(other: Double) = abs(this - other) >= EPSILON
-
-infix fun Double.isLessThan(other: Double) = (this - other) <= -EPSILON
-infix fun Double.isGreaterThan(other: Double) = (this - other) >= EPSILON
-infix fun Double.isLessThanOrEqualTo(other: Double) = (this - other) < EPSILON
-infix fun Double.isGreaterThanOrEqualTo(other: Double) = (this - other) > -EPSILON
 
 fun Double.toTruncatedString(maxFractionalDigits: Int): String {
 	val parts = toString().split('.')
@@ -57,7 +51,7 @@ inline fun jsonString(builder: (dynamic) -> Unit) = JSON.stringify(
 )
 
 // Events
-class TempEvents private constructor(val receiver: EventTarget, private val map: MutableMap<String, EventListener>) : Map<String, EventListener> by map {
+class TempEvents private constructor(private val receiver: EventTarget, private val map: MutableMap<String, EventListener>) : Map<String, EventListener> by map {
 	constructor(receiver: EventTarget) : this(receiver, mutableMapOf())
 	
 	private fun register(event: String, listener: EventListener) {

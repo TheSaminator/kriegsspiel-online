@@ -89,14 +89,14 @@ data class GameMap(
 	companion object {
 		const val defaultColor = "#194"
 		
-		val WIDTH_RANGE = 3500.0..5500.0
-		val HEIGHT_RANGE = 2500.0..4500.0
+		private val WIDTH_RANGE = 3500.0..5500.0
+		private val HEIGHT_RANGE = 2500.0..4500.0
 		
-		fun randomSize() = Vec2(WIDTH_RANGE.random(), HEIGHT_RANGE.random())
+		private fun randomSize() = Vec2(WIDTH_RANGE.random(), HEIGHT_RANGE.random())
 		
-		val MIN_DISTANCE_BETWEEN_BLOBS = 200.0
+		private val MIN_DISTANCE_BETWEEN_BLOBS = 200.0
 		
-		val MAX_TERRAIN_BLOBS = 20
+		private val MAX_TERRAIN_BLOBS = 20
 		
 		fun generateMap(): GameMap {
 			val minDistanceBetweenBlobs = MIN_DISTANCE_BETWEEN_BLOBS

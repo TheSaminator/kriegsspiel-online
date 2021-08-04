@@ -132,8 +132,7 @@ object WebRTC {
 	private const val DATA_CHANNEL_LABEL = "kriegsspiel_data"
 	private lateinit var dataChannel: RTCDataChannel
 	
-	var connectionOpen: Boolean = false
-		private set
+	private var connectionOpen: Boolean = false
 	
 	suspend fun makeDataChannel(onClose: suspend () -> Unit) {
 		with(dataChannel) {

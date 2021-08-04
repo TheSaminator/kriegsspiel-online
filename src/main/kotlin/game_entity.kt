@@ -110,8 +110,7 @@ data class GamePiece(
 	val canUndoMove: Boolean
 		get() = (prevLocation != location || prevFacing != facing) && prevAction != action
 	
-	var prevLocation: Vec2 = initialLocation
-		private set
+	private var prevLocation: Vec2 = initialLocation
 	
 	var location: Vec2 = initialLocation
 		set(value) {
@@ -119,8 +118,7 @@ data class GamePiece(
 			field = value
 		}
 	
-	var prevFacing: Double = initialFacing
-		private set
+	private var prevFacing: Double = initialFacing
 	
 	var facing: Double = initialFacing
 		get() = field.asAngle()
@@ -129,8 +127,7 @@ data class GamePiece(
 			field = value
 		}
 	
-	var prevAction = 1.0
-		private set
+	private var prevAction = 1.0
 	
 	var action = 1.0
 		set(value) {
@@ -138,8 +135,7 @@ data class GamePiece(
 			field = value
 		}
 	
-	var airEvasion = 0.0
-		private set
+	private var airEvasion = 0.0
 	
 	val airTargetedMult: Double
 		get() = 1.5 - airEvasion
@@ -161,8 +157,6 @@ data class GamePiece(
 	
 	var hasAttacked = false
 	
-	var isCloaked = false
-	var isCloakRevealed = false
 	var heavyWeaponCharged = false
 	
 	fun attack(damage: Double, source: DamageSource) {
@@ -196,8 +190,8 @@ data class GamePiece(
 	val canBeRendered: Boolean
 		get() = Game.currentSide == owner || canBeRenderedByEnemy
 	
-	val canBeRenderedByEnemy: Boolean
-		get() = (!isCloaked || isCloakRevealed) && !isHiddenByTerrain
+	private val canBeRenderedByEnemy: Boolean
+		get() = !isHiddenByTerrain
 	
 	val currentTerrainBlob: TerrainBlob?
 		get() = if (type.layer == PieceLayer.AIR)
@@ -205,7 +199,7 @@ data class GamePiece(
 		else
 			GameSessionData.currentSession!!.gameMap.terrainBlobs.singleOrNull { (it.center - location).magnitude < it.radius }
 	
-	val isHiddenByTerrain: Boolean
+	private val isHiddenByTerrain: Boolean
 		get() = currentTerrainBlob?.let { blob ->
 			val hideRange = blob.type.stats.hideEnemyUnitRange
 			hideRange != null && GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).none { enemyPiece ->
@@ -214,7 +208,7 @@ data class GamePiece(
 			}
 		} ?: false
 	
-	val visionRange: Double
+	private val visionRange: Double
 		get() = when (type.layer) {
 			PieceLayer.LAND -> 500.0
 			PieceLayer.AIR -> 1000.0
@@ -223,7 +217,7 @@ data class GamePiece(
 	val canBeIdentified: Boolean
 		get() = Game.currentSide == owner || canBeIdentifiedByEnemy
 	
-	val canBeIdentifiedByEnemy: Boolean
+	private val canBeIdentifiedByEnemy: Boolean
 		get() = GameSessionData.currentSession!!.allPiecesWithOwner(owner.other).any { otherPiece ->
 			(location - otherPiece.location).magnitude < otherPiece.visionRange
 		}

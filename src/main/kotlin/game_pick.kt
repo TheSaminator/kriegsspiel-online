@@ -172,7 +172,7 @@ object PickHandler {
 		val fromNormal = angleReq.fromAngle.asAngle()
 		val begin = Vec2.polar(angleReq.displayArcRadius, fromNormal) + angleReq.center
 		
-		val toNormal = toAngle
+		val toNormal = toAngle.asAngle()
 		val end = Vec2.polar(angleReq.displayArcRadius, toNormal) + angleReq.center
 		
 		val pointer = toPos + Vec2.polar(5.0, toAngle)

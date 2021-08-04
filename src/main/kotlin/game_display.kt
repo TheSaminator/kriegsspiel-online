@@ -257,7 +257,7 @@ object GameField {
 		gameFieldPanZoom.fit().center()
 	}
 	
-	fun drawMap(map: GameMap) {
+	private fun drawMap(map: GameMap) {
 		mapField.clear()
 		
 		mapField.append(RECT()) {

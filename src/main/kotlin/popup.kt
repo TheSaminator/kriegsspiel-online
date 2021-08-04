@@ -166,7 +166,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class HostScreen(val offerId: String) : Popup<Boolean>() {
+	class HostScreen(private val offerId: String) : Popup<Boolean>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
 			p {
 				+"Your game ID is "
@@ -196,7 +196,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class JoinScreen(val sessions: List<WebRTCOpenSession>) : Popup<WebRTCOpenSession?>() {
+	class JoinScreen(private val sessions: List<WebRTCOpenSession>) : Popup<WebRTCOpenSession?>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (WebRTCOpenSession?) -> Unit) {
 			val joinGameId = "join-game-id"
 			val joinGameErrorId = "join-game-error"
@@ -251,7 +251,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class YesNoDialogue(val acceptText: String = "Accept", val rejectText: String = "Reject", val describeRequest: P.() -> Unit) : Popup<Boolean>() {
+	class YesNoDialogue(private val acceptText: String = "Accept", private val rejectText: String = "Reject", private val describeRequest: P.() -> Unit) : Popup<Boolean>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
 			p {
 				describeRequest()
@@ -278,7 +278,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class NameableChoice<T>(val headerText: String, val values: List<T>, val getName: (T) -> String) : Popup<T>() {
+	class NameableChoice<T>(private val headerText: String, private val values: List<T>, private val getName: (T) -> String) : Popup<T>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (T) -> Unit) {
 			p {
 				style = "text-align: center"
@@ -300,7 +300,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class LoadingScreen(val loadingText: String, val loadAction: suspend () -> Unit) : Popup<Unit>() {
+	class LoadingScreen(private val loadingText: String, private val loadAction: suspend () -> Unit) : Popup<Unit>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Unit) -> Unit) {
 			p {
 				style = "text-align: center"
@@ -315,7 +315,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class TryLoadingScreen(val loadingText: String, val successText: String, val failureText: String, val loadAction: suspend () -> Boolean) : Popup<Boolean>() {
+	class TryLoadingScreen(private val loadingText: String, private val successText: String, private val failureText: String, private val loadAction: suspend () -> Boolean) : Popup<Boolean>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
 			val nextButtonId = "next-button"
 			div(classes = "button-set row") {
@@ -340,7 +340,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class Message(val message: String, val centerMessage: Boolean, val closeButton: String) : Popup<Unit>() {
+	class Message(private val message: String, private val centerMessage: Boolean, private val closeButton: String) : Popup<Unit>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Unit) -> Unit) {
 			p {
 				if (centerMessage)
@@ -361,7 +361,7 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class UncloseableMessage(val message: String, val centerMessage: Boolean) : Popup<Nothing>() {
+	class UncloseableMessage(private val message: String, private val centerMessage: Boolean) : Popup<Nothing>() {
 		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Nothing) -> Unit) {
 			p {
 				if (centerMessage)
