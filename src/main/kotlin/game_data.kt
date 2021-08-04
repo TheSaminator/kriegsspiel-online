@@ -67,6 +67,8 @@ sealed class Ability {
 			currentPiece.location = newLocation
 			currentPiece.facing = newFacing
 			currentPiece.action = newAction
+			
+			currentPiece.heavyWeaponCharged = false
 		}
 	}
 	
@@ -95,6 +97,8 @@ sealed class Ability {
 			currentPiece.location = newLocation // prevent the Undo Move from messing up
 			currentPiece.facing = newFacing
 			currentPiece.action = newAction
+			
+			currentPiece.heavyWeaponCharged = false
 		}
 	}
 	
@@ -248,7 +252,6 @@ sealed class Ability {
 		override suspend fun use(currentPiece: GamePiece) {
 			currentPiece.action -= actionConsumed
 			
-			currentPiece.hasAttacked = true
 			currentPiece.heavyWeaponCharged = true
 			
 			currentPiece.lockUndo()
@@ -956,8 +959,8 @@ enum class PieceType(
 				maxAttackDistance = 1200.0,
 				softAttack = 1200.0,
 				hardAttack = 600.0,
-				attackActionConsumed = 0.5,
-				attackRequiresLoading = 0.51,
+				attackActionConsumed = 0.375,
+				attackRequiresLoading = 0.375,
 				canMoveAfterAttacking = false
 			)
 		)
@@ -1000,7 +1003,7 @@ enum class PieceType(
 				maxAttackDistance = 500.0,
 				softAttack = 400.0,
 				hardAttack = 1600.0,
-				attackActionConsumed = 0.375,
+				attackActionConsumed = 0.25,
 				attackRequiresLoading = null,
 				canMoveAfterAttacking = false
 			)
@@ -1022,7 +1025,7 @@ enum class PieceType(
 				maxAttackDistance = 500.0,
 				attackPower = 800.0,
 				attackActionConsumed = 0.375,
-				attackRequiresLoading = 0.25,
+				attackRequiresLoading = 0.375,
 				canMoveAfterAttacking = false
 			)
 		)
@@ -1042,8 +1045,8 @@ enum class PieceType(
 				minAttackDistance = 10.0,
 				maxAttackDistance = 600.0,
 				attackPower = 1200.0,
-				attackActionConsumed = 0.375,
-				attackRequiresLoading = null,
+				attackActionConsumed = 0.25,
+				attackRequiresLoading = 0.25,
 				canMoveAfterAttacking = false
 			)
 		)

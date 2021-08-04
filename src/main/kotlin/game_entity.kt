@@ -141,23 +141,29 @@ data class GamePiece(
 		get() = 1.5 - airEvasion
 	
 	fun undoMove() {
-		val (newLocation, newFacing, newAction) = Triple(prevLocation, prevFacing, prevAction)
-		location = newLocation
-		facing = newFacing
-		action = newAction
+		location = prevLocation
+		facing = prevFacing
+		action = prevAction
+		heavyWeaponCharged = prevHeavyWeaponCharged
 	}
 	
 	fun lockUndo() {
 		prevLocation = location
 		prevFacing = facing
 		prevAction = action
+		prevHeavyWeaponCharged = heavyWeaponCharged
 	}
 	
 	var health = 1.0
 	
 	var hasAttacked = false
 	
+	private var prevHeavyWeaponCharged = false
 	var heavyWeaponCharged = false
+		set(value) {
+			prevHeavyWeaponCharged = field
+			field = value
+		}
 	
 	fun attack(damage: Double, source: DamageSource) {
 		health -= damage / type.stats.maxHealth
