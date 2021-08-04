@@ -1011,7 +1011,7 @@ enum class PieceType(
 	),
 	LAND_ANTI_AIR(
 		"Flak Cannons",
-		110,
+		85,
 		PieceLayer.LAND,
 		PieceStats(
 			maxHealth = 1625.0,
@@ -1032,7 +1032,7 @@ enum class PieceType(
 	),
 	LAND_SAM_LAUNCHER(
 		"Surface-to-Air Missiles",
-		140,
+		135,
 		PieceLayer.LAND,
 		PieceStats(
 			maxHealth = 1875.0,
@@ -1056,7 +1056,7 @@ enum class PieceType(
 	
 	LAND_AIR_FIGHTERS(
 		"Fighter Wing",
-		160,
+		110,
 		PieceLayer.LAND,
 		PieceStats(
 			maxHealth = 500.0,
@@ -1075,7 +1075,7 @@ enum class PieceType(
 	),
 	LAND_AIR_BOMBERS(
 		"Bomber Wing",
-		190,
+		140,
 		PieceLayer.LAND,
 		PieceStats(
 			maxHealth = 500.0,

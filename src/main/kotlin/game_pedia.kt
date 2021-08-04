@@ -182,7 +182,7 @@ object Kriegspedia {
 				+"Point Cost"
 			}
 			td {
-				+(type.pointCost?.toString() ?: "Not Deployable")
+				+(type.pointCost?.toString() ?: "Cannot be purchased")
 			}
 		}
 		tr {
