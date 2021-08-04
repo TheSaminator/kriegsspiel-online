@@ -29,8 +29,12 @@ object WebRTC {
 			val candidate = e.unsafeCast<RTCPeerConnectionIceEvent>().candidate
 			if (isReadyToSend)
 				iceCandidateHandler(candidate)
+			else if (candidate == null)
+				iceCandidateSendQueue.close()
 			else
-				iceCandidateSendQueue.add(candidate)
+				GameScope.launch {
+					iceCandidateSendQueue.send(candidate)
+				}
 		})
 		
 		val offer = rtcPeerConnection.createOffer().await()
@@ -61,8 +65,12 @@ object WebRTC {
 			val candidate = e.unsafeCast<RTCPeerConnectionIceEvent>().candidate
 			if (isReadyToSend)
 				iceCandidateHandler(candidate)
+			else if (candidate == null)
+				iceCandidateSendQueue.close()
 			else
-				iceCandidateSendQueue.add(candidate)
+				GameScope.launch {
+					iceCandidateSendQueue.send(candidate)
+				}
 		})
 		
 		val offer = JSON.parse<RTCSessionDescriptionInit>(offerStr)
@@ -77,28 +85,28 @@ object WebRTC {
 	
 	private var isReadyToSend = false
 	private var isReadyToReceive = false
-	private val iceCandidateSendQueue = mutableListOf<RTCIceCandidate?>()
-	private val iceCandidateReceiveQueue = mutableListOf<RTCIceCandidate?>()
+	private val iceCandidateSendQueue = Channel<RTCIceCandidate>(Channel.UNLIMITED)
+	private val iceCandidateReceiveQueue = Channel<RTCIceCandidate>(Channel.UNLIMITED)
 	lateinit var iceCandidateHandler: (RTCIceCandidate?) -> Unit
 	
-	fun dumpGatheredIceCandidates() {
+	suspend fun dumpGatheredIceCandidates() {
 		isReadyToSend = true
 		
-		iceCandidateSendQueue.forEach {
-			iceCandidateHandler(it)
+		for (candidate in iceCandidateSendQueue) {
+			iceCandidateHandler(candidate)
 		}
 		
-		iceCandidateSendQueue.clear()
+		iceCandidateHandler(null)
 	}
 	
 	private suspend fun dumpReceivedIceCandidates() {
 		isReadyToReceive = true
 		
-		iceCandidateReceiveQueue.forEach {
-			receiveIceCandidate(it)
+		for (candidate in iceCandidateReceiveQueue) {
+			receiveIceCandidate(candidate)
 		}
 		
-		iceCandidateReceiveQueue.clear()
+		receiveIceCandidate(null)
 	}
 	
 	suspend fun receiveIceCandidate(iceCandidate: RTCIceCandidate?) {
@@ -109,7 +117,10 @@ object WebRTC {
 			} else
 				rtcPeerConnection.addIceCandidate(iceCandidate).await()
 		} else {
-			iceCandidateReceiveQueue.add(iceCandidate)
+			if (iceCandidate == null)
+				iceCandidateReceiveQueue.close()
+			else
+				iceCandidateReceiveQueue.send(iceCandidate)
 		}
 	}
 	
@@ -118,7 +129,7 @@ object WebRTC {
 			delay(100L)
 	}
 	
-	const val DATA_CHANNEL_LABEL = "kriegsspiel_data"
+	private const val DATA_CHANNEL_LABEL = "kriegsspiel_data"
 	private lateinit var dataChannel: RTCDataChannel
 	
 	var connectionOpen: Boolean = false
@@ -129,6 +140,7 @@ object WebRTC {
 			addEventListener("message", messageEventHandler)
 			addEventListener("close", {
 				removeEventListener("message", messageEventHandler)
+				messageChannel.close()
 				GameScope.launch {
 					onClose()
 				}

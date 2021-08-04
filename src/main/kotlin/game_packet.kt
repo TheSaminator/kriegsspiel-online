@@ -1,4 +1,3 @@
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -176,7 +175,7 @@ sealed class GamePacket {
 			}
 			
 			WebRTC.makeDataChannel {
-				receiveJob.cancelAndJoin()
+				receiveJob.join()
 				
 				if (Game.currentSide != null)
 					Game.end()
