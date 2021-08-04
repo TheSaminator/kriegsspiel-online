@@ -33,7 +33,7 @@ fun main() {
 }
 
 suspend fun suspendMain() {
-	attachKriegspediaButton()
+	Kriegspedia.attachKriegspediaButton()
 	PieceLayer.attachToggleAirUnitsButton()
 	
 	Popup.LoadingScreen("Loading assets...") {
@@ -73,7 +73,7 @@ suspend fun playMain(): GameServerSide {
 			}
 		}
 		MainMenuAction.ViewKriegspedia -> {
-			viewKriegspedia()
+			Kriegspedia.viewKriegspedia()
 			playMain()
 		}
 	}
