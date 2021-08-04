@@ -19,7 +19,7 @@ object WebRTC {
 	
 	suspend fun host1(): String {
 		closeConn()
-		rtcPeerConnection = RTCPeerConnection(getRtcConfig())
+		rtcPeerConnection = createRtcPeerConn()
 		
 		dataChannel = rtcPeerConnection.createDataChannel(DATA_CHANNEL_LABEL, configure {
 			ordered = true
@@ -51,7 +51,7 @@ object WebRTC {
 	
 	suspend fun join(offerStr: String): String {
 		closeConn()
-		rtcPeerConnection = RTCPeerConnection(getRtcConfig())
+		rtcPeerConnection = createRtcPeerConn()
 		
 		rtcPeerConnection.addEventListener("datachannel", {
 			val e = it.unsafeCast<RTCDataChannelEvent>()
