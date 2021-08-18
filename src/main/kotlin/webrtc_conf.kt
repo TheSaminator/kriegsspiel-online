@@ -18,7 +18,7 @@ fun getDevEnvRtcConfig() = configure<RTCConfiguration> {
 suspend fun getRtcConfig() = configure<RTCConfiguration> {
 	val stunServer = configure<RTCIceServer> { urls = "stun:franciscusrex.dev" }
 	val turnServer = window
-		.fetch("https://franciscusrex.dev/turn/confmaker.php?sitename=kriegsspiel")
+		.fetch("https://franciscusrex.dev/turn/confmaker.php?sitename=$GAME_NAME")
 		.await()
 		.json()
 		.await()

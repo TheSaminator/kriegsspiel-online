@@ -1,6 +1,8 @@
 import kotlinx.browser.window
 import kotlinx.coroutines.*
 
+const val GAME_NAME = "kriegsspiel-online"
+
 private const val playerNameStorageKey = "playerName"
 var playerName: String? = null
 	private set

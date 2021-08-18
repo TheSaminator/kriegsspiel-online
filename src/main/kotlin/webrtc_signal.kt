@@ -78,7 +78,7 @@ object WebRTCSignalling {
 		val offerPacket = jsonString {
 			it.type = "host-offer"
 			it.name = playerName!!
-			it.game = "kriegsspiel-online"
+			it.game = GAME_NAME
 			it.offer = offer
 		}
 		
@@ -114,7 +114,7 @@ object WebRTCSignalling {
 		
 		val listDataPacket = jsonString {
 			it.type = "list-data"
-			it.game = "kriegsspiel-online"
+			it.game = GAME_NAME
 		}
 		
 		val listDeferred = GameScope.async {
