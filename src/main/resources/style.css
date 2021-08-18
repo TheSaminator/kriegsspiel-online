@@ -294,18 +294,21 @@ hr:first-child {
 .measure-bar .meter {
 	display: inline-block;
 	flex-grow: 1;
+	margin: 0;
+	padding: 0;
+	height: 1em;
 }
 
-.measure-bar .meter.red-green {
+.measure-bar .meter.health {
 	background: linear-gradient(to right, #c44, #4c4);
-	padding: 0;
-	height: 1em;
 }
 
-.measure-bar .meter.orange-blue {
+.measure-bar .meter.action {
 	background: linear-gradient(to right, #c84, #48c);
-	padding: 0;
-	height: 1em;
+}
+
+.measure-bar .meter.supply {
+	background: linear-gradient(to right, #84c, #cc0);
 }
 
 .measure-bar .meter .emptiness {

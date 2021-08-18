@@ -725,7 +725,8 @@ object GameSidebar {
 					
 					div(classes = "measure-bar") {
 						+"Health"
-						span("meter red-green") {
+						+Entities.nbsp
+						span("meter health") {
 							span("emptiness") {
 								style = "width: ${((1 - piece.health) * 100).roundToInt()}%"
 							}
@@ -740,7 +741,8 @@ object GameSidebar {
 				if (piece.owner == Game.currentSide!! && GamePhase.currentPhase == GamePhase.PlayTurn(Game.currentSide!!)) {
 					div(classes = "measure-bar") {
 						+"Action"
-						span("meter orange-blue") {
+						+Entities.nbsp
+						span("meter action") {
 							span("emptiness") {
 								style = "width: ${((1 - piece.action) * 100).roundToInt()}%"
 							}

@@ -26,20 +26,23 @@ wsServer.on("connection", function (ws) {
 		switch (msg.type) {
 			case "host-offer":
 				const hostName = msg.name;
+				const hostGame = msg.game;
 				const hostOffer = msg.offer;
 				const offerId = newId();
 				ids.push(offerId);
-				hosts[offerId] = {"name": hostName, "offer": hostOffer, "host": ws, "iceCandidates": []};
+				hosts[offerId] = {"name": hostName, "game": hostGame, "offer": hostOffer, "host": ws, "iceCandidates": []};
 				ws.send(JSON.stringify({"type": "offer-id", "id": offerId}));
 				ws.connId = offerId;
 				ws.connType = "host";
 
 				break;
 			case "list-data":
+				const joinGame = msg.game;
+
 				const hostList = ids.map(function (id) {
-					return {"id": id, "name": hosts[id].name, "offer": hosts[id].offer, "joined": "guest" in Object.keys(hosts[id])};
+					return {"id": id, "name": hosts[id].name, "game": hosts[id].game, "offer": hosts[id].offer, "joined": "guest" in Object.keys(hosts[id])};
 				}).filter(function (record) {
-					return !record.joined;
+					return record.game === joinGame && !record.joined;
 				});
 
 				ws.send(JSON.stringify({"type": "list-data", "list": hostList}));

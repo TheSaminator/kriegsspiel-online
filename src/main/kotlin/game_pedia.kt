@@ -81,7 +81,13 @@ object Kriegspedia {
 				td {
 					colSpan = "2"
 					style = "text-align: center"
-					+"This terrain has special hill mechanics. Pieces have an attack buff when attacking downhill and an attack debuff when attacking uphill. Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
+					+"This terrain has special hill mechanics."
+					br
+					br
+					+"Pieces have an attack buff when attacking downhill and an attack debuff when attacking uphill."
+					br
+					br
+					+"Also, units have slower movement when facing towards or away from the center of the hill; their movement isn't as slow when the unit is facing with its side to the center of the hill."
 				}
 			}
 			

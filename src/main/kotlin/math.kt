@@ -1,8 +1,5 @@
 import kotlinx.serialization.Serializable
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.sin
+import kotlin.math.*
 
 // NOTE: Vec2.angle and Vec2.normal make X the SINE and Y the COSINE
 // because rotations in CSS are CW from pointing up, not CCW from pointing right.
@@ -24,7 +21,7 @@ data class Vec2(val x: Double, val y: Double) {
 	
 	fun rotateBy(radians: Double) = Vec2(
 		x * cos(radians) - y * sin(radians),
-		y * cos(radians) + x * sin(radians),
+		x * sin(radians) + y * cos(radians),
 	)
 	
 	val magnitude: Double
@@ -32,6 +29,14 @@ data class Vec2(val x: Double, val y: Double) {
 	
 	val angle: Double
 		get() = atan2(x, y)
+	
+	fun projectOnto(other: Vec2) = (other / other.magnitude).let { otherHat -> (this dot otherHat) * otherHat }
+	fun distanceToSegment(a: Vec2, b: Vec2): Double? = ((this - a).projectOnto(b - a) + a).takeIf { (cx, cy) ->
+		val xRange = min(a.x, b.x)..max(a.x, b.x)
+		val yRange = min(a.y, b.y)..max(a.y, b.y)
+		
+		cx in xRange && cy in yRange
+	}?.let { c -> (this - c).magnitude }
 	
 	override fun toString(): String {
 		return "(${x}î + ${y}ĵ)"

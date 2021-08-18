@@ -47,7 +47,7 @@ val jsonSerializer = Json {
 inline fun <T> configure(builder: T.() -> Unit) = js("{}").unsafeCast<T>().apply(builder)
 
 inline fun jsonString(builder: (dynamic) -> Unit) = JSON.stringify(
-	js("{}").unsafeCast<Any?>().also(builder)
+	js("{}").unsafeCast<Any>().also(builder)
 )
 
 // Events
