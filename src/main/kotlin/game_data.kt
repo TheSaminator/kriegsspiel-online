@@ -745,9 +745,9 @@ enum class PieceLayer {
 				viewAirUnits = !viewAirUnits
 				
 				if (viewAirUnits)
-					aElement.innerHTML = "Hide Air Units"
+					aElement.innerHTML = "Hide Flying Units"
 				else
-					aElement.innerHTML = "Show Air Units"
+					aElement.innerHTML = "Show Flying Units"
 				
 				GameSessionData.currentSession?.let {
 					GameField.redrawAllPieces(it.allPieces())
