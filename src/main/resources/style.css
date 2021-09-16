@@ -308,7 +308,7 @@ hr:first-child {
 }
 
 .measure-bar .meter.supply {
-	background: linear-gradient(to right, #84c, #cc0);
+	background: linear-gradient(to right, #84c, #cc4);
 }
 
 .measure-bar .meter .emptiness {
