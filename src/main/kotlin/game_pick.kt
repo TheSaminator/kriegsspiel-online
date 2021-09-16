@@ -270,12 +270,11 @@ object PickHandler {
 		
 		val isDesktop = window.matchMedia("(pointer: fine)").matches
 		
-		if (isDesktop)
-			helpText.innerHTML = "Press the Escape key to cancel"
-		else if (pickRequest is PickRequest.PickPiece)
-			helpText.innerHTML = "Tap on a piece to make selection"
-		else
-			helpText.innerHTML = "Tap to select, long press to confirm selection"
+		helpText.innerHTML = when {
+			isDesktop -> "Press the Escape key to cancel"
+			pickRequest is PickRequest.PickPiece -> "Tap on a piece to make selection"
+			else -> "Tap to select, long press to confirm selection"
+		}
 		
 		topListeners.deregister()
 		
