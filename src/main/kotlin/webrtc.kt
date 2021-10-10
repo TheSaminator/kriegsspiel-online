@@ -131,6 +131,8 @@ object WebRTC {
 	private var connectionOpen: Boolean = false
 	
 	suspend fun makeDataChannel(onClose: suspend () -> Unit) {
+		messageChannel = Channel()
+		
 		with(dataChannel) {
 			addEventListener("message", messageEventHandler)
 			addEventListener("close", {
@@ -155,7 +157,7 @@ object WebRTC {
 		})
 	}
 	
-	val messageChannel = Channel<String>()
+	lateinit var messageChannel: Channel<String>
 	
 	private val messageEventHandler = object : EventListener {
 		override fun handleEvent(event: Event) {
