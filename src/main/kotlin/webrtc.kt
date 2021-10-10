@@ -22,6 +22,8 @@ object WebRTC {
 		
 		iceCandidateSendQueue = Channel(Channel.UNLIMITED)
 		iceCandidateReceiveQueue = Channel(Channel.UNLIMITED)
+		
+		messageChannel = Channel()
 	}
 	
 	suspend fun host1(): String {
@@ -140,8 +142,6 @@ object WebRTC {
 	private var connectionOpen: Boolean = false
 	
 	suspend fun makeDataChannel(onClose: suspend () -> Unit) {
-		messageChannel = Channel()
-		
 		with(dataChannel) {
 			addEventListener("message", messageEventHandler)
 			addEventListener("close", {
