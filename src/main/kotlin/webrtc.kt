@@ -17,9 +17,16 @@ object WebRTC {
 			rtcPeerConnection.close()
 	}
 	
+	private suspend fun beginConn() {
+		rtcPeerConnection = createRtcPeerConn()
+		
+		iceCandidateSendQueue = Channel(Channel.UNLIMITED)
+		iceCandidateReceiveQueue = Channel(Channel.UNLIMITED)
+	}
+	
 	suspend fun host1(): String {
 		closeConn()
-		rtcPeerConnection = createRtcPeerConn()
+		beginConn()
 		
 		dataChannel = rtcPeerConnection.createDataChannel(DATA_CHANNEL_LABEL, configure {
 			ordered = true
@@ -51,7 +58,7 @@ object WebRTC {
 	
 	suspend fun join(offerStr: String): String {
 		closeConn()
-		rtcPeerConnection = createRtcPeerConn()
+		beginConn()
 		
 		rtcPeerConnection.addEventListener("datachannel", {
 			val e = it.unsafeCast<RTCDataChannelEvent>()
@@ -83,8 +90,10 @@ object WebRTC {
 	
 	private var isReadyToSend = false
 	private var isReadyToReceive = false
-	private val iceCandidateSendQueue = Channel<RTCIceCandidate?>(Channel.UNLIMITED)
-	private val iceCandidateReceiveQueue = Channel<RTCIceCandidate?>(Channel.UNLIMITED)
+	
+	private lateinit var iceCandidateSendQueue: Channel<RTCIceCandidate?>
+	private lateinit var iceCandidateReceiveQueue: Channel<RTCIceCandidate?>
+	
 	lateinit var iceCandidateHandler: (RTCIceCandidate?) -> Unit
 	
 	suspend fun dumpGatheredIceCandidates() {
