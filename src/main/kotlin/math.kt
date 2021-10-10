@@ -17,8 +17,6 @@ data class Vec2(val x: Double, val y: Double) {
 	fun scaleX(scale: Double) = Vec2(x * scale, y)
 	fun scaleY(scale: Double) = Vec2(x, y * scale)
 	
-	infix fun dot(other: Vec2) = x * other.x + y * other.y
-	
 	fun rotateBy(radians: Double) = Vec2(
 		x * cos(radians) - y * sin(radians),
 		x * sin(radians) + y * cos(radians),
@@ -29,14 +27,6 @@ data class Vec2(val x: Double, val y: Double) {
 	
 	val angle: Double
 		get() = atan2(x, y)
-	
-	fun projectOnto(other: Vec2) = (other / other.magnitude).let { otherHat -> (this dot otherHat) * otherHat }
-	fun distanceToSegment(a: Vec2, b: Vec2): Double? = ((this - a).projectOnto(b - a) + a).takeIf { (cx, cy) ->
-		val xRange = min(a.x, b.x)..max(a.x, b.x)
-		val yRange = min(a.y, b.y)..max(a.y, b.y)
-		
-		cx in xRange && cy in yRange
-	}?.let { c -> (this - c).magnitude }
 	
 	override fun toString(): String {
 		return "(${x}î + ${y}ĵ)"
