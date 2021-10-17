@@ -170,15 +170,21 @@ object GameField {
 		})
 		
 		gameFieldPanZoom.fit().center()
+		
+		window.addEventListener("resize", {
+			gameFieldPanZoom.resize()
+			gameFieldPanZoom.fit()
+			gameFieldPanZoom.center()
+		})
 	}
 	
 	private fun createPanZoomMobile() {
-		lateinit var hammer: HammerManager
-		
 		gameFieldPanZoom = svgPanZoom(field, configure {
 			configurePanBox()
 			
 			customEventsHandler = configure<CustomEventHandler> {
+				lateinit var hammer: HammerManager
+				
 				haltEventListeners = arrayOf("touchstart", "touchend", "touchmove", "touchleave", "touchcancel")
 				
 				init = { opts ->
@@ -255,6 +261,12 @@ object GameField {
 		})
 		
 		gameFieldPanZoom.fit().center()
+		
+		window.addEventListener("resize", {
+			gameFieldPanZoom.resize()
+			gameFieldPanZoom.fit()
+			gameFieldPanZoom.center()
+		})
 	}
 	
 	private fun drawMap(map: GameMap) {
