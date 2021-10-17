@@ -94,9 +94,9 @@ data class GameMap(
 		
 		private fun randomSize() = Vec2(WIDTH_RANGE.random(), HEIGHT_RANGE.random())
 		
-		private val MIN_DISTANCE_BETWEEN_BLOBS = 200.0
+		private const val MIN_DISTANCE_BETWEEN_BLOBS = 200.0
 		
-		private val MAX_TERRAIN_BLOBS = 20
+		private const val MAX_TERRAIN_BLOBS = 20
 		
 		fun generateMap(): GameMap {
 			val minDistanceBetweenBlobs = MIN_DISTANCE_BETWEEN_BLOBS

@@ -394,12 +394,13 @@ object GameField {
 				stroke = color
 				strokeWidth = "5"
 				
-				val begin = Vec2(0.0, -radius)
-				val end = begin.rotateBy(amount * 2 * PI)
+				val origin = Vec2(0.0, radius)
+				val begin = origin.rotateBy(amount * PI)
+				val end = origin.rotateBy(-amount * PI)
 				
 				val largeArc = if (amount > 0.5) "1" else "0"
 				
-				d = "M ${begin.x} ${begin.y} A $radius $radius 0 $largeArc 1 ${end.x} ${end.y}"
+				d = "M ${begin.x} ${begin.y} A $radius $radius 0 $largeArc 0 ${end.x} ${end.y}"
 			}
 		}
 	}
