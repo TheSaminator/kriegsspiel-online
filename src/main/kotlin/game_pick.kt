@@ -77,23 +77,23 @@ data class PickBoundaryUnitBased(
 
 enum class TerrainRequirement {
 	DEFAULT {
-		override fun isTerrainOkay(terrainType: TerrainType): Boolean {
-			return !terrainType.stats.isImpassible
+		override fun isTerrainOkay(terrainBlob: TerrainBlob): Boolean {
+			return !terrainBlob.type.stats.isImpassible
 		}
 	},
 	REQ_NONE {
-		override fun isTerrainOkay(terrainType: TerrainType): Boolean {
+		override fun isTerrainOkay(terrainBlob: TerrainBlob): Boolean {
 			return false
 		}
 	},
 	ALLOW_ANY {
-		override fun isTerrainOkay(terrainType: TerrainType): Boolean {
+		override fun isTerrainOkay(terrainBlob: TerrainBlob): Boolean {
 			return true
 		}
 	},
 	;
 	
-	abstract fun isTerrainOkay(terrainType: TerrainType): Boolean
+	abstract fun isTerrainOkay(terrainBlob: TerrainBlob): Boolean
 }
 
 @Serializable
@@ -228,7 +228,7 @@ object PickHandler {
 		
 		if (
 			GameSessionData.currentSession!!.gameMap.terrainBlobs.any {
-				!posReq.requireTerrain.isTerrainOkay(it.type) && (it.center - pos).magnitude < it.radius
+				!posReq.requireTerrain.isTerrainOkay(it) && (it.center - pos).magnitude < it.radius
 			}
 		)
 			return false

@@ -22,7 +22,10 @@ private suspend fun choosePlayerName(): String? {
 	}
 }
 
-private val AppScope = MainScope()
+private val AppScope = MainScope() + CoroutineExceptionHandler { _, error ->
+	console.error("Unhandled coroutine exception", error.stackTraceToString())
+}
+
 private var mainJob: Job? = null
 
 val GameScope: CoroutineScope
@@ -39,7 +42,7 @@ suspend fun suspendMain() {
 	PieceLayer.attachToggleAirUnitsButton()
 	
 	Popup.LoadingScreen("Loading assets...") {
-		GamePiece.preloadAllPieceImages()
+		GamePiece.preloadAllImages()
 	}.display()
 	
 	gameMain()
@@ -94,7 +97,6 @@ suspend fun hostGame(): GameServerSide {
 		WebRTCSignalling.exchangeIce()
 	}.display()
 	
-	Game.beginLocal()
 	return Game.doLocal()
 }
 
@@ -111,6 +113,5 @@ suspend fun joinGame(): GameServerSide {
 		WebRTCSignalling.exchangeIce()
 	}.display()
 	
-	Game.beginRemote()
 	return Game.doRemote()
 }

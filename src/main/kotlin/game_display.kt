@@ -66,7 +66,7 @@ object ChatBox {
 	fun addChatMessage(sender: String, message: String) {
 		history.append {
 			p(classes = "chat-message") {
-				strong { +"<$sender> " }
+				b { +"<$sender> " }
 				+message
 			}
 		}.last().scrollIntoView()

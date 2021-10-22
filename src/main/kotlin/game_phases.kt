@@ -30,13 +30,14 @@ sealed class GamePhase {
 					guestJob = Job()
 			}
 		
-		val localIsDone
+		val localIsDone: Boolean
 			get() = when (Game.currentSide!!) {
 				GameServerSide.HOST -> hostIsDone
 				GameServerSide.GUEST -> guestIsDone
 			}
 		
-		val bothAreDone get() = hostIsDone && guestIsDone
+		val bothAreDone: Boolean
+			get() = hostIsDone && guestIsDone
 		
 		suspend fun awaitBothDone() {
 			listOf(hostJob, guestJob).joinAll()
@@ -57,7 +58,7 @@ sealed class GamePhase {
 		suspend fun awaitPhase(waitUntil: suspend (GamePhase) -> Boolean) {
 			if (waitUntil(phaseChanges.value))
 				return
-			phaseChanges.takeWhile { !waitUntil(it) }.collect { /* no-op */ }
+			phaseChanges.takeWhile { !waitUntil(it) }.collect()
 		}
 		
 		var currentPhase: GamePhase

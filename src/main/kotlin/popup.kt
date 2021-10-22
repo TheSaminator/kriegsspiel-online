@@ -64,12 +64,12 @@ sealed class Popup<T> {
 			p {
 				style = "text-align: center"
 				
-				strong {
+				b {
 					style = "font-size: 1.8em"
 					+"Kriegsspiel Online"
 				}
 				br
-				em {
+				i {
 					style = "font-size: 1.4em"
 					+"the web-based wargame"
 				}

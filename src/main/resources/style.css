@@ -11,7 +11,7 @@ html, body {
 
 	color: #345;
 	font-family: 'JetBrains Mono', 'Courier New', 'Courier', monospace;
-	font-size: 100%;
+	font-size: 70%;
 
 	touch-action: none;
 }
@@ -194,8 +194,8 @@ input[type=submit]:disabled {
 	bottom: 1.5em;
 	left: 1.5em;
 
-	width: 30%;
-	height: 30%;
+	width: 25%;
+	height: 35%;
 
 	display: flex;
 	flex-wrap: nowrap;
@@ -344,50 +344,52 @@ td, th {
 	left: 1.5em;
 
 	width: 20%;
+}
 
+#cancel-pick.hide {
 	display: none;
 }
 
-@media only screen and (pointer: coarse) {
+@media only screen and (pointer: fine) {
 	html, body {
-		font-size: 62.5%;
+		font-size: 100% !important;
 	}
 
 	#cancel-pick {
-		display: unset;
+		display: none;
 	}
 
-	#cancel-pick.hide {
-		display: none;
+	#portrait-admonishment {
+		display: none !important;
 	}
 }
 
 #portrait-admonishment {
 	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+
+	width: 100%;
+	height: 100%;
+
+	background-color: #ACE;
 }
 
-@media only screen and (pointer: coarse) and (orientation: portrait) {
+#portrait-admonishment p {
+	color: #135;
+	font-size: 200%;
+	text-align: center;
+
+	position: fixed;
+	top: 50%;
+	left: 50%;
+
+	transform: translate(-50%, -50%);
+}
+
+@media only screen and (orientation: portrait) {
 	#portrait-admonishment {
 		display: unset;
-		position: fixed;
-		top: 0;
-		left: 0;
-
-		width: 100%;
-		height: 100%;
-
-		background-color: #DDD;
-	}
-
-	#portrait-admonishment p {
-		color: #222;
-		font-size: 200%;
-		text-align: center;
-
-		position: fixed;
-		top: 50%;
-		left: 50%;
-
-		transform: translate(-50%, -50%);
 	}
 }

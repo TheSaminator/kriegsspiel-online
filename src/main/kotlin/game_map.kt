@@ -3,7 +3,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TerrainStats(
 	val hideEnemyUnitRange: Double?,
-	val damagePerTurn: Double,
+	val damagePerTurn: Double?,
 	val moveSpeedMult: Double,
 	val softAttackMult: Double,
 	val hardAttackMult: Double,
@@ -32,7 +32,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 		"#062",
 		TerrainStats(
 			hideEnemyUnitRange = 160.0,
-			damagePerTurn = 0.0,
+			damagePerTurn = null,
 			moveSpeedMult = 0.75,
 			softAttackMult = 0.9,
 			hardAttackMult = 0.6,
@@ -45,7 +45,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 		"#7ad",
 		TerrainStats(
 			hideEnemyUnitRange = null,
-			damagePerTurn = 0.0,
+			damagePerTurn = null,
 			moveSpeedMult = 0.0,
 			softAttackMult = 0.0,
 			hardAttackMult = 0.0,
@@ -58,7 +58,7 @@ enum class TerrainType(val displayName: String, val color: String, val stats: Te
 		"#2c6",
 		TerrainStats(
 			hideEnemyUnitRange = null,
-			damagePerTurn = 0.0,
+			damagePerTurn = null,
 			moveSpeedMult = 1.0,
 			softAttackMult = 1.0,
 			hardAttackMult = 1.0,

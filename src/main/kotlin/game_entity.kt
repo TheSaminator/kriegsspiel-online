@@ -187,9 +187,10 @@ data class GamePiece(
 		action = 1.0
 		hasAttacked = false
 		
-		currentTerrainBlob?.let { blob ->
-			val takenDamage = blob.type.stats.damagePerTurn
-			attack(takenDamage, DamageSource.Terrain(blob.type))
+		currentTerrainBlob?.type?.let { type ->
+			type.stats.damagePerTurn?.let { takenDamage ->
+				attack(takenDamage, DamageSource.Terrain(type))
+			}
 		}
 	}
 	
@@ -230,9 +231,9 @@ data class GamePiece(
 	
 	val imagePath: String
 		get() = if (canBeIdentified)
-			getImagePath(owner != Game.currentSide!!, type)
+			getImagePath(owner.clientSide!!, type)
 		else
-			getUnknownImagePath(owner != Game.currentSide!!, type.layer)
+			getUnknownImagePath(owner.clientSide!!, type.layer)
 	
 	val pieceRadius: Double
 		get() = type.imageRadius + PIECE_RADIUS_OUTLINE
@@ -254,18 +255,16 @@ data class GamePiece(
 			img.awaitEvent("load")
 		}
 		
-		suspend fun preloadAllPieceImages() {
+		suspend fun preloadAllImages() {
 			coroutineScope {
 				val urls = PieceType.values().flatMap { pieceType ->
-					listOf(
-						getImagePath(true, pieceType),
-						getImagePath(false, pieceType)
-					)
+					GameClientSide.values().map { side ->
+						getImagePath(side, pieceType)
+					}
 				} + PieceLayer.values().flatMap { pieceLayer ->
-					listOf(
-						getUnknownImagePath(true, pieceLayer),
-						getUnknownImagePath(false, pieceLayer)
-					)
+					GameClientSide.values().map { side ->
+						getUnknownImagePath(side, pieceLayer)
+					}
 				}
 				
 				urls.map { url ->
@@ -276,12 +275,12 @@ data class GamePiece(
 			}
 		}
 		
-		fun getImagePath(isOpponent: Boolean, pieceType: PieceType): String {
-			return "uniticons/${if (isOpponent) "opponent" else "player"}/${pieceType.name.lowercase()}.png"
+		fun getImagePath(side: GameClientSide, pieceType: PieceType): String {
+			return "uniticons/${side.name.lowercase()}/${pieceType.name.lowercase()}.png"
 		}
 		
-		fun getUnknownImagePath(isOpponent: Boolean, layer: PieceLayer): String {
-			return "uniticons/${if (isOpponent) "opponent" else "player"}/${layer.name.lowercase()}_unknown.png"
+		fun getUnknownImagePath(side: GameClientSide, layer: PieceLayer): String {
+			return "uniticons/${side.name.lowercase()}/${layer.name.lowercase()}_unknown.png"
 		}
 	}
 }

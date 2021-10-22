@@ -16,15 +16,17 @@ import kotlin.random.Random
 const val EPSILON = 0.00_000_1
 
 infix fun Double.isEqualTo(other: Double) = abs(this - other) < EPSILON
+infix fun Double.isNotEqualTo(other: Double) = abs(this - other) >= EPSILON
 
 fun Double.toTruncatedString(maxFractionalDigits: Int): String {
 	val parts = toString().split('.')
-	if (parts.size < 2)
-		return parts[0]
 	
-	val (whole, frac) = parts
+	val (whole, frac) = if (parts.size < 2)
+		listOf(parts[0], "")
+	else
+		parts
 	
-	val clippedFrac = frac.substring(0, maxFractionalDigits.coerceAtMost(frac.length))
+	val clippedFrac = frac.padEnd(maxFractionalDigits, padChar = '0')
 	return "$whole.$clippedFrac"
 }
 

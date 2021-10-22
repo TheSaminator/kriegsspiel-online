@@ -37,7 +37,7 @@ sealed class Ability {
 				(hillX2 * 0.3) + 0.6
 			} else 1.0
 			
-			val terrainMult = currentPiece.currentTerrainBlob?.type?.stats?.moveSpeedMult ?: 1.0
+			val terrainMult = terrainStats?.moveSpeedMult ?: 1.0
 			
 			val moveMult = hillMult * terrainMult
 			val moveRange = (distancePerAction * currentPiece.action + distanceBuffer) * moveMult

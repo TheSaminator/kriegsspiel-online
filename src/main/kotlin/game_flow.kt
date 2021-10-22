@@ -12,10 +12,9 @@ object Game {
 		ChatBox.enable()
 	}
 	
-	suspend fun beginLocal() = beginWith(GameServerSide.HOST)
-	suspend fun beginRemote() = beginWith(GameServerSide.GUEST)
-	
 	suspend fun doLocal(): GameServerSide {
+		beginWith(GameServerSide.HOST)
+		
 		if (!GamePacket.awaitJoinAccept()) {
 			end()
 			awaitCancellation()
@@ -54,6 +53,8 @@ object Game {
 	}
 	
 	suspend fun doRemote(): GameServerSide {
+		beginWith(GameServerSide.GUEST)
+		
 		if (!Popup.TryLoadingScreen("Awaiting connection acceptance...", "Connection accepted!", "Connection rejected.") { GamePacket.awaitJoinAccept() }.display()) {
 			end()
 			awaitCancellation()
@@ -100,9 +101,26 @@ object Game {
 enum class GameServerSide {
 	HOST, GUEST;
 	
+	val clientSide: GameClientSide?
+		get() = when (Game.currentSide) {
+			this -> GameClientSide.PLAYER
+			this.other -> GameClientSide.OPPONENT
+			else -> null
+		}
+	
 	val other: GameServerSide
 		get() = when (this) {
 			HOST -> GUEST
 			GUEST -> HOST
+		}
+}
+
+enum class GameClientSide {
+	PLAYER, OPPONENT;
+	
+	val other: GameClientSide
+		get() = when (this) {
+			PLAYER -> OPPONENT
+			OPPONENT -> PLAYER
 		}
 }
