@@ -26,7 +26,7 @@ fun Double.toTruncatedString(maxFractionalDigits: Int): String {
 	else
 		parts
 	
-	val clippedFrac = frac.padEnd(maxFractionalDigits, padChar = '0')
+	val clippedFrac = frac.padEnd(maxFractionalDigits, padChar = '0').substring(0, maxFractionalDigits)
 	return "$whole.$clippedFrac"
 }
 
@@ -36,7 +36,7 @@ fun ClosedFloatingPointRange<Double>.random(source: Random = Random) = source.ne
 val isDevEnv: Boolean
 	get() = window.location.hostname == "localhost"
 
-// Detect shitty browser
+// Detect Chromium
 val isChrome = js("/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)").unsafeCast<Boolean>()
 
 // Serializer
