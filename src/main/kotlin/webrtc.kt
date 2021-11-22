@@ -58,13 +58,14 @@ object WebRTC {
 		dumpReceivedIceCandidates()
 	}
 	
-	suspend fun join(offerStr: String): String {
+	suspend fun join(offerStr: String, getDataChannel: (RTCDataChannel) -> Unit): String {
 		closeConn()
 		beginConn()
 		
 		rtcPeerConnection.addEventListener("datachannel", {
 			val e = it.unsafeCast<RTCDataChannelEvent>()
 			dataChannel = e.channel
+			getDataChannel(dataChannel)
 			
 			if (isDevEnv)
 				console.log("Data channel connected on guest")

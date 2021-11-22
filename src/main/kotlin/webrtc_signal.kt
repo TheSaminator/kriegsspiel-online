@@ -1,3 +1,4 @@
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -127,7 +128,9 @@ object WebRTCSignalling {
 		val sess = chooseOffer(list) ?: return false
 		val offer = sess.offer
 		
-		val answer = WebRTC.join(offer)
+		val hasDataChannel = Job()
+		
+		val answer = WebRTC.join(offer) { _ -> hasDataChannel.complete() }
 		
 		val answerPacket = jsonString {
 			it.type = "join-answer"
@@ -138,6 +141,8 @@ object WebRTCSignalling {
 		ws.send(answerPacket)
 		
 		WebRTC.dumpGatheredIceCandidates()
+		
+		hasDataChannel.join()
 		
 		return true
 	}
