@@ -27,10 +27,11 @@ wsServer.on("connection", function (ws) {
 			case "host-offer":
 				const hostName = msg.name;
 				const hostGame = msg.game;
+				const hostData = msg.data;
 				const hostOffer = msg.offer;
 				const offerId = newId();
 				ids.push(offerId);
-				hosts[offerId] = {"name": hostName, "game": hostGame, "offer": hostOffer, "host": ws, "iceCandidates": []};
+				hosts[offerId] = {"name": hostName, "game": hostGame, "data": hostData, "offer": hostOffer, "host": ws, "iceCandidates": []};
 				ws.send(JSON.stringify({"type": "offer-id", "id": offerId}));
 				ws.connId = offerId;
 				ws.connType = "host";
@@ -40,7 +41,7 @@ wsServer.on("connection", function (ws) {
 				const joinGame = msg.game;
 
 				const hostList = ids.map(function (id) {
-					return {"id": id, "name": hosts[id].name, "game": hosts[id].game, "offer": hosts[id].offer, "joined": "guest" in Object.keys(hosts[id])};
+					return {"id": id, "name": hosts[id].name, "game": hosts[id].game, "data": hosts[id].data, "offer": hosts[id].offer, "joined": "guest" in Object.keys(hosts[id])};
 				}).filter(function (record) {
 					return record.game === joinGame && !record.joined;
 				});
@@ -72,18 +73,18 @@ wsServer.on("connection", function (ws) {
 			case "ice-candidate":
 				const iceCandidate = msg.candidate;
 				const iceId = ws.connId;
-				const hostData = hosts[iceId];
+				const connHost = hosts[iceId];
 				const connType = ws.connType;
 
-				if (hostData === undefined) {
+				if (connHost === undefined) {
 					ws.send(JSON.stringify({"type": "connection-error", "message": "ICE negotiation failed"}));
 				} else if (connType === "host") {
-					if (hostData.guest !== undefined)
-						hostData.guest.send(JSON.stringify({"type": "ice-candidate", "candidate": iceCandidate}));
+					if (connHost.guest !== undefined)
+						connHost.guest.send(JSON.stringify({"type": "ice-candidate", "candidate": iceCandidate}));
 					else
-						hostData.iceCandidates.push(iceCandidate);
+						connHost.iceCandidates.push(iceCandidate);
 				} else {
-					hostData.host.send(JSON.stringify({"type": "ice-candidate", "candidate": iceCandidate}));
+					connHost.host.send(JSON.stringify({"type": "ice-candidate", "candidate": iceCandidate}));
 				}
 
 				break;

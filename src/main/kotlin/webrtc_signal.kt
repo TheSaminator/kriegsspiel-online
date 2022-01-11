@@ -1,19 +1,20 @@
-import kotlinx.coroutines.Job
+import externals.webrtc.RTCDataChannel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.decodeFromDynamic
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 
 object WebRTCSignalling {
 	private lateinit var ws: WebSocket
 	
-	private val offerIdChannel = Channel<WebRTCHostId>()
-	private val listDataChannel = Channel<WebRTCHostList>()
-	private val answerDataChannel = Channel<WebRTCHostAnswer>()
+	private val offerIdChannel = Channel<String>()
+	private val listDataChannel = Channel<List<WebRTCOpenSession>>()
+	private val answerDataChannel = Channel<String>()
 	
 	@OptIn(ExperimentalSerializationApi::class)
 	suspend fun initConnection() {
@@ -23,34 +24,27 @@ object WebRTCSignalling {
 		ws = WebSocket("wss://franciscusrex.dev/rtc-signal/")
 		
 		ws.addEventListener("message", { e ->
-			val packet = JSON.parse<dynamic>(e.unsafeCast<MessageEvent>().data as String)
+			val packet = jsonSerializer.decodeFromString(SignalServerS2CPacket.serializer(), e.unsafeCast<MessageEvent>().data as String)
 			
 			GameScope.launch {
-				when (packet.type) {
-					"offer-id" -> {
-						val offerId = jsonSerializer.decodeFromDynamic(WebRTCHostId.serializer(), packet)
-						offerIdChannel.send(offerId)
+				when (packet) {
+					is SignalServerS2CPacket.OfferId -> {
+						offerIdChannel.send(packet.id)
 					}
-					"list-data" -> {
-						val listData = jsonSerializer.decodeFromDynamic(WebRTCHostList.serializer(), packet)
-						listDataChannel.send(listData)
+					is SignalServerS2CPacket.ListData -> {
+						listDataChannel.send(packet.list)
 					}
-					"answer-data" -> {
-						val answerData = jsonSerializer.decodeFromDynamic(WebRTCHostAnswer.serializer(), packet)
-						answerDataChannel.send(answerData)
+					is SignalServerS2CPacket.AnswerData -> {
+						answerDataChannel.send(packet.answer)
 					}
-					"ice-candidate" -> {
-						val iceCandidate = packet.candidate.unsafeCast<String>()
-						
-						GameScope.launch {
-							WebRTC.receiveIceCandidate(JSON.parse(iceCandidate))
+					is SignalServerS2CPacket.IceCandidate -> {
+						launch {
+							WebRTC.receiveIceCandidate(JSON.parse(packet.candidate))
 						}
 					}
-					"connection-error" -> {
-						val errorMessage = packet.message.unsafeCast<String>()
-						
-						GameScope.launch {
-							Popup.Message("Connection error: $errorMessage", true, "Return to Main Menu").display()
+					is SignalServerS2CPacket.ConnectionError -> {
+						launch {
+							Popup.Message("Connection error: ${packet.message}", true, "Return to Main Menu").display()
 							
 							gameMain()
 						}
@@ -60,41 +54,35 @@ object WebRTCSignalling {
 		})
 		
 		WebRTC.iceCandidateHandler = { candidate ->
-			val candidatePacket = jsonString {
-				it.type = "ice-candidate"
-				it.candidate = JSON.stringify(candidate)
-			}
+			val candidatePacket = SignalServerC2SPacket.IceCandidate(JSON.stringify(candidate))
+			val packet = jsonSerializer.encodeToString(SignalServerC2SPacket.serializer(), candidatePacket)
 			
-			ws.send(candidatePacket)
+			ws.send(packet)
 		}
 		
 		ws.awaitEvent("open")
 	}
 	
-	suspend fun host(useId: suspend (String) -> Boolean): Boolean {
+	suspend fun host(data: String, useId: suspend (String) -> Boolean): Boolean {
 		initConnection()
 		
 		val offer = WebRTC.host1()
 		
-		val offerPacket = jsonString {
-			it.type = "host-offer"
-			it.name = playerName!!
-			it.game = GAME_NAME
-			it.offer = offer
-		}
+		val offerPacket = SignalServerC2SPacket.HostOffer(playerName!!, GAME_NAME, data, offer)
+		val offerPacketEncoded = jsonSerializer.encodeToString(SignalServerC2SPacket.serializer(), offerPacket)
 		
 		val idDeferred = GameScope.async {
-			offerIdChannel.receive().id
+			offerIdChannel.receive()
 		}
 		
-		ws.send(offerPacket)
+		ws.send(offerPacketEncoded)
 		
 		val id = idDeferred.await()
 		
 		WebRTC.dumpGatheredIceCandidates()
 		
 		val awaitAnswerJob = GameScope.launch {
-			val answer = answerDataChannel.receive().answer
+			val answer = answerDataChannel.receive()
 			WebRTC.host2(answer)
 		}
 		
@@ -113,35 +101,28 @@ object WebRTCSignalling {
 	suspend fun join(chooseOffer: suspend (List<WebRTCOpenSession>) -> WebRTCOpenSession?): Boolean {
 		initConnection()
 		
-		val listDataPacket = jsonString {
-			it.type = "list-data"
-			it.game = GAME_NAME
-		}
+		val listDataPacket = SignalServerC2SPacket.ListData(GAME_NAME)
+		val listDataPacketEncoded = jsonSerializer.encodeToString(SignalServerC2SPacket.serializer(), listDataPacket)
 		
 		val listDeferred = GameScope.async {
-			listDataChannel.receive().list
+			listDataChannel.receive()
 		}
 		
-		ws.send(listDataPacket)
+		ws.send(listDataPacketEncoded)
 		
 		val list = listDeferred.await()
 		val sess = chooseOffer(list) ?: return false
 		val offer = sess.offer
 		
-		val hasDataChannel = Job()
+		val hasDataChannel = CompletableDeferred<RTCDataChannel>()
 		
-		val answer = WebRTC.join(offer) { _ -> hasDataChannel.complete() }
+		val answer = WebRTC.join(offer) { hasDataChannel.complete(it) }
+		val answerPacket = SignalServerC2SPacket.JoinAnswer(sess.id, answer)
+		val answerPacketEncoded = jsonSerializer.encodeToString(SignalServerC2SPacket.serializer(), answerPacket)
 		
-		val answerPacket = jsonString {
-			it.type = "join-answer"
-			it.id = sess.id
-			it.answer = answer
-		}
-		
-		ws.send(answerPacket)
+		ws.send(answerPacketEncoded)
 		
 		WebRTC.dumpGatheredIceCandidates()
-		
 		hasDataChannel.join()
 		
 		return true
@@ -153,13 +134,46 @@ object WebRTCSignalling {
 }
 
 @Serializable
-data class WebRTCOpenSession(val id: String, val name: String, val offer: String)
+sealed class SignalServerC2SPacket {
+	@Serializable
+	@SerialName("host-offer")
+	data class HostOffer(val name: String, val game: String, val data: String, val offer: String) : SignalServerC2SPacket()
+	
+	@Serializable
+	@SerialName("list-data")
+	data class ListData(val game: String) : SignalServerC2SPacket()
+	
+	@Serializable
+	@SerialName("join-answer")
+	data class JoinAnswer(val id: String, val answer: String) : SignalServerC2SPacket()
+	
+	@Serializable
+	@SerialName("ice-candidate")
+	data class IceCandidate(val candidate: String) : SignalServerC2SPacket()
+}
 
 @Serializable
-data class WebRTCHostId(val id: String)
+data class WebRTCOpenSession(val id: String, val name: String, val data: String, val offer: String)
 
 @Serializable
-data class WebRTCHostList(val list: List<WebRTCOpenSession>)
-
-@Serializable
-data class WebRTCHostAnswer(val answer: String)
+sealed class SignalServerS2CPacket {
+	@Serializable
+	@SerialName("offer-id")
+	data class OfferId(val id: String) : SignalServerS2CPacket()
+	
+	@Serializable
+	@SerialName("list-data")
+	data class ListData(val list: List<WebRTCOpenSession>) : SignalServerS2CPacket()
+	
+	@Serializable
+	@SerialName("answer-data")
+	data class AnswerData(val answer: String) : SignalServerS2CPacket()
+	
+	@Serializable
+	@SerialName("ice-candidate")
+	data class IceCandidate(val candidate: String) : SignalServerS2CPacket()
+	
+	@Serializable
+	@SerialName("connection-error")
+	data class ConnectionError(val message: String) : SignalServerS2CPacket()
+}

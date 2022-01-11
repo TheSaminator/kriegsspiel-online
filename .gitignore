@@ -99,3 +99,5 @@ dist
 .pnp.*
 publish/
 local.properties
+*.iml
+.idea/markdown.xml

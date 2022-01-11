@@ -12,17 +12,13 @@ object Game {
 		ChatBox.enable()
 	}
 	
-	suspend fun doLocal(): GameServerSide {
+	suspend fun doLocal(battleSize: Int): GameServerSide {
 		beginWith(GameServerSide.HOST)
 		
 		if (!GamePacket.awaitJoinAccept()) {
 			end()
 			awaitCancellation()
 		}
-		
-		val battleSize = Popup.NameableChoice("Select battle size", DeployConstants.pointLevels.keys.toList()) {
-			DeployConstants.pointLevels.getValue(it) + " ($it)"
-		}.display()
 		
 		GameSessionData.currentSession = GameSessionData(GameMap.generateMap(), battleSize).also { gsd ->
 			GamePacket.send(GamePacket.MapLoaded(gsd.gameMap, battleSize))

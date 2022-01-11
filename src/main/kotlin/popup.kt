@@ -212,9 +212,12 @@ sealed class Popup<T> {
 					}
 					
 					sessions.forEach { sess ->
+						val battleSize = sess.data.toInt()
+						val battleSizeName = DeployConstants.pointLevels[battleSize] ?: "Custom"
+						
 						option {
 							value = sess.id
-							+"${sess.name} (${sess.id})"
+							+"${sess.name} #${sess.id} ($battleSizeName: $battleSize points)"
 						}
 					}
 				}

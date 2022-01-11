@@ -89,7 +89,11 @@ suspend fun hostGame(): GameServerSide {
 	
 	playerName = playerName ?: choosePlayerName() ?: return playMain()
 	
-	if (!WebRTCSignalling.host { Popup.HostScreen(it).display() }) {
+	val battleSize = Popup.NameableChoice("Select battle size", DeployConstants.pointLevels.keys.toList()) {
+		DeployConstants.pointLevels.getValue(it) + " ($it)"
+	}.display()
+	
+	if (!WebRTCSignalling.host(battleSize.toString()) { Popup.HostScreen(it).display() }) {
 		return playMain()
 	}
 	
@@ -97,7 +101,7 @@ suspend fun hostGame(): GameServerSide {
 		WebRTCSignalling.exchangeIce()
 	}.display()
 	
-	return Game.doLocal()
+	return Game.doLocal(battleSize)
 }
 
 suspend fun joinGame(): GameServerSide {
