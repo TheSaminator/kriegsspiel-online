@@ -93,9 +93,7 @@ suspend fun hostGame(): GameServerSide {
 		DeployConstants.pointLevels.getValue(it) + " ($it)"
 	}.display()
 	
-	if (!WebRTCSignalling.host(battleSize.toString()) { Popup.HostScreen(it).display() }) {
-		return playMain()
-	}
+	WebRTCSignalling.host(battleSize.toString()) { Popup.HostScreen(it).display() }
 	
 	Popup.LoadingScreen("Establishing connection...") {
 		WebRTCSignalling.exchangeIce()

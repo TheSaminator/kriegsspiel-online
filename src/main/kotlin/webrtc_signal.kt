@@ -2,6 +2,7 @@ import externals.webrtc.RTCDataChannel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -63,7 +64,7 @@ object WebRTCSignalling {
 		ws.awaitEvent("open")
 	}
 	
-	suspend fun host(data: String, useId: suspend (String) -> Boolean): Boolean {
+	suspend fun host(data: String, useId: suspend (String) -> Nothing) {
 		initConnection()
 		
 		val offer = WebRTC.host1()
@@ -86,16 +87,11 @@ object WebRTCSignalling {
 			WebRTC.host2(answer)
 		}
 		
-		val notCancelled = useId(id)
-		
-		if (notCancelled)
-			Popup.LoadingScreen("Awaiting peer connection...") {
-				awaitAnswerJob.join()
-			}.display()
-		else
-			awaitAnswerJob.cancel()
-		
-		return notCancelled
+		coroutineScope {
+			val showIdJob = launch { useId(id) }
+			awaitAnswerJob.join()
+			showIdJob.cancel()
+		}
 	}
 	
 	suspend fun join(chooseOffer: suspend (List<WebRTCOpenSession>) -> WebRTCOpenSession?): Boolean {

@@ -16,7 +16,6 @@ import kotlin.random.Random
 const val EPSILON = 0.00_000_1
 
 infix fun Double.isEqualTo(other: Double) = abs(this - other) < EPSILON
-infix fun Double.isNotEqualTo(other: Double) = abs(this - other) >= EPSILON
 
 fun Double.toTruncatedString(maxFractionalDigits: Int): String {
 	val parts = toString().split('.')
@@ -34,7 +33,7 @@ fun ClosedFloatingPointRange<Double>.random(source: Random = Random) = source.ne
 
 // Detect development environment
 val isDevEnv: Boolean
-	get() = window.location.hostname == "localhost"
+	get() = window.location.hostname != "kriegsspiel-online.netlify.app"
 
 // Detect Chromium
 val isChrome = js("/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)").unsafeCast<Boolean>()
@@ -47,10 +46,6 @@ val jsonSerializer = Json {
 }
 
 inline fun <T> configure(builder: T.() -> Unit) = js("{}").unsafeCast<T>().apply(builder)
-
-inline fun jsonString(builder: (dynamic) -> Unit) = JSON.stringify(
-	js("{}").unsafeCast<Any>().also(builder)
-)
 
 // Events
 class TempEvents private constructor(private val receiver: EventTarget, private val map: MutableMap<String, EventListener>) : Map<String, EventListener> by map {

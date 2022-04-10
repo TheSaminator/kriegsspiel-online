@@ -166,32 +166,14 @@ sealed class Popup<T> {
 		}
 	}
 	
-	class HostScreen(private val offerId: String) : Popup<Boolean>() {
-		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Boolean) -> Unit) {
+	class HostScreen(private val offerId: String) : Popup<Nothing>() {
+		override fun TagConsumer<*>.render(context: CoroutineContext, callback: (Nothing) -> Unit) {
 			p {
 				+"Your game ID is "
 				code {
 					+"${playerName!!} ($offerId)"
 				}
-				+". Copy it and send it to the person with whom you want to start a game. Once you have shared the ID, click Continue to wait for a connection."
-			}
-			div(classes = "button-set row") {
-				a(href = "#") {
-					+"Cancel"
-					onClickFunction = { e ->
-						e.preventDefault()
-						
-						callback(false)
-					}
-				}
-				a(href = "#") {
-					+"Continue"
-					onClickFunction = { e ->
-						e.preventDefault()
-						
-						callback(true)
-					}
-				}
+				+". Copy it and send it to the person with whom you want to start a game. Once you have shared the ID, wait for the connection request to appear onscreen."
 			}
 		}
 	}
